@@ -1,0 +1,8 @@
+/.git/
+/.vscode/
+/node_modules/
+/src/config/
+webdata/connection-settings.ini
+*.log
+logs/
+/lib/
