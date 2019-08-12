@@ -50,7 +50,7 @@ class Embeds {
 		return new discord.MessageEmbed(basicEmbed);
 	}
 
-	public static async helpEmbed(commandModule: CommandFile, prefix?: string, overrideOptions?: discord.MessageEmbedOptions) {
+	public static helpEmbed(commandModule: CommandFile, prefix?: string, overrideOptions?: discord.MessageEmbedOptions) {
 		const channelConv = {
 			dm: 'Direct Message',
 			text: 'Guild Text Channel',
