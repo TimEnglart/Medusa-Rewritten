@@ -63,7 +63,12 @@ interface MedalData {
 interface RankData {
 	name: string;
 	icon: string;
-	emoji: string;
+	emoji: {
+		name: string;
+		id: string;
+		animated: boolean;
+		text: string;
+	};
 }
 function giveMedal(userId: string | null, medals: MedalData[], databaseClient: Database) {
 	return new Promise(async (resolve, reject) => {
@@ -104,7 +109,7 @@ function calculateExperience(xp: number, currLevel: number): ExperienceResponse 
 	while (xp >= nextLevelRequirement) {
 		currLevel += 1;
 		nextLevelRequirement += 3000;
-		if (currLevel < Settings.lighthouse.ranks.length) levelUps.push(Settings.lighthouse.ranks[currLevel - 1]);
+		if (currLevel <= Settings.lighthouse.ranks.length) levelUps.push(Settings.lighthouse.ranks[currLevel - 1]);
 	}
 	while (xp < nextLevelRequirement - 3000 && currLevel > 1) {
 		currLevel -= 1;
@@ -303,6 +308,7 @@ function medalFunction(member: discord.GuildMember, medal: MedalData, databaseCl
 			// Get User Bungie/Destiny Data
 			const args: string[] = medal.acquisitionMethod.data.args;
 			// GOT USER DATA
+			if (!medal.acquisitionMethod.data.functionName) return false;
 			return resolve(await dynamicFunctions[medal.acquisitionMethod.data.functionName](args));
 		}
 		catch (e) {
@@ -404,7 +410,7 @@ function voiceChannelXp(member: discord.GuildMember | undefined, xpPerTick: numb
 }
 
 function handleRoles() {
-	
+
 }
 
 export { calculateExperience, giveExperience, giveMedal, voiceChannelXp, categoriseMedals, disconnectUser, connectUser, checkAllMedals, revokeMedal, MedalData };
