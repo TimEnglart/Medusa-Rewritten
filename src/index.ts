@@ -86,10 +86,15 @@ discordBot.on('message', async (message: Message) => {
 		if (message.channel.type !== 'dm' && message.member) {
 			// yeet await doXp(message.member);
 			const expData = await exp.giveExperience(message.author.id, null, discordBot.databaseClient);
-			for (const levelUp of expData.levelUps) {
-				const emojiId = levelUp.emoji.replace('>', '').split(':');
-				if (message.member.lastMessage) await message.member.lastMessage.react(emojiId[emojiId.length - 1]);
+			if (expData.levelUps.length) {
+				for (const levelUp of expData.levelUps) {
+					if (message.member.lastMessage) await message.member.lastMessage.react(levelUp.emoji.id);
+				}
+				if (expData.level === discordBot.settings.lighthouse.ranks.length) {
+					await message.author.send(Embeds.resetNotifyEmbed('Rank Reset Is Now Available', 'Use command ```guardian reset``` to continue your progression.'));
+				}
 			}
+
 			// handle Role Assignment
 
 		}
