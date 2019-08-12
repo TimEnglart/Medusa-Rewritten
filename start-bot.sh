@@ -1,5 +1,5 @@
 #!/bin/bash
-REPO_DIR=/srv/medusa
+REPO_DIR=/srv/Medusa-Rewritten
 cd $REPO_DIR
 git fetch
 gitdiff=$(git diff master origin/master)
@@ -8,5 +8,4 @@ then
 git pull origin master
 fi
 npm run build
-cd "./lib/"
-node "index.js"
+node "./lib/index.js"
