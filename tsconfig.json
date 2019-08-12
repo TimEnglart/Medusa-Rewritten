@@ -1,14 +1,14 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "target": "es6",
-    "outDir": "./lib/",
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "**/__tests__/*"],
-  "compileOnSave": true
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "es6",
+        "outDir": "./lib/",
+        "noImplicitAny": false,
+        "strictNullChecks": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true
+    },
+    "include": ["src/**/*"],
+    "exclude": ["node_modules", "**/__tests__/*"],
+    "compileOnSave": true
 }
