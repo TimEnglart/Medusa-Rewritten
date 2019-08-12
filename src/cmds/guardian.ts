@@ -33,7 +33,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				for (const leaderBoardEntry of leaderBoard) {
 					const guildMember = message.guild.members.get(leaderBoardEntry.user_id);
 					const currentRank = ranks[leaderBoardEntry.level >= amountOfLevels ? amountOfLevels - 1 : leaderBoardEntry.level];
-					leaderBoardEmbed.addField(`${leaderBoardEntry.position}. ${guildMember ? guildMember.displayName : 'REDACTED'} ${currentRank.emoji} ${leaderBoardEntry.user_id === message.member.id ? ' \\◀' : ''}`,
+					leaderBoardEmbed.addField(`${leaderBoardEntry.position}. ${guildMember ? guildMember.displayName : 'REDACTED'} ${currentRank.emoji.text} ${leaderBoardEntry.user_id === message.member.id ? ' \\◀' : ''}`,
 						`${currentRank.name} - Reset: ${leaderBoardEntry.reset} - XP: ${leaderBoardEntry.xp}`);
 				}
 				await message.channel.send(leaderBoardEmbed);
@@ -42,13 +42,13 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				const userExperience = await discordBot.databaseClient.query(`SELECT * FROM U_Experience WHERE user_id = ${message.member.id}`);
 				if (userExperience.length && userExperience[0].level >= amountOfLevels) {
 					const resetXp = 3000 * amountOfLevels;
-					const currentReset = parseInt(userExperience[0].reset, 0);
-					const currentXp = parseInt(userExperience[0].xp, 0);
+					const currentReset = +userExperience[0].reset;
+					const currentXp = +userExperience[0].xp;
 					const newReset = currentReset + 1;
 					const newXp = currentXp > resetXp ? currentXp - resetXp : 0;
 
 					await discordBot.databaseClient.query(`UPDATE U_Experience SET reset = ${newReset}, xp = ${newXp}, level = 1 WHERE user_id = ${message.member.id}`);
-					await message.channel.send(Embeds.successEmbed('Your Light Grows Brighter Guardian!', `Your Rank has been reset back to ${ranks[0].name} ${ranks[0].emoji}.\nNumber of Resets: ${newReset}`));
+					await message.channel.send(Embeds.successEmbed('Your Light Grows Brighter Guardian!', `Your Rank has been reset back to ${ranks[0].name} ${ranks[0].emoji.text}.\nNumber of Resets: ${newReset}`));
 				}
 				else {
 					await message.channel.send(Embeds.errorEmbed('Insufficient Rank', `You need to be of **${ranks[ranks.length - 1].name}** Rank before you can Reset.`));
@@ -81,21 +81,22 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 
 			const userExperience = await discordBot.databaseClient.query(`SELECT * FROM U_Experience WHERE user_id = ${message.member.id}`);
 			if (!userExperience) return resolve();
-			const currentLevel = userExperience[0].level;
-			const currentExperience = userExperience[0].xp;
-			const currentReset = userExperience[0].reset;
-			const currentRank = ranks[userExperience[0].level >= amountOfLevels ? amountOfLevels - 1 : userExperience[0].level];
+			const currentLevel = +userExperience[0].level;
+			const currentLevelArray = currentLevel - 1;
+			const currentExperience = +userExperience[0].xp;
+			const currentReset = +userExperience[0].reset;
+			const currentRank = ranks[currentLevel >= amountOfLevels ? amountOfLevels - 1 : currentLevelArray];
 			const experienceRequiredForNextLevel = currentLevel * 3000;
 			const experienceDifference = experienceRequiredForNextLevel - currentExperience;
 			const xpBar = levelBar(currentExperience, experienceRequiredForNextLevel);
-			const rankBar = levelBar(currentLevel, amountOfLevels);
+			const rankBar = levelBar(currentLevelArray, amountOfLevels);
 			const romanReset = romanize(currentReset) as string;
 			const leaderBoardRank = await discordBot.databaseClient.query(`SELECT * FROM (SELECT *, ROW_NUMBER() OVER (ORDER BY reset DESC, xp DESC) as position FROM U_Experience WHERE connected = true) as positions WHERE user_id = ${user.id} ORDER BY reset DESC, xp DESC`);
 
 			const guardianEmbed = new discord.MessageEmbed()
 				.setTitle(`${user.displayName} #${leaderBoardRank[0].position}`)
 				// .setDescription(`${destinyProfiles[0].parsedData.profile.data.userInfo.displayName}`)
-				.setFooter(`${experienceDifference} XP Until Next Level Up ${currentLevel === amountOfLevels ? '| Consider Resetting... (use `guardian reset`)' : ''}`)
+				.setFooter(`${experienceDifference} XP Until Next Level Up ${currentLevel >= amountOfLevels ? '| Consider Resetting... (use `guardian reset`)' : ''}`)
 				.setThumbnail(`${currentRank.icon}`)
 				// .setImage(`${currentRank.icon}`)
 				.setColor(`#4287f5`)
@@ -125,7 +126,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 const help: CommandHelp = {
 	description: 'Displays Guardian profiles including current Rank, XP, number of Resets and Medals.',
 	environments: ['text', 'dm'],
-	example: 'guardian \'Medusa@6621\'',
+	example: 'guardian \'@Medusa#6621\'',
 	expectedArgs: [{ name: 'query', optional: true }],
 	name: 'guardian',
 	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
