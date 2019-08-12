@@ -73,7 +73,6 @@ class Embeds {
 		};
 
 		if (overrideOptions) Object.assign(basicEmbed, overrideOptions);
-		console.log(JSON.stringify(new discord.MessageEmbed(basicEmbed)));
 		return new discord.MessageEmbed(basicEmbed);
 	}
 
