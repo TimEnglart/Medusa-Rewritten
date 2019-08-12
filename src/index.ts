@@ -2,15 +2,6 @@
 	Implement all //yeet comments with working code
 	Move all Commands and 
 */
-process
-	.on('unhandledRejection', (reason, p) => {
-		discordBot.logger.logClient.log(`Uncaught Promise Rejection:\nReason:\n${reason}`, LogFilter.Error);
-	})
-	.on('uncaughtException', err => {
-		discordBot.logger.logClient.log(`Uncaught Exception thrown:\n${err}\nExiting...`, LogFilter.Error);
-		process.exit(1);
-	});
-
 import {
 	BitFieldResolvable,
 	Client,
@@ -32,11 +23,19 @@ import * as exp from './ext/experienceHandler';
 const discordBot: ExtendedClient = new Client({
 	disableEveryone: true,
 }) as ExtendedClient;
-
 discordBot.logger = {
 	logClient: new Logger('./logs', [LogFilter.Info, LogFilter.Debug, LogFilter.Error]),
 	logFilters: LogFilter,
 };
+process
+	.on('unhandledRejection', (reason, p) => {
+		discordBot.logger.logClient.log(`Uncaught Promise Rejection:\nReason:\n${reason}`, LogFilter.Error);
+	})
+	.on('uncaughtException', err => {
+		discordBot.logger.logClient.log(`Uncaught Exception thrown:\n${err}\nExiting...`, LogFilter.Error);
+		process.exit(1);
+	});
+
 discordBot.settings = Settings;
 discordBot.databaseClient = new Database(
 	{
