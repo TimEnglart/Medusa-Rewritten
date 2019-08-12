@@ -10,7 +10,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 		try {
 			if (args.length > 0) {
 				const commandModule = discordBot.commands.get(args[0]);
-				if (commandModule && !commandModule.help.permissionRequired) {
+				if (commandModule) {
 					let prefix;
 					if (message.guild) {
 						const resp = await discordBot.databaseClient.query(`SELECT * FROM G_Prefix WHERE guild_id = ${message.guild.id};`);
