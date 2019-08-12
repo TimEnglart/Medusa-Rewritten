@@ -23,12 +23,13 @@ interface CommandFile {
 	run: CommandRun;
 	help: CommandHelp;
 }
-
 interface ExtendedClient extends discord.Client {
 	commands: discord.Collection<string, CommandFile>;
 	settings: typeof Settings;
 	statusMessages: string[];
-	usersEarningXp: any;
+	usersEarningXp: {
+		[userId: string]: string;
+	};
 	logger: {
 		logClient: Logger;
 		logFilters: typeof LogFilter;
@@ -37,48 +38,83 @@ interface ExtendedClient extends discord.Client {
 }
 class Embeds {
 	public static permissionEmbed(permissionTitle: string, permissionDescription: string, overrideOptions?: discord.MessageEmbedOptions) {
-		const permissionError = new discord.MessageEmbed(overrideOptions)
-			.setTitle('Access Denied')
-			.setDescription('Guardian is of insufficient rank for this command. \\⚠️')
-			.setColor('#ba0526')
-			.addField(permissionTitle, permissionDescription, false);
-		return permissionError;
+		const basicEmbed: discord.MessageEmbedOptions = {
+			color: '#ba0526',
+			description: 'Guardian is of insufficient rank for this command. \\⚠️',
+			fields: [
+				{ name: permissionTitle, value: permissionDescription, inline: false }
+			],
+			title: 'Access Denied'
+		};
+		if (overrideOptions) Object.assign(basicEmbed, overrideOptions);
+		return new discord.MessageEmbed(basicEmbed);
 	}
 
 	public static helpEmbed(commandModule: CommandFile, overrideOptions?: discord.MessageEmbedOptions) {
-		const help = new discord.MessageEmbed(overrideOptions)
-			.setTitle(`Info on "${commandModule.help.name || '<Empty>'}" Command. <:banshee:515429193518153748>`)
-			.addField('Usage', `${commandModule.help.usage || '<Empty>'}`)
-			.addField('Description', `${commandModule.help.description || '<Empty>'}`)
-			.addField('Example', `${commandModule.help.example || '<Empty>'}`)
-			.setColor('#00dde0');
-		return help;
+		const usage = ``;
+		const basicEmbed: discord.MessageEmbedOptions = {
+			color: '#00dde0',
+			fields: [
+				{ name: 'Usage', value: `${commandModule.help.usage || '<Empty>'}`, inline: false },
+				{ name: 'Description', value: `${commandModule.help.description || '<Empty>'}`, inline: false },
+				{ name: 'Example', value: `${commandModule.help.example || '<Empty>'}`, inline: false },
+			],
+			title: `Info on "${commandModule.help.name || '<Empty>'}" Command. <:banshee:515429193518153748>`
+		};
+		if (overrideOptions) Object.assign(basicEmbed, overrideOptions);
+		return new discord.MessageEmbed(basicEmbed);
 	}
 
 	public static errorEmbed(errorTitle: string, errorDescription: string, overrideOptions?: discord.MessageEmbedOptions) {
-		const functionError = new discord.MessageEmbed(overrideOptions)
-			.setTitle('Error')
-			.setDescription('Your Light is Fading <:down:513403773272457231>')
-			.setColor('#ba0526')
-			.addField(errorTitle, errorDescription, false);
-		return functionError;
+		const basicEmbed: discord.MessageEmbedOptions = {
+			color: '#ba0526',
+			description: 'Your Light is Fading <:down:513403773272457231>',
+			fields: [
+				{ name: errorTitle, value: errorDescription, inline: false }
+			],
+			title: 'Error'
+		};
+		if (overrideOptions) Object.assign(basicEmbed, overrideOptions);
+		return new discord.MessageEmbed(basicEmbed);
 	}
 
 	public static successEmbed(successTitle: string, successDescription: string, overrideOptions?: discord.MessageEmbedOptions) {
-		const success = new discord.MessageEmbed(overrideOptions)
-			.setTitle('Success!')
-			.setDescription('Vanguard Approval Recieved. <:cayde:515427956995129364>')
-			.setColor('#3bcc45')
-			.addField(successTitle, successDescription);
-		return success;
+		const basicEmbed: discord.MessageEmbedOptions = {
+			color: '#3bcc45',
+			description: 'Vanguard Approval Received. <:cayde:515427956995129364>',
+			fields: [
+				{ name: successTitle, value: successDescription, inline: false }
+			],
+			title: 'Success!'
+		};
+		if (overrideOptions) Object.assign(basicEmbed, overrideOptions);
+		return new discord.MessageEmbed(basicEmbed);
 	}
 
 	public static notifyEmbed(notifyTitle: string, notifyDescription: string, overrideOptions?: discord.MessageEmbedOptions) {
-		const success = new discord.MessageEmbed(overrideOptions)
-			.setTitle('Check your Recieved Direct Messages')
-			.setColor('#00dde0')
-			.addField(notifyTitle, notifyDescription);
-		return success;
+		const basicEmbed: discord.MessageEmbedOptions = {
+			color: '#00dde0',
+			fields: [
+				{ name: notifyTitle, value: notifyDescription, inline: false }
+			],
+			title: 'Check your Received Direct Messages'
+		};
+		if (overrideOptions) Object.assign(basicEmbed, overrideOptions);
+		return new discord.MessageEmbed(basicEmbed);
+	}
+	public static resetNotifyEmbed(notifyTitle: string, notifyDescription: string, overrideOptions?: discord.MessageEmbedOptions) {
+		const basicEmbed: discord.MessageEmbedOptions = {
+			color: '#ffae00',
+			fields: [
+				{ name: notifyTitle, value: notifyDescription, inline: false }
+			],
+			thumbnail: {
+				url: 'https://i.imgur.com/GDvNXqa.png'
+			},
+			title: 'You have Become Legend!'
+		};
+		if (overrideOptions) Object.assign(basicEmbed, overrideOptions);
+		return new discord.MessageEmbed(basicEmbed);
 	}
 }
 
