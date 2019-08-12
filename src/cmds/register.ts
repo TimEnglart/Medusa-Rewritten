@@ -14,7 +14,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				.setTitle('Link Your Destiny Account to Your Lighthouse Progression')
 				.setColor('#1E90FF')
 				.setFooter('Medusa', discordBot.user!.displayAvatarURL())
-				.addField('Enhance Your Guardian Progression', 'Completing this Registration Will Add Additional Features and Integrations Between Destiny and The Lighthouse Discord Server');
+				.addField('Enhance Your Guardian Progression', 'Completing this Registration Will Add Additional Features and Integrations Between Destiny and The Lighthouse Discord Server\n\n[Click Here To Register](https://medusabot.tk/initialize.php?did=${message.author.id})');
 			const registerMsg = await message.author.send(registerEmbed) as discord.Message;
 			let hasRegistered = false;
 			let timePassed = 0;
