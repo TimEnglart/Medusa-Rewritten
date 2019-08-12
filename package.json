@@ -5,7 +5,7 @@
 	"main": "lib/index.js",
 	"scripts": {
 		"test": "jest --config jestconfig.json",
-		"start": "node .",
+		"start": "(cd ./lib/ && node .)",
 		"build": "tsc -p .",
 		"format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
 		"lint": "tslint -p tsconfig.json",
