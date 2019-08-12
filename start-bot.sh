@@ -7,5 +7,4 @@ if [ $(git rev-parse HEAD) != $(git rev-parse @{u}) ]
 then
 git reset --hard origin/master
 fi
-npm run build
-node "./lib/index.js"
+npm run build && npm run start
