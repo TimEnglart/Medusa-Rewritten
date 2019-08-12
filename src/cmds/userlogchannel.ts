@@ -32,13 +32,13 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 };
 
 const help: CommandHelp = {
-	description: '',
+	description: 'Sets a Text Channel Where Guild Events are Sent',
 	environments: ['text'],
-	example: '',
-	expectedArgs: [{ name: '', optional: false }],
+	example: 'userlogchannel 72136712313',
+	expectedArgs: [{ name: 'Channel Id', optional: true }],
 	name: 'userlogchannel',
 	permissionRequired: 'MANAGE_GUILD', // Change nulls to 'SEND_MESSAGES'
-	usage: ''
+	usage: 'userlogchannel [Channel Id]'
 };
 
 module.exports = {

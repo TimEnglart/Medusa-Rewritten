@@ -21,13 +21,13 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 };
 
 const help: CommandHelp = {
-	description: '',
-	environments: [''],
-	example: '',
+	description: 'Prints Welcome Messages to Welcome Channel [Hard Coded]',
+	environments: ['text'],
+	example: 'welcome',
 	expectedArgs: [{ name: '', optional: false }],
 	name: 'welcome',
 	permissionRequired: 'ADMINISTRATOR', // Change nulls to 'SEND_MESSAGES'
-	usage: ''
+	usage: 'welcome'
 };
 
 module.exports = {

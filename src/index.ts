@@ -133,7 +133,7 @@ discordBot.on('message', async (message: Message) => {
 				// tslint:disable-next-line: no-floating-promises
 				message.channel.startTyping();
 				if (args[0] === 'help') { // args.includes('help')
-					await message.channel.send(Embeds.helpEmbed(commandFile));
+					await message.channel.send(Embeds.helpEmbed(commandFile, prefix));
 				} else {
 					if (commandFile.help.environments && !commandFile.help.environments.includes(message.channel.type)) {
 						// Command Cant be used in this Channel

@@ -35,13 +35,13 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 };
 
 const help: CommandHelp = {
-	description: '',
+	description: 'Unlocks a Currently Locked Voice Channel',
 	environments: ['text'],
-	example: '',
-	expectedArgs: [{ name: '', optional: false }],
+	example: 'unlock',
+	expectedArgs: [],
 	name: 'unlock',
 	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
-	usage: ''
+	usage: 'unlock'
 };
 
 module.exports = {

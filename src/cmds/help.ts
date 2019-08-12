@@ -11,7 +11,12 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			if (args.length > 0) {
 				const commandModule = discordBot.commands.get(args[0]);
 				if (commandModule && !commandModule.help.permissionRequired) {
-					await message.channel.send(Embeds.helpEmbed(commandModule));
+					let prefix;
+					if (message.guild) {
+						const resp = await discordBot.databaseClient.query(`SELECT * FROM G_Prefix WHERE guild_id = ${message.guild.id};`);
+						if (resp.length) prefix = resp[0].prefix;
+					}
+					await message.channel.send(Embeds.helpEmbed(commandModule, prefix));
 				} else {
 					await message.channel.send(Embeds.errorEmbed('Unable to Find Command', `I was Unable to Find the Specified Command: ${args[0]}`));
 				}
@@ -40,12 +45,12 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 
 const help: CommandHelp = {
 	environments: ['text', 'dm'],
-	expectedArgs: [{ name: '', optional: false }],
+	expectedArgs: [{ name: 'query', optional: true }],
 	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
 	name: 'help',
 	usage: 'To assist with teaching new users of the bot.',
 	description: 'Responds with a guide on how to use the bot, including basic commands.',
-	example: '``?help``',
+	example: '``?help [command]``',
 };
 
 module.exports = {

@@ -59,13 +59,13 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 };
 
 const help: CommandHelp = {
-	description: '',
+	description: 'Restricts Joining Permissions to Current Voice Channel to Other Members',
 	environments: ['text'],
-	example: '',
-	expectedArgs: [{ name: '', optional: false }],
+	example: 'lock',
+	expectedArgs: [],
 	name: 'lock',
 	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
-	usage: ''
+	usage: 'lock'
 };
 
 module.exports = {

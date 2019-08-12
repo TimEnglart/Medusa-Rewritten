@@ -24,13 +24,13 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 };
 
 const help: CommandHelp = {
-	description: '',
+	description: 'Sets the Guilds Bot Command Prfix',
 	environments: ['text'],
-	example: '',
-	expectedArgs: [{ name: '', optional: false }],
+	example: 'setprefix *',
+	expectedArgs: [{ name: 'prefix', optional: false }],
 	name: 'setprefix',
 	permissionRequired: 'ADMINISTRATOR', // Change nulls to 'SEND_MESSAGES'
-	usage: ''
+	usage: 'setprefix <prefix>'
 };
 
 module.exports = {

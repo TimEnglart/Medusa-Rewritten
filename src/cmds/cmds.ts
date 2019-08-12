@@ -21,7 +21,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 					botEmbed.addField(`${prefix}${name} ${commandf.help.permissionRequired !== 'SEND_MESSAGES' ? '\\⚠️' : ''}`, `Desc - ${commandf.help.description}\nUsage - ${commandf.help.usage}`);
 				}
 			}
-			message.channel.send(botEmbed);
+			await message.channel.send(botEmbed);
 			return resolve();
 		} catch (e) {
 			return reject(e);
@@ -30,13 +30,13 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 };
 
 const help: CommandHelp = {
-	description: 'Commands',
+	description: 'Provides details on all commands available to you.',
 	environments: ['text', 'dm'],
-	example: '',
-	expectedArgs: [{ name: '', optional: false }],
+	example: 'cmds',
+	expectedArgs: [],
 	name: 'cmds',
 	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
-	usage: ''
+	usage: 'cmds'
 };
 
 module.exports = {

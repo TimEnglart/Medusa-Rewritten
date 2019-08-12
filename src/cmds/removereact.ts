@@ -56,13 +56,13 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 };
 
 const help: CommandHelp = {
-	description: '',
+	description: 'Remove an Existing Reaction Role Assigner From a Message',
 	environments: ['text'],
-	example: '',
-	expectedArgs: [{ name: 'message Id', optional: false }, { name: 'role', optional: false }],
+	example: 'removereact 3612736712367 @admin',
+	expectedArgs: [{ name: 'Message Id', optional: false }, { name: 'Role Resolvable', optional: false }],
 	name: 'removereact',
 	permissionRequired: 'MANAGE_ROLES', // Change nulls to 'SEND_MESSAGES'
-	usage: ''
+	usage: 'removereact <Message Id> <Role Resolveable>'
 };
 
 module.exports = {

@@ -12,8 +12,8 @@ interface CommandHelp {
 	description: string;
 	example: string;
 	permissionRequired: discord.BitFieldResolvable<discord.PermissionString>; // Change nulls to 'SEND_MESSAGES'
-	environments?: string[];
-	expectedArgs?: Array<{
+	environments: string[];
+	expectedArgs: Array<{
 		name: string,
 		optional: boolean
 	}>;
@@ -50,17 +50,28 @@ class Embeds {
 		return new discord.MessageEmbed(basicEmbed);
 	}
 
-	public static helpEmbed(commandModule: CommandFile, overrideOptions?: discord.MessageEmbedOptions) {
-		const usage = ``;
+	public static async helpEmbed(commandModule: CommandFile, prefix?: string, overrideOptions?: discord.MessageEmbedOptions) {
+		const channelConv = {
+			dm: 'Direct Message',
+			text: 'Guild Text Channel',
+			voice: 'Guild Voice Channel',
+			category: 'Guild Category Channel',
+			unknown: 'Unknown Channel'
+		} as { [s: string]: string };
+		if (!prefix) prefix = Settings.defaultPrefix;
+		const usage = `${prefix}${commandModule.help.name} ${commandModule.help.expectedArgs.length ? commandModule.help.expectedArgs.map(arg => arg.optional ? `[${arg.name}]` : `<${arg.name}>`).join(' ') : ``}`;
 		const basicEmbed: discord.MessageEmbedOptions = {
 			color: '#00dde0',
 			fields: [
-				{ name: 'Usage', value: `${commandModule.help.usage || '<Empty>'}`, inline: false },
+				{ name: 'Usage', value: `\`\`\`${usage || '<Empty>'}\`\`\``, inline: false },
 				{ name: 'Description', value: `${commandModule.help.description || '<Empty>'}`, inline: false },
-				{ name: 'Example', value: `${commandModule.help.example || '<Empty>'}`, inline: false },
+				{ name: 'Example', value: `${prefix}${commandModule.help.example || '<Empty>'}`, inline: false },
+				{ name: 'Allowed Channels', value: `${commandModule.help.environments.length ? commandModule.help.environments.map(channel => channelConv[channel]).join(', ') : 'None'}` },
+				{ name: 'Required Permissions', value: `${commandModule.help.permissionRequired}`, inline: false }
 			],
 			title: `Info on "${commandModule.help.name || '<Empty>'}" Command. <:banshee:515429193518153748>`
 		};
+
 		if (overrideOptions) Object.assign(basicEmbed, overrideOptions);
 		return new discord.MessageEmbed(basicEmbed);
 	}

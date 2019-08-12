@@ -29,7 +29,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 
 const help: CommandHelp = {
 	environments: ['text', 'dm'],
-	expectedArgs: [{ name: '', optional: false }],
+	expectedArgs: [],
 	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
 	name: 'emojis',
 	usage: 'Used for bot development.',

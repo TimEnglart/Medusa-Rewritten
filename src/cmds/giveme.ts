@@ -25,13 +25,13 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 };
 
 const help: CommandHelp = {
-	description: '',
+	description: 'Gives In Game Acquired Medals for Guild Progression',
 	environments: ['text'],
-	example: '',
-	expectedArgs: [{ name: '', optional: false }],
+	example: 'giveme',
+	expectedArgs: [],
 	name: 'giveme',
 	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
-	usage: ''
+	usage: 'giveme'
 };
 
 module.exports = {

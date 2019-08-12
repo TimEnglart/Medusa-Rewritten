@@ -35,13 +35,13 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 };
 
 const help: CommandHelp = {
-	description: '',
+	description: 'Remove an Existing Temporary Channel Master So No Temp Channels are Created Based on That Channel',
 	environments: ['text'],
-	example: '',
-	expectedArgs: [{ name: '', optional: false }],
+	example: 'removetemp 3213123131',
+	expectedArgs: [{ name: 'Channel Id', optional: false }],
 	name: 'removetemp',
 	permissionRequired: 'MANAGE_CHANNELS', // Change nulls to 'SEND_MESSAGES'
-	usage: ''
+	usage: 'removetemp <Channel Id>'
 };
 
 module.exports = {

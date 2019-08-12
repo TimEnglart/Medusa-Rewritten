@@ -42,13 +42,13 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 };
 
 const help: CommandHelp = {
-	description: '',
+	description: 'Link Discord Account to Bungie Account For Guild So In Game Progression Can Be Tracked',
 	environments: ['text', 'dm'],
-	example: '',
-	expectedArgs: [{ name: '', optional: false }],
+	example: 'register',
+	expectedArgs: [],
 	name: 'register',
 	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
-	usage: ''
+	usage: 'register'
 };
 
 module.exports = {

@@ -87,7 +87,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 
 const help: CommandHelp = {
 	environments: ['text'],
-	expectedArgs: [{ name: '', optional: false }],
+	expectedArgs: [{ name: 'User Resolvable', optional: false }],
 	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
 	name: 'invite',
 	usage: '``?invite <@User#12345>``',
