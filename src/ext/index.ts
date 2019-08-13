@@ -68,9 +68,9 @@ class Embeds {
 		const basicEmbed: discord.MessageEmbedOptions = {
 			color: '#00dde0',
 			fields: [
-				{ name: 'Usage', value: `\`\`\`${prefix}${usage || '<Empty>'}\`\`\``, inline: false },
+				{ name: 'Usage', value: `\`\`\`${usage || '<Empty>'}\`\`\``, inline: false },
 				{ name: 'Description', value: `${commandModule.help.description || '<Empty>'}`, inline: false },
-				{ name: 'Example', value: `${prefix}${Embeds.generateExample(commandModule, prefix) || '<Empty>'}`, inline: false },
+				{ name: 'Example', value: `${Embeds.generateExample(commandModule, prefix) || '<Empty>'}`, inline: false },
 				{ name: 'Allowed Channels', value: `${commandModule.help.environments.length ? commandModule.help.environments.map(channel => channelConv[channel]).join(', ') : 'None'}` },
 				{ name: 'Required Permissions', value: `${commandModule.help.permissionRequired}`, inline: false }
 			],

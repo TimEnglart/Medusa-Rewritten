@@ -1,0 +1,15 @@
+[Unit]
+Description=Discord JS Bot
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+#RemainAfterExit=yes
+Restart=always
+RestartSec=120000ms
+StartLimitInterval=0
+ExecStart=/usr/bin/env HOME=/root /srv/Medusa-Rewritten/start-bot.sh
+
+
+[Install]
+WantedBy=multi-user.target
