@@ -14,9 +14,10 @@ gitdiff=$(git diff master origin/master)
 if [ $(git rev-parse HEAD) != $(git rev-parse @{u}) ]
 then
 git reset --hard origin/master
-chmod -R a+rX *
-chmod +x "./start-bot.sh" # Make Updated Script Execuatble
+chmod -R a+rX *;
+chmod +x "./start-bot.sh"; # Make Updated Script Execuatble
 fi
 
 # Update NPM Packagaes & Start Bot
-npm i && npm audit fix && npm run build && npm run start
+npm i && npm audit fix;
+npm run build && npm run start
