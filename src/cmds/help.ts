@@ -45,12 +45,11 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 
 const help: CommandHelp = {
 	environments: ['text', 'dm'],
-	expectedArgs: [{ name: 'query', optional: true }],
+	expectedArgs: [{ name: 'query', optional: true, example: 'guardian' }],
 	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
 	name: 'help',
-	usage: 'To assist with teaching new users of the bot.',
 	description: 'Responds with a guide on how to use the bot, including basic commands.',
-	example: '``?help [command]``',
+	example: 'help',
 };
 
 module.exports = {

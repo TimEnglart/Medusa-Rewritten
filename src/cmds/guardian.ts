@@ -127,10 +127,9 @@ const help: CommandHelp = {
 	description: 'Displays Guardian profiles including current Rank, XP, number of Resets and Medals.',
 	environments: ['text', 'dm'],
 	example: 'guardian \'@Medusa#6621\'',
-	expectedArgs: [{ name: 'query', optional: true }],
+	expectedArgs: [{ name: 'query', optional: true, example: '@User#12345 | reset | rank' }],
 	name: 'guardian',
 	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
-	usage: 'guardian [rank | reset | @User]'
 };
 
 module.exports = {

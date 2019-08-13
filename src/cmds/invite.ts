@@ -87,12 +87,11 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 
 const help: CommandHelp = {
 	environments: ['text'],
-	expectedArgs: [{ name: 'User Resolvable', optional: false }],
+	expectedArgs: [{ name: 'User Resolvable', optional: false, example: '@User#12345' }],
 	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
 	name: 'invite',
-	usage: '``?invite <@User#12345>``',
 	description: 'To invite a user to your voice channel and move them in if they accept.',
-	example: '?invite <@User#12345>',
+	example: 'invite <@User#12345>',
 };
 
 module.exports = {

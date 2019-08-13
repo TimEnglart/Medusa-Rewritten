@@ -27,10 +27,9 @@ const help: CommandHelp = {
 	description: 'Sets the Guilds Bot Command Prfix',
 	environments: ['text'],
 	example: 'setprefix *',
-	expectedArgs: [{ name: 'prefix', optional: false }],
+	expectedArgs: [{ name: 'prefix', optional: false, example: '*' }],
 	name: 'setprefix',
 	permissionRequired: 'ADMINISTRATOR', // Change nulls to 'SEND_MESSAGES'
-	usage: 'setprefix <prefix>'
 };
 
 module.exports = {

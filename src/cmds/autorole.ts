@@ -30,12 +30,11 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 
 const help: CommandHelp = {
 	name: 'autorole',
-	usage: '``?autorole <Role Name>`` *or* ``<@Role>`` *or* ``<Role ID>``.',
 	description: 'Set a role to automatically assigned to all new members.',
-	example: '*?autorole @Role*',
+	example: 'autorole @Role',
 	permissionRequired: 'MANAGE_GUILD', // Change nulls to 'SEND_MESSAGES'
 	environments: ['text'],
-	expectedArgs: [{ name: 'Role Resolveable', optional: false }]
+	expectedArgs: [{ name: 'Role Resolvable', optional: false, example: '@Role' }]
 };
 
 module.exports = {

@@ -49,11 +49,10 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 
 const help: CommandHelp = {
 	environments: ['text'],
-	expectedArgs: [{ name: 'user', optional: false }, { name: 'medal', optional: false }],
+	expectedArgs: [{ name: 'User Resolvable', optional: false, example: '@User#12345' }, { name: 'Medal Resolvable', optional: false, example: 'pointbreaker' }],
 	name: 'award',
-	usage: '``?award <@User#12345> <Medal DB Name>`` *or* ``<Medal Display Name>``',
 	description: 'Award selected user a given medal.\nUse ``?medals`` to see awardable Medals.\n**Note - ** Excludes Event Medals.',
-	example: '``?award @User#12345 pointbreaker``',
+	example: 'award @User#12345 pointbreaker',
 	permissionRequired: 'MANAGE_ROLES'
 };
 

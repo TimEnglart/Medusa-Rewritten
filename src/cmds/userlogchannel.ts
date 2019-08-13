@@ -35,10 +35,9 @@ const help: CommandHelp = {
 	description: 'Sets a Text Channel Where Guild Events are Sent',
 	environments: ['text'],
 	example: 'userlogchannel 72136712313',
-	expectedArgs: [{ name: 'Channel Id', optional: true }],
+	expectedArgs: [{ name: 'Channel Id', optional: true, example: '4126456125411' }],
 	name: 'userlogchannel',
 	permissionRequired: 'MANAGE_GUILD', // Change nulls to 'SEND_MESSAGES'
-	usage: 'userlogchannel [Channel Id]'
 };
 
 module.exports = {

@@ -38,10 +38,9 @@ const help: CommandHelp = {
 	description: 'Remove an Existing Temporary Channel Master So No Temp Channels are Created Based on That Channel',
 	environments: ['text'],
 	example: 'removetemp 3213123131',
-	expectedArgs: [{ name: 'Channel Id', optional: false }],
+	expectedArgs: [{ name: 'Channel Id', optional: false, example: '31263512635413' }],
 	name: 'removetemp',
 	permissionRequired: 'MANAGE_CHANNELS', // Change nulls to 'SEND_MESSAGES'
-	usage: 'removetemp <Channel Id>'
 };
 
 module.exports = {

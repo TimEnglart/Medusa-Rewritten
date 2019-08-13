@@ -1,4 +1,4 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient } from '../ext/index';
+import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Embeds } from '../ext/index';
 
 // Only Reject Promise if a Real Error Occurs
 // run Function is pretty convoluted
@@ -18,7 +18,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				.setDescription(`Admin Permissions Required. **\\⚠️**\nVersion: ${discordBot.settings.version}`);
 			for (const [name, commandf] of discordBot.commands.filter(command => command.help.name !== 'cmds')) {
 				if (commandf.help.permissionRequired === 'SEND_MESSAGES' || (message.guild && message.member!.hasPermission(commandf.help.permissionRequired))) {
-					botEmbed.addField(`${prefix}${name} ${commandf.help.permissionRequired !== 'SEND_MESSAGES' ? '\\⚠️' : ''}`, `Desc - ${commandf.help.description}\nUsage - ${commandf.help.usage}`);
+					botEmbed.addField(`${prefix}${name} ${commandf.help.permissionRequired !== 'SEND_MESSAGES' ? '\\⚠️' : ''}`, `Desc - ${commandf.help.description}\nUsage - ${Embeds.generateUsage(module.exports, prefix)}`);
 				}
 			}
 			await message.channel.send(botEmbed);
@@ -36,7 +36,6 @@ const help: CommandHelp = {
 	expectedArgs: [],
 	name: 'cmds',
 	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
-	usage: 'cmds'
 };
 
 module.exports = {

@@ -24,10 +24,9 @@ const help: CommandHelp = {
 	description: '',
 	environments: ['text', 'dm'],
 	example: '',
-	expectedArgs: [{ name: '', optional: false }],
+	expectedArgs: [{ name: '', optional: false, example: '' }],
 	name: 'sample',
 	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
-	usage: ''
 };
 
 module.exports = {

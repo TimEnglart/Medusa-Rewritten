@@ -29,7 +29,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 						return resolve();
 					}
 				} catch (e) {
-					await message.channel.send(Embeds.errorEmbed('Incorrect Usage', help.usage || 'Empty'));
+					await message.channel.send(Embeds.errorEmbed('Incorrect Usage', `Use \`help ${help.name}\` Command`));
 					return resolve();
 				}
 				const response = await discordBot.databaseClient.query(`SELECT * FROM G_Reaction_Roles WHERE guild_id = ${message.guild.id} AND message_id = ${messageId} AND role_id = ${role.id}`);
@@ -59,10 +59,9 @@ const help: CommandHelp = {
 	description: 'Remove an Existing Reaction Role Assigner From a Message',
 	environments: ['text'],
 	example: 'removereact 3612736712367 @admin',
-	expectedArgs: [{ name: 'Message Id', optional: false }, { name: 'Role Resolvable', optional: false }],
+	expectedArgs: [{ name: 'Message Id', optional: false, example: '62135126421' }, { name: 'Role Resolvable', optional: false, example: '@Role' }],
 	name: 'removereact',
 	permissionRequired: 'MANAGE_ROLES', // Change nulls to 'SEND_MESSAGES'
-	usage: 'removereact <Message Id> <Role Resolveable>'
 };
 
 module.exports = {

@@ -30,12 +30,11 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 
 const help: CommandHelp = {
 	name: 'addtemp',
-	usage: 'While in a voicechannel use ``?addtemp`` *or* ``?addtemp <Channel ID>``.',
 	description: 'Assigns voicechannel you are in as a Tempory Channel Master.',
-	example: '?addtemp <Channel ID>',
+	example: 'addtemp',
 	permissionRequired: 'MANAGE_CHANNELS',
 	environments: ['text'],
-	expectedArgs: [{ name: 'Voice Channel Id', optional: true }]
+	expectedArgs: [{ name: 'Voice Channel Id', optional: true, example: '321314561424' }]
 };
 
 module.exports = {

@@ -39,9 +39,8 @@ const help: CommandHelp = {
 	expectedArgs: [],
 	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
 	name: "ranks",
-	usage: "To see names and order of current obtainable ranks.",
 	description: "Responds with a list of all current Ranks via direct message.",
-	example: "``?ranks``",
+	example: "ranks",
 };
 
 module.exports = {

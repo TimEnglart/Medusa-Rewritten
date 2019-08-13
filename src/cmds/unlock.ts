@@ -41,7 +41,6 @@ const help: CommandHelp = {
 	expectedArgs: [],
 	name: 'unlock',
 	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
-	usage: 'unlock'
 };
 
 module.exports = {

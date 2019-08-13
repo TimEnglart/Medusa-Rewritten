@@ -67,11 +67,10 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 const help: CommandHelp = {
 	name: 'addreact',
 	description: 'Adds a selfassignable role via user reaction.',
-	example: '*?addreact <Message ID> 👍 @role*',
+	example: 'addreact <Message ID> 👍 @role',
 	permissionRequired: 'ADMINISTRATOR', // Change nulls to 'SEND_MESSAGES'
-	usage: '``?addreact <Message ID> <emoji> <@Role>`` *or* ``<Role ID>``',
 	environments: ['text'],
-	expectedArgs: [{ name: 'Message Id', optional: false }, { name: 'Emoji', optional: false }, { name: 'Role Resolvable', optional: false }]
+	expectedArgs: [{ name: 'Message Id', optional: false, example: '31267345614' }, { name: 'Emoji', optional: false, example: ':smile:' }, { name: 'Role Resolvable', optional: false, example: "@Role" }]
 };
 
 module.exports = {

@@ -8,4 +8,4 @@ then
 git reset --hard origin/master
 chmod +x "./start-bot.sh" # Make Updated Script Execuatble
 fi
-npm i && npm run build && npm run start
+npm i && npm audit fix && npm run build && npm run start

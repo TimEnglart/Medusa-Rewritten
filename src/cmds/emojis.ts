@@ -32,9 +32,8 @@ const help: CommandHelp = {
 	expectedArgs: [],
 	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
 	name: 'emojis',
-	usage: 'Used for bot development.',
 	description: 'Sends a list of all Discord servers custom emojis via direct message.',
-	example: '``?emojis``',
+	example: 'emojis',
 };
 
 module.exports = {

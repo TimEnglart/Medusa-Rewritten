@@ -48,7 +48,6 @@ const help: CommandHelp = {
 	expectedArgs: [],
 	name: 'register',
 	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
-	usage: 'register'
 };
 
 module.exports = {
