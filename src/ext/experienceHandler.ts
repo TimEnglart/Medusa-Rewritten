@@ -308,7 +308,7 @@ function medalFunction(member: discord.GuildMember, medal: MedalData, databaseCl
 			// Get User Bungie/Destiny Data
 			const args: string[] = medal.acquisitionMethod.data.args;
 			// GOT USER DATA
-			if (!medal.acquisitionMethod.data.functionName) return false;
+			if (!medal.acquisitionMethod.data.functionName) return resolve(false);
 			return resolve(await dynamicFunctions[medal.acquisitionMethod.data.functionName](args));
 		}
 		catch (e) {

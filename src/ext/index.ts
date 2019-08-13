@@ -4,7 +4,7 @@ import { Database, SqlQuery } from './database';
 import { LogFilter, Logger } from './logger';
 import { Utility } from './utility';
 import { MyRequester } from './webClient';
-type CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => Promise<void | Error>;
+type CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => Promise<void>;
 
 interface CommandHelp {
 	name: string;
@@ -37,7 +37,7 @@ interface ExtendedClient extends discord.Client {
 	databaseClient: Database;
 }
 class Embeds {
-	public static permissionEmbed(permissionTitle: string, permissionDescription: string, overrideOptions?: discord.MessageEmbedOptions) {
+	public static permissionEmbed(permissionTitle: string, permissionDescription: string, overrideOptions?: discord.MessageEmbedOptions): discord.MessageEmbed {
 		const basicEmbed: discord.MessageEmbedOptions = {
 			color: '#ba0526',
 			description: 'Guardian is of insufficient rank for this command. \\⚠️',
@@ -49,13 +49,13 @@ class Embeds {
 		if (overrideOptions) Object.assign(basicEmbed, overrideOptions);
 		return new discord.MessageEmbed(basicEmbed);
 	}
-	public static generateUsage(commandModule: CommandFile, prefix?: string) {
+	public static generateUsage(commandModule: CommandFile, prefix?: string): string {
 		return `${prefix}${commandModule.help.name} ${commandModule.help.expectedArgs.length ? commandModule.help.expectedArgs.map(arg => arg.optional ? `[${arg.name}]` : `<${arg.name}>`).join(' ') : ``}`;
 	}
-	public static generateExample(commandModule: CommandFile, prefix?: string) {
+	public static generateExample(commandModule: CommandFile, prefix?: string): string {
 		return `${prefix}${commandModule.help.name} ${commandModule.help.expectedArgs.length ? commandModule.help.expectedArgs.map(arg => arg.optional ? `[${arg.example}]` : `<${arg.example}>`).join(' ') : ``}`;
 	}
-	public static helpEmbed(commandModule: CommandFile, prefix?: string, overrideOptions?: discord.MessageEmbedOptions) {
+	public static helpEmbed(commandModule: CommandFile, prefix?: string, overrideOptions?: discord.MessageEmbedOptions): discord.MessageEmbed {
 		const channelConv = {
 			dm: 'Direct Message',
 			text: 'Guild Text Channel',
@@ -81,7 +81,7 @@ class Embeds {
 		return new discord.MessageEmbed(basicEmbed);
 	}
 
-	public static errorEmbed(errorTitle: string, errorDescription: string, overrideOptions?: discord.MessageEmbedOptions) {
+	public static errorEmbed(errorTitle: string, errorDescription: string, overrideOptions?: discord.MessageEmbedOptions): discord.MessageEmbed {
 		const basicEmbed: discord.MessageEmbedOptions = {
 			color: '#ba0526',
 			description: 'Your Light is Fading <:down:513403773272457231>',
@@ -94,7 +94,7 @@ class Embeds {
 		return new discord.MessageEmbed(basicEmbed);
 	}
 
-	public static successEmbed(successTitle: string, successDescription: string, overrideOptions?: discord.MessageEmbedOptions) {
+	public static successEmbed(successTitle: string, successDescription: string, overrideOptions?: discord.MessageEmbedOptions): discord.MessageEmbed {
 		const basicEmbed: discord.MessageEmbedOptions = {
 			color: '#3bcc45',
 			description: 'Vanguard Approval Received. <:cayde:515427956995129364>',
@@ -107,7 +107,7 @@ class Embeds {
 		return new discord.MessageEmbed(basicEmbed);
 	}
 
-	public static notifyEmbed(notifyTitle: string, notifyDescription: string, overrideOptions?: discord.MessageEmbedOptions) {
+	public static notifyEmbed(notifyTitle: string, notifyDescription: string, overrideOptions?: discord.MessageEmbedOptions): discord.MessageEmbed {
 		const basicEmbed: discord.MessageEmbedOptions = {
 			color: '#00dde0',
 			fields: [
@@ -118,7 +118,7 @@ class Embeds {
 		if (overrideOptions) Object.assign(basicEmbed, overrideOptions);
 		return new discord.MessageEmbed(basicEmbed);
 	}
-	public static resetNotifyEmbed(notifyTitle: string, notifyDescription: string, overrideOptions?: discord.MessageEmbedOptions) {
+	public static resetNotifyEmbed(notifyTitle: string, notifyDescription: string, overrideOptions?: discord.MessageEmbedOptions): discord.MessageEmbed {
 		const basicEmbed: discord.MessageEmbedOptions = {
 			color: '#ffae00',
 			fields: [

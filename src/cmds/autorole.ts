@@ -9,7 +9,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			const autoRole = message.guild!.roles.get(roleId!);
 			if (!autoRole) {
 				// No Role Specified
-				message.channel.send(`Unable to Find Role`);
+				await message.channel.send(`Unable to Find Role`);
 			}
 			else {
 				const guildAutoRole = await discordBot.databaseClient.query(`SELECT * FROM G_Auto_Role WHERE guild_id = ${message.guild!.id}`);
