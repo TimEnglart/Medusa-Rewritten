@@ -14,6 +14,7 @@ gitdiff=$(git diff master origin/master)
 if [ $(git rev-parse HEAD) != $(git rev-parse @{u}) ]
 then
 git reset --hard origin/master
+chmod -R a+rX *
 chmod +x "./start-bot.sh" # Make Updated Script Execuatble
 fi
 
