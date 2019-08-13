@@ -1,0 +1,688 @@
+{
+	"version": "1.1.6",
+	"debug": true,
+	"defaultPrefix": "=",
+	"superUsers": [
+		"<Admin User IDs>"
+	],
+	"tokens": {
+		"production": "<Production Bot Token>",
+		"debugging": "<Debug Bot Token>"
+	},
+	"database": {
+		"ip": "",
+		"port": 1111,
+		"database": "",
+		"username": "",
+		"password": ""
+	},
+	"lighthouse": {
+		"discordId": "<Guild Server ID>",
+		"destinyReset": {
+			"day": "Tuesday",
+			"auDay": "Wednesday",
+			"time": "10:00:00 PDT",
+			"auTime": "3:00:00 AEST"
+		},
+		"scorebook": {
+			"epoch": "February 6, 2019",
+			"auEpoch": "February 7, 2019",
+			"channelId": "<Scorebook Channel ID>"
+		},
+		"roleIds ": {
+			"@everyone": "<Role ID> Not Used"
+		},
+		"clanIds": {
+			"Destiny Clan Name": "Destiny Clan ID"
+		},
+		"ranks": [
+			{
+				"name": "Rank Name",
+				"icon": "Url to Rank Icon",
+				"emoji": {
+					"name": "Rank Emoji Name",
+					"id": "Rank Emoji Id",
+					"animated": false,
+					"text": "<:Rank_Emoji_Name:Rank_Emoji_Id>"
+				}
+			}
+		],
+		"medals": [
+			{
+				"name": "The Originals",
+				"emoji": "<a:Originals:518599506032590848>",
+				"dbData": {
+					"column": "original",
+					"table": "U_M_Clan"
+				},
+				"acquisitionMethod": {
+					"function": "MANUAL_ASSIGNMENT",
+					"data": {}
+				},
+				"xp": 2000,
+				"category": "Clan",
+				"description": "Earliest members of the clan and special contributors.\nThankyou",
+				"limited": true,
+				"available": false
+			},
+			{
+				"name": "Once a Breaker",
+				"emoji": "<:Breaker:519110615051141120>",
+				"dbData": {
+					"column": "breaker",
+					"table": "U_M_Clan"
+				},
+				"acquisitionMethod": {
+					"function": "DISCORD",
+					"data": {
+						"roleIds": [
+							"354897915300544512",
+							"477757251470491648",
+							"451667132237742090"
+						]
+					}
+				},
+				"xp": 2000,
+				"category": "Clan",
+				"description": "Become a member of Sunbreakers, Tidebreakers or Cursebreakers",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Pointbreaker",
+				"emoji": "<:Pointbreaker:519113020580823040>",
+				"dbData": {
+					"column": "pointbreaker",
+					"table": "U_M_Clan"
+				},
+				"acquisitionMethod": {
+					"function": "DISCORD",
+					"data": {
+						"roleIds": [
+							"466537129338470421"
+						]
+					}
+				},
+				"xp": 1500,
+				"category": "Clan",
+				"description": "Have been awarded Pointbreaker.\n**1500 XP first, 750 XP every win after.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Speedbreaker",
+				"emoji": "<:Speedbreaker:519110754415280128>",
+				"dbData": {
+					"column": "speedbreaker",
+					"table": "U_M_Clan"
+				},
+				"acquisitionMethod": {
+					"function": "DISCORD",
+					"data": {
+						"roleIds": [
+							"466537792277708801"
+						]
+					}
+				},
+				"xp": 1500,
+				"category": "Clan",
+				"description": "Have been awarded Speedbreaker.\n**1500 XP first, 750 XP every win after.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Legend",
+				"emoji": "<:Legend:518606062195310629>",
+				"dbData": {
+					"column": "legend",
+					"table": "U_M_Clan"
+				},
+				"acquisitionMethod": {
+					"function": "DISCORD",
+					"data": {
+						"roleIds": [
+							"515764131773677568"
+						]
+					}
+				},
+				"xp": 2000,
+				"category": "Clan",
+				"description": "Achieve the highest Lighthouse rank.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Flawless Hunter",
+				"emoji": "<:Flawless_Hunter:518605964862029834>",
+				"dbData": {
+					"column": "flawless_hunter",
+					"table": "U_M_Pve"
+				},
+				"acquisitionMethod": {
+					"function": "TRIUMPH",
+					"data": {
+						"recordId": "4177910003"
+					}
+				},
+				"xp": 2000,
+				"category": "Vanguard Feats",
+				"description": "Completed a Petra's Run.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Thronebreaker",
+				"emoji": "<:Thronebreaker:518611255171219456>",
+				"dbData": {
+					"column": "throne_breaker",
+					"table": "U_M_Pve"
+				},
+				"acquisitionMethod": {
+					"function": "TRIUMPH",
+					"data": {
+						"recordId": "851701008"
+					}
+				},
+				"xp": 2000,
+				"category": "Vanguard Feats",
+				"description": "Complete the Shattered Throne Solo",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Hammer of Sol",
+				"emoji": "<:Hammer_of_Sol:518610893383270400>",
+				"dbData": {
+					"column": "hammer_of_sol",
+					"table": "U_M_Pve"
+				},
+				"acquisitionMethod": {
+					"function": "FUNCTION",
+					"data": {}
+				},
+				"xp": 1500,
+				"category": "Vanguard Feats",
+				"description": "Earn 300,000 points or more on any Nightfall.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Blink",
+				"emoji": "<:Blink:519110679060545536>",
+				"dbData": {
+					"column": "blink",
+					"table": "U_M_Pve"
+				},
+				"acquisitionMethod": {
+					"function": "FUNCTION",
+					"data": {}
+				},
+				"xp": 1500,
+				"category": "Vanguard Feats",
+				"description": "Completed any Nightfall in 5 minutes or less.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Moonlit Wolf",
+				"emoji": "<:Moonlit_Wolf:518606134832267275>",
+				"dbData": {
+					"column": "luna",
+					"table": "U_M_Pvp"
+				},
+				"acquisitionMethod": {
+					"function": "TRIUMPH",
+					"data": {
+						"recordId": "599626507"
+					}
+				},
+				"xp": 2000,
+				"category": "Crucible Feats",
+				"description": "Acquired Luna's Howl.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Pointbreaker Veteran",
+				"emoji": "<:Pointbreaker_Veteran:519113031024902146>",
+				"dbData": {
+					"column": "pointbreaker_v",
+					"table": "U_M_Clan"
+				},
+				"acquisitionMethod": {
+					"function": "FUNCTION",
+					"data": {}
+				},
+				"xp": 2000,
+				"category": "Clan",
+				"description": "Have been awarded Pointbreaker 3 times in a season.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Speedbreaker Veteran",
+				"emoji": "<:Speedbreaker_Veteran:519110765790363669>",
+				"dbData": {
+					"column": "speedbreaker_v",
+					"table": "U_M_Clan"
+				},
+				"acquisitionMethod": {
+					"function": "FUNCTION",
+					"data": {}
+				},
+				"xp": 2000,
+				"category": "Clan",
+				"description": "Have been awarded Speedbreaker 3 times in a season.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Legend V",
+				"emoji": "<:Legend_V:518606089273606149>",
+				"dbData": {
+					"column": "legend_v",
+					"table": "U_M_Clan"
+				},
+				"acquisitionMethod": {
+					"function": "FUNCTION",
+					"data": {
+						"functionName": "checkReset",
+						"args": [
+							"5"
+						]
+					}
+				},
+				"xp": 2500,
+				"category": "Clan",
+				"description": "Achieve the highest Lighthouse rank 5 times.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Wrath of Sol",
+				"emoji": "<:Wrath_of_Sol:518610951059144705>",
+				"dbData": {
+					"column": "wrath_of_sol",
+					"table": "U_M_Pve"
+				},
+				"acquisitionMethod": {
+					"function": "FUNCTION",
+					"data": {}
+				},
+				"xp": 2000,
+				"category": "Vanguard Feats",
+				"description": "Earn 400,000 points or more on any Nightfall.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Blink Master",
+				"emoji": "<:Blink_Master:519110709490089984>",
+				"dbData": {
+					"column": "blink_master",
+					"table": "U_M_Pve"
+				},
+				"acquisitionMethod": {
+					"function": "FUNCTION",
+					"data": {
+						"functionName": "medalMaster"
+					}
+				},
+				"xp": 2000,
+				"category": "Vanguard Feats",
+				"description": "Completed any Nightfall in 3.5 minutes or less.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Wayfarer",
+				"emoji": "<a:Wayfarer:519115416463736852>",
+				"dbData": {
+					"column": "wayfarer",
+					"table": "U_M_Seals"
+				},
+				"acquisitionMethod": {
+					"function": "TRIUMPH",
+					"data": {
+						"recordId": "2757681677"
+					}
+				},
+				"xp": 2500,
+				"category": "Seals",
+				"description": "Earn the Wayfarer Title.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Cursebreaker",
+				"emoji": "<a:Cursebreaker:518758726178570253>",
+				"dbData": {
+					"column": "cursebreaker",
+					"table": "U_M_Seals"
+				},
+				"acquisitionMethod": {
+					"function": "TRIUMPH",
+					"data": {
+						"recordId": "1693645129"
+					}
+				},
+				"xp": 2500,
+				"category": "Seals",
+				"description": "Earn the Cursebreaker Title.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Rivensbane",
+				"emoji": "<a:Rivensbane:518761667094511616>",
+				"dbData": {
+					"column": "rivensbane",
+					"table": "U_M_Seals"
+				},
+				"acquisitionMethod": {
+					"function": "TRIUMPH",
+					"data": {
+						"recordId": "2182090828"
+					}
+				},
+				"xp": 2500,
+				"category": "Seals",
+				"description": "Earned Rivensbane Title.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Chronicler",
+				"emoji": "<a:Chronicler:518758837193277440>",
+				"dbData": {
+					"column": "chronicler",
+					"table": "U_M_Seals"
+				},
+				"acquisitionMethod": {
+					"function": "TRIUMPH",
+					"data": {
+						"recordId": "1754983323"
+					}
+				},
+				"xp": 2500,
+				"category": "Seals",
+				"description": "Earn the Chronicler Title.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Dredgen",
+				"emoji": "<a:Dredgen:518758666388635669>",
+				"dbData": {
+					"column": "dredgen",
+					"table": "U_M_Seals"
+				},
+				"acquisitionMethod": {
+					"function": "TRIUMPH",
+					"data": {
+						"recordId": "3798931976"
+					}
+				},
+				"xp": 2500,
+				"category": "Seals",
+				"description": "Earn the Dredgen Title.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Unbroken",
+				"emoji": "<a:Unbroken:518758539875844096>",
+				"dbData": {
+					"column": "unbroken",
+					"table": "U_M_Seals"
+				},
+				"acquisitionMethod": {
+					"function": "TRIUMPH",
+					"data": {
+						"recordId": "3369119720"
+					}
+				},
+				"xp": 2500,
+				"category": "Seals",
+				"description": "Earn the Unbroken Title.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Hero Among Guardians",
+				"emoji": "<a:Hero_Among_Guardians:518758606032863255>",
+				"dbData": {
+					"column": "hero_among_guardians",
+					"table": "U_M_Clan"
+				},
+				"acquisitionMethod": {
+					"function": "TRIUMPH",
+					"data": {
+						"recordId": "score"
+					}
+				},
+				"xp": 2500,
+				"category": "Clan",
+				"description": "Earn 50,000 Triumph Score.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Dawning 2018",
+				"emoji": "<a:Dawning_2018:519110265195855875>",
+				"dbData": {
+					"column": "dawning_2018",
+					"table": "U_M_Event"
+				},
+				"acquisitionMethod": {
+					"function": "DISCORD",
+					"data": {
+						"roleIds": [
+							"157737184684802048"
+						]
+					}
+				},
+				"xp": 1000,
+				"category": "Event",
+				"description": "Be active in the Lighthouse during December of 2018.",
+				"limited": true,
+				"available": false
+			},
+			{
+				"name": "Blacksmith",
+				"emoji": "<a:Blacksmith:521212303568535562>",
+				"dbData": {
+					"column": "blacksmith",
+					"table": "U_M_Seals"
+				},
+				"acquisitionMethod": {
+					"function": "TRIUMPH",
+					"data": {
+						"recordId": "2053985130"
+					}
+				},
+				"xp": 2500,
+				"category": "Seals",
+				"description": "Earn the Blacksmith Title.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Against All Odds",
+				"emoji": "<:Against_all_Odds:525987002122764288>",
+				"dbData": {
+					"column": "mountain_top",
+					"table": "U_M_Pvp"
+				},
+				"acquisitionMethod": {
+					"function": "TRIUMPH",
+					"data": {
+						"recordId": "3851137658"
+					}
+				},
+				"xp": 2000,
+				"category": "Crucible Feats",
+				"description": "Acquired The Mountaintop.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Lost but Never Forgotten",
+				"emoji": "<:Lost_but_Never_Forgotten:525987076500619264>",
+				"dbData": {
+					"column": "not_forgotten",
+					"table": "U_M_Pvp"
+				},
+				"acquisitionMethod": {
+					"function": "FUNCTION",
+					"data": {
+						"functionName": "objectDefinition",
+						"recordId": "1032620927",
+						"note": "Need to Change this to an ObjectiveDefinition as Not Forgotten does not have a triumph / DestinyInventoryItemDefinition Id: 96594792 name: Keepsake"
+					}
+				},
+				"xp": 2000,
+				"category": "Crucible Feats",
+				"description": "Acquired Not Forgotten.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Made Shaxx Proud",
+				"emoji": "<:Made_Shaxx_Proud:526285535807930368>",
+				"dbData": {
+					"column": "shaxx_proud",
+					"table": "U_M_Pvp"
+				},
+				"acquisitionMethod": {
+					"function": "FUNCTION",
+					"data": {
+						"functionName": "multipleRecords",
+						"args": [
+							"3324094091",
+							"2857093873",
+							"1271667367",
+							"1413337742",
+							"3882642308",
+							"1371679603",
+							"706112207",
+							"3400576446",
+							"3664890052",
+							"461152590",
+							"395207948",
+							"4109457230",
+							"147788586",
+							"4166658100",
+							"827330513"
+						]
+					}
+				},
+				"xp": 2500,
+				"category": "Crucible Feats",
+				"description": "Earn the Made Shaxx Proud Emblem",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Bring a Broadsword",
+				"emoji": "<:Bring_a_Broadsword:526279631394045955>",
+				"dbData": {
+					"column": "broadsword",
+					"table": "U_M_Pvp"
+				},
+				"acquisitionMethod": {
+					"function": "TRIUMPH",
+					"data": {
+						"recordId": "992007906"
+					}
+				},
+				"xp": 2000,
+				"category": "Crucible Feats",
+				"description": "Acquired Redrix Broadsword.",
+				"limited": false,
+				"available": true
+			},
+			{
+				"name": "Reckoner",
+				"emoji": "???",
+				"dbData": {
+					"column": "reckoner",
+					"table": "U_M_Seals"
+				},
+				"acquisitionMethod": {
+					"function": "TRIUMPH",
+					"data": {
+						"recordId": "1313291220"
+					}
+				},
+				"xp": 2500,
+				"category": "Seals",
+				"description": "Earn the Reckoner Title.",
+				"limited": true,
+				"available": false
+			},
+			{
+				"name": "Shadow",
+				"emoji": "???",
+				"dbData": {
+					"column": "shadow",
+					"table": "U_M_Seals"
+				},
+				"acquisitionMethod": {
+					"function": "TRIUMPH",
+					"data": {
+						"recordId": "1883929036"
+					}
+				},
+				"xp": 2500,
+				"category": "Seals",
+				"description": "Earn the Shadow Title.",
+				"limited": true,
+				"available": false
+			},
+			{
+				"name": "MMXIX",
+				"emoji": "???",
+				"dbData": {
+					"column": "mmxix",
+					"table": "U_M_Seals"
+				},
+				"acquisitionMethod": {
+					"function": "TRIUMPH",
+					"data": {
+						"recordId": "2254764897"
+					}
+				},
+				"xp": 2500,
+				"category": "Seals",
+				"description": "Earn the Moments of Triumph: MMXIX Title.",
+				"limited": true,
+				"available": false
+			},
+			{
+				"name": "Locked",
+				"emoji": "<:locked:517242138300252190>",
+				"dbData": {
+					"column": "",
+					"table": ""
+				},
+				"acquisitionMethod": {
+					"function": "",
+					"data": {}
+				},
+				"xp": 0,
+				"category": "Locked",
+				"description": "",
+				"limited": false,
+				"available": false
+			}
+		]
+	},
+	"statuses": [
+		"Version 1.1.0"
+	],
+	"sentry": "",
+	"bungie": {
+		"apikey": ""
+	}
+}
