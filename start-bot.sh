@@ -6,7 +6,6 @@ gitdiff=$(git diff master origin/master)
 if [ $(git rev-parse HEAD) != $(git rev-parse @{u}) ]
 then
 git reset --hard origin/master
-npm i
 chmod +x "./start-bot.sh" # Make Updated Script Execuatble
 fi
-npm run build && npm run start
+npm i && npm run build && npm run start
