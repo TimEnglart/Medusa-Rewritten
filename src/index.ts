@@ -337,7 +337,7 @@ discordBot.on('messageReactionAdd', async (reaction, user) => {
 	try {
 		if (reaction.message.guild) {
 			const response = await discordBot.databaseClient.query(
-				`SELECT role_id FROM G_Reaction_Roles WHERE guild_id = ${reaction.message.guild.id} AND channel_id = ${reaction.message.channel.id} AND message_id = ${reaction.message.id} AND reaction_id = ${reaction.emoji.id} AND reaction_name = \'${reaction.emoji.name}\'`,
+				`SELECT role_id FROM G_Reaction_Roles WHERE guild_id = ${reaction.message.guild.id} AND channel_id = ${reaction.message.channel.id} AND message_id = ${reaction.message.id} AND reaction_id ${reaction.emoji.id ? `=` : `IS`} ${reaction.emoji.id} AND reaction_name = \'${reaction.emoji.name}\'`,
 			);
 			if (response.length) {
 				// Assign Role Based on React
@@ -360,7 +360,7 @@ discordBot.on('messageReactionRemove', async (reaction, user) => {
 	try {
 		if (reaction.message.guild) {
 			const response = await discordBot.databaseClient.query(
-				`SELECT role_id FROM G_Reaction_Roles WHERE guild_id = ${reaction.message.guild.id} AND channel_id = ${reaction.message.channel.id} AND message_id = ${reaction.message.id} AND reaction_id = ${reaction.emoji.id} AND reaction_name = \'${reaction.emoji.name}\'`,
+				`SELECT role_id FROM G_Reaction_Roles WHERE guild_id = ${reaction.message.guild.id} AND channel_id = ${reaction.message.channel.id} AND message_id = ${reaction.message.id} AND reaction_id ${reaction.emoji.id ? `=` : `IS`} ${reaction.emoji.id} AND reaction_name = \'${reaction.emoji.name}\'`,
 			);
 			if (response.length) {
 				// Assign Role Based on React
