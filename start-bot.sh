@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Allow SSH Connection to Github For Private Repo
-eval $(ssh-agent)
-ssh-add ~/.ssh/github_rsa
+eval $(ssh-agent);
+ssh-add ~/.ssh/github_rsa;
 
 
 REPO_DIR=/srv/Medusa-Rewritten
@@ -19,5 +19,5 @@ chmod +x "./start-bot.sh"; # Make Updated Script Execuatble
 fi
 
 # Update NPM Packagaes & Start Bot
-npm i && npm audit fix;
-npm run build && npm run start
+npm i && npm update && npm audit fix;
+npm run build && npm run start;

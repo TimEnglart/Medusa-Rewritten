@@ -70,7 +70,7 @@ interface RankData {
 		text: string;
 	};
 }
-function giveMedal(userId: string | null, medals: MedalData[], databaseClient: Database) {
+function giveMedal(userId: string | null, medals: MedalData[], databaseClient: Database): Promise<void> {
 	return new Promise(async (resolve, reject) => {
 		if (!userId) return reject('No User Provided');
 		for (const medal of medals) {
@@ -83,8 +83,8 @@ function giveMedal(userId: string | null, medals: MedalData[], databaseClient: D
 		return resolve();
 	});
 }
-function revokeMedal(userId: string | null, medals: MedalData[], databaseClient: Database) {
-	return new Promise(async (resolve, reject) => {
+function revokeMedal(userId: string | null, medals: MedalData[], databaseClient: Database): Promise<void> {
+	return new Promise(async (resolve: () => void, reject) => {
 		if (!userId) return reject('No User Provided');
 		for (const medal of medals) {
 			const response = await databaseClient.query(`SELECT ${medal.dbData.column} FROM ${medal.dbData.table} WHERE user_id = ${userId}`);
@@ -137,7 +137,7 @@ function checkAllMedals(member: discord.GuildMember | null, databaseClient: Data
 		return resolve(unlockedMedals);
 	});
 }
-function checkMedal(member: discord.GuildMember, medal: MedalData, databaseClient?: Database, records?: any): Promise<boolean | Error> {
+function checkMedal(member: discord.GuildMember, medal: MedalData, databaseClient?: Database, records?: any): Promise<boolean> {
 	return new Promise(async (resolve, reject) => {
 		try {
 			switch (medal.acquisitionMethod.function.toUpperCase()) {
@@ -173,7 +173,7 @@ function medalRoles(member: discord.GuildMember, medal: MedalData): boolean {
 	if (medal.acquisitionMethod.data.roleName && member.roles.find(role => role.name.toLowerCase() === medal.acquisitionMethod.data.roleName)) return true; // Using Name. Probs Better
 	return false;
 }
-function getUserRecords(member: discord.GuildMember, databaseClient: Database, fails: number = 0): Promise<any[]> {
+function getUserRecords(member: discord.GuildMember, databaseClient: Database, fails: number = 0): Promise<RecordResponse[]> {
 	return new Promise(async (resolve, reject) => {
 		const records = [];
 		try {
@@ -194,7 +194,7 @@ function getUserRecords(member: discord.GuildMember, databaseClient: Database, f
 		return resolve(records);
 	});
 }
-function checkTriumph(medal: MedalData, response: any) {
+function checkTriumph(medal: MedalData, response: any): boolean {
 	if (isNaN(Number(medal.acquisitionMethod.data.recordId))) {
 		if (response.Response.profileRecords.data.score >= 50000) return true;
 	}
@@ -266,7 +266,7 @@ function medalTriumph(member: discord.GuildMember, medal: MedalData, databaseCli
 		}
 	});
 }
-function medalFunction(member: discord.GuildMember, medal: MedalData, databaseClient?: Database, existingRecords?: any) {
+function medalFunction(member: discord.GuildMember, medal: MedalData, databaseClient?: Database, existingRecords?: any): Promise<boolean> {
 	return new Promise(async (resolve, reject) => {
 		const dynamicFunctions: any = {
 			test: async (args: string[]) => {

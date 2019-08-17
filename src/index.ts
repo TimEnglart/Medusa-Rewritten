@@ -19,12 +19,14 @@ import * as fs from 'fs';
 // import * as settings from './config/settings.json';
 import { CommandFile, Database, ExtendedClient, LogFilter, Logger, Settings, Embeds } from './ext/';
 import * as exp from './ext/experienceHandler';
+import { WebServer } from './ext/web-server';
+
 
 const discordBot: ExtendedClient = new Client({
 	disableEveryone: true,
 }) as ExtendedClient;
 discordBot.logger = {
-	logClient: new Logger('./logs', [LogFilter.Info, LogFilter.Debug, LogFilter.Error]),
+	logClient: new Logger('./logs', [LogFilter.Info, LogFilter.Debug, LogFilter.Error], true),
 	logFilters: LogFilter,
 };
 process
@@ -32,10 +34,14 @@ process
 		discordBot.logger.logClient.log(`Uncaught Promise Rejection:\nReason:\n${reason}`, LogFilter.Error);
 	})
 	.on('uncaughtException', err => {
+		console.log(err);
 		discordBot.logger.logClient.log(`Uncaught Exception thrown:\n${err}\nExiting...`, LogFilter.Error);
 		process.exit(1);
+	})
+	.on('exit', (e) => {
+		console.log(e);
 	});
-
+discordBot.webServer = new WebServer(discordBot);
 discordBot.settings = Settings;
 discordBot.databaseClient = new Database(
 	{
@@ -465,6 +471,5 @@ function randomPresence() {
 	});
 	setTimeout(randomPresence, 600000);
 }
-
 // tslint:disable-next-line: no-floating-promises
 discordBot.login(!discordBot.settings.debug ? discordBot.settings.tokens.production : discordBot.settings.tokens.debugging);

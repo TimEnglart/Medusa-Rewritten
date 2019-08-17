@@ -4,6 +4,8 @@ import { Database, SqlQuery } from './database';
 import { LogFilter, Logger } from './logger';
 import { Utility } from './utility';
 import { MyRequester } from './webClient';
+import * as express from 'express';
+import { WebServer } from './web-server/index.js';
 type CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => Promise<void>;
 
 interface CommandHelp {
@@ -35,6 +37,7 @@ interface ExtendedClient extends discord.Client {
 		logFilters: typeof LogFilter;
 	};
 	databaseClient: Database;
+	webServer: WebServer;
 }
 class Embeds {
 	public static permissionEmbed(permissionTitle: string, permissionDescription: string, overrideOptions?: discord.MessageEmbedOptions): discord.MessageEmbed {
