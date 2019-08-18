@@ -17,6 +17,8 @@ class WebServer {
 			})
 			.get('/logs', (req, res) => {
 				const logFile = discordInstance.logger.logClient.returnLogFile().then(r => {
+					res.set('Access-Control-Expose-Headers', 'Access-Control-Allow-Origin');
+					res.set('Access-Control-Allow-Origin', '*');
 					res.status(200).send(JSON.parse(r));
 				});
 			})

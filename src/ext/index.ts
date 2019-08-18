@@ -11,7 +11,7 @@ type CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: s
 interface CommandHelp {
 	name: string;
 	description: string;
-	example: string;
+	example?: string;
 	permissionRequired: discord.BitFieldResolvable<discord.PermissionString>; // Change nulls to 'SEND_MESSAGES'
 	environments: string[];
 	expectedArgs: Array<{

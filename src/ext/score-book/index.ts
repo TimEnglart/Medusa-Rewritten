@@ -38,7 +38,6 @@ class ScoreBook {
 	public async start(): Promise<void> {
 
 
-
 		setTimeout(() => this.start(), 600000); // check every 10 mins
 	}
 	public async totalWinners(): Promise<number> {
@@ -68,36 +67,80 @@ class ScoreBook {
 		return `FROM_UNIXTIME(${(date.getTime() / 1000).toFixed(0)})`;
 	}
 	public async thisWeekSubmissions(): Promise<ISubmissionResponse[]> {
-		const response = await this.databaseClient.query(`SELECT * FROM SB_Submissions WHERE date_completed > ${this.dateToMySql(this.lastReset)}`);
+		const response = await this.databaseClient.query(`SELECT * FROM SB_Submissions WHERE date_completed >= ${this.dateToMySql(this.lastReset)}`);
 		return response;
 	}
-	public async getPostGameCarnageReport(activityId: number | string): Promise<BungieResponse<PostGameCarnageReport>> {
+	public async getPostGameCarnageReport(activityId: number | string): Promise<BungieResponse<IPostGameCarnageReport>> {
 		const bungieData = await this.requester.request({ path: `/Destiny2/Stats/PostGameCarnageReport/${activityId}/` });
 		return bungieData;
 	}
-	public async addWeekWinnersToDatabase(type: 'SPEED' | 'POINT', activityEntries: IActivityEntry[]) {
+	public async resolveWeekWinners(type: 'SPEED' | 'POINT', activityEntries: IActivityEntry[]) {
+		const winners: IWinner[] = [];
 		for (const entry of activityEntries) {
-			let verified: boolean;
+			const winnerObj: IWinner = {
+				name: entry.player.destinyPlayerInfo.displayName,
+				type
+			};
 			const destinyProfiles = await this.databaseClient.query(`SELECT * FROM U_Destiny_Profile WHERE destiny_id = ${entry.player.destinyPlayerInfo.membershipId}`);
-			if (destinyProfiles.length) verified = true;
-			await this.databaseClient.query(``);
+			if (destinyProfiles.length) {
+				const bungieProfiles = await this.databaseClient.query(`SELECT * FROM U_Bungie_Account WHERE bungie_id = ${destinyProfiles[0].bungie_id}`);
+				if (bungieProfiles.length) {
+					winnerObj.userId = bungieProfiles[0].user_id;
+				}
+			}
+			winners.push(winnerObj);
 		}
-
+		return winners;
 	}
-	public async addWeekWinners(): Promise<void> {
+	public async getWeekWinners()/*: Promise<void>*/ {
 		// SPEED VS POINT
 		const response = await this.thisWeekSubmissions();
 		if (!response.length) return;
 		const speedWinner = response.reduce((prev, current) => (+prev.time > +current.time) ? prev : current);
 		const pointWinner = response.reduce((prev, current) => (+prev.score > +current.score) ? prev : current);
 
+		// API Activity Details
 		const speedReport = await this.getPostGameCarnageReport(speedWinner.pgcr_id);
 		const pointReport = await this.getPostGameCarnageReport(pointWinner.pgcr_id);
 
+		// Resolved Players with Discord ID
+		const resolvedSpeedWinners = await this.resolveWeekWinners('SPEED', speedReport.Response.entries);
+		const resolvedPointWinners = await this.resolveWeekWinners('POINT', pointReport.Response.entries);
 
+
+		return {
+			pointBreakers: {
+				activity: pointReport,
+				players: resolvedPointWinners
+			},
+			speedBreakers: {
+				activity: speedReport,
+				players: resolvedSpeedWinners
+			}
+		};
+	}
+	public async addWinners() {
+		const winners = await this.getWeekWinners();
+		if (!winners) return;
+		for (const winner of winners.pointBreakers.players) {
+			if (!winner.userId) continue;
+
+			// Update User Statistics
+			const column = winner.type === 'SPEED' ? 'speedbreaker_wins' : 'pointbreaker_wins';
+			const medal = winner.type === 'SPEED' ? this.discordInstance.settings.lighthouse.medals.find(medal => medal.name === 'Pointbreaker') : this.discordInstance.settings.lighthouse.medals.find(medal => medal.name === 'Speedbreaker');
+			const currentStatistics = await this.databaseClient.query(`SELECT * FROM U_SB_Statistics WHERE user_id = ${winner.userId}`);
+			if (!currentStatistics.length) await this.databaseClient.query(`INSERT INTO U_SB_Statistics (user_id, pointbreaker_wins, speedbreaker_wins) VALUES (${winner.userId}, ${winner.type === 'POINT' ? 1 : 0}, ${winner.type === 'SPEED' ? 1 : 0});`);
+			else await this.databaseClient.query(`UPDATE U_SB_Statistics SET ${column} = ${currentStatistics[0][column] + 1} WHERE user_id = ${winner.userId}`);
+
+			// Give Medal / XP
+			if (medal) await giveMedal(winner.userId, [medal], this.databaseClient);
+		}
+		// Update Winner Table
+		await this.databaseClient.query(`INSERT INTO SB_Winners (week, type, pgcr_id, season) VALUES (${await this.currentWeek()}, ${'SPEED'}, ${winners.speedBreakers.activity.Response.activityDetails.instanceId}, ${this.currentSeason}); ` +
+			`INSERT INTO SB_Winners (week, type, pgcr_id, season) VALUES (${await this.currentWeek()}, ${'POINT'}, ${winners.pointBreakers.activity.Response.activityDetails.instanceId}, ${this.currentSeason});`);
 	}
 }
-interface PostGameCarnageReport {
+interface IPostGameCarnageReport {
 	period: string;
 	startingPhaseIndex: number;
 	activityDetails: IActivityDetails;
@@ -171,7 +214,7 @@ interface IScorebookWinnerResponse {
 interface IWinner {
 	name: string;
 	type: 'POINT' | 'SPEED';
-	verified: boolean;
+	userId?: string;
 }
 interface IWeekWinners {
 	pointBreakers: {

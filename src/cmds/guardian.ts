@@ -166,7 +166,7 @@ function levelBar(currRank: number, numRanks: number) {
 		//determine bar fill
 		if (barsToFill > 0.9) { // was if (barsToFill > 1) {
 			bar += 'Full';
-		} else if (barsToFill > 0) {
+		} else if (barsToFill >= 0) { // should be > 0 but there is no leftEndEmpty Emoji
 			bar += 'Half';
 		} else {
 			bar += 'Empty';
