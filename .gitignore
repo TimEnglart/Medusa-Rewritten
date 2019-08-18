@@ -1,6 +1,6 @@
 /.git/
 /.vscode/
-/node_modules/
+node_modules/
 /src/config/settings.json
 webdata/connection-settings.ini
 *.log
