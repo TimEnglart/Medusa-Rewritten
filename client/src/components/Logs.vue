@@ -8,7 +8,7 @@
         </div>
         <div v-if="logData.length" class="logConatiner">
             <ul>
-                <li v-for="item in logData" v-bind:key="item">{{ item.message }}</li>
+                <li v-for="item in logData" v-bind:key="item.date">{{ item.message }}</li>
             </ul>
         </div>
     </section>
