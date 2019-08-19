@@ -1,15 +1,7 @@
 import { Database, discord, ExtendedClient, MyRequester, Settings } from '.';
+import { BungieResponse } from './discordToBungie';
 
-const requester = new MyRequester({
-	hostname: 'www.bungie.net',
-	port: 443,
-	method: 'GET',
-	headers: {
-		'X-API-Key': Settings.bungie.apikey
-	},
-	doNotFollowRedirect: false,
-	responseType: 'JSON'
-});
+
 
 function disconnectUser(userId: string | null, databaseClient: Database) {
 	return new Promise(async (resolve, reject) => {
@@ -137,7 +129,7 @@ function checkAllMedals(member: discord.GuildMember | null, databaseClient: Data
 		return resolve(unlockedMedals);
 	});
 }
-function checkMedal(member: discord.GuildMember, medal: MedalData, databaseClient?: Database, records?: any): Promise<boolean> {
+function checkMedal(member: discord.GuildMember, medal: MedalData, databaseClient?: Database, records?: RecordResponse[]): Promise<boolean> {
 	return new Promise(async (resolve, reject) => {
 		try {
 			switch (medal.acquisitionMethod.function.toUpperCase()) {
@@ -177,14 +169,25 @@ function getUserRecords(member: discord.GuildMember, databaseClient: Database, f
 	return new Promise(async (resolve, reject) => {
 		const records = [];
 		try {
+			const requester = new MyRequester({
+				hostname: 'www.bungie.net',
+				port: 443,
+				method: 'GET',
+				headers: {
+					'X-API-Key': Settings.bungie.apikey
+				},
+				doNotFollowRedirect: false,
+				responseType: 'JSON'
+			});
 			// Get User Bungie/Destiny Data
 			const bungieAccounts = await databaseClient.query(`SELECT * FROM U_Bungie_Account WHERE user_id = ${member.id}`);
 			if (!bungieAccounts.length) reject('User Bungie Account Not Registered');
 			const destinyAccounts = await databaseClient.query(`SELECT * FROM U_Destiny_Profile WHERE bungie_id = ${bungieAccounts[0].bungie_id}`);
 			if (!destinyAccounts.length) reject('User Has No Destiny Profiles [Xbox, Playstation, PC]');
 			for (const dProfile of destinyAccounts) {
-				const pRecords = await requester.request({ path: `/Platform/Destiny2/${dProfile.membership_id}/Profile/${dProfile.destiny_id}/?components=900` });
-				if (pRecords) records.push(pRecords);
+				const pRecords: BungieResponse<RecordResponse> = await requester.request({ path: `/Platform/Destiny2/${dProfile.membership_id}/Profile/${dProfile.destiny_id}/?components=900` });
+
+				if (pRecords) records.push(pRecords.Response);
 			}
 		}
 		catch (e) {
@@ -194,21 +197,21 @@ function getUserRecords(member: discord.GuildMember, databaseClient: Database, f
 		return resolve(records);
 	});
 }
-function checkTriumph(medal: MedalData, response: any): boolean {
+function checkTriumph(medal: MedalData, response: RecordResponse): boolean {
 	if (isNaN(Number(medal.acquisitionMethod.data.recordId))) {
-		if (response.Response.profileRecords.data.score >= 50000) return true;
+		if (response.profileRecords.data.score >= 50000) return true;
 	}
 	else {
 		try {
-			const triumph = response.Response.profileRecords.data.records[medal.acquisitionMethod.data.recordId];
+			const triumph = response.profileRecords.data.records[medal.acquisitionMethod.data.recordId];
 			if (triumph) { // Profile Record
 				const pTriumphState = new CollectableState(triumph.state);
 				if (!pTriumphState.objectiveNotCompleted) return true;
 			}
 			else { // Character Record
-				for (const characterId in response.Response.characterRecords.data) {
+				for (const characterId in response.characterRecords.data) {
 					if (characterId) {
-						const cTriumph = response.Response.characterRecords.data[characterId].records[medal.acquisitionMethod.data.recordId];
+						const cTriumph = response.characterRecords.data[characterId].records[medal.acquisitionMethod.data.recordId];
 						const cTriumphState = new CollectableState(cTriumph.state);
 						if (!cTriumphState.objectiveNotCompleted) return true;
 					}
@@ -221,52 +224,7 @@ function checkTriumph(medal: MedalData, response: any): boolean {
 	}
 	return false;
 }
-function medalTriumph(member: discord.GuildMember, medal: MedalData, databaseClient: Database, records?: any): Promise<boolean> {
-	return new Promise(async (resolve, reject) => {
-		try {
-			// Get User Bungie/Destiny Data
-			const bungieAccounts = await databaseClient.query(`SELECT * FROM U_Bungie_Account WHERE user_id = ${member.id}`);
-			if (!bungieAccounts.length) reject('User Bungie Account Not Registered');
-			const destinyAccounts = await databaseClient.query(`SELECT * FROM U_Destiny_Profile WHERE bungie_id = ${bungieAccounts[0].bungie_id}`);
-			if (!destinyAccounts.length) reject('User Has No Destiny Profiles [Xbox, Playstation, PC]');
-			// GOT USER DATA
-
-			// Get Triumphs
-			for (const dProfile of destinyAccounts) {
-				const apiResponse = await requester.request({ path: `/Platform/Destiny2/${dProfile.membership_id}/Profile/${dProfile.destiny_id}/?components=900` });
-				if (isNaN(Number(medal.acquisitionMethod.data.recordId))) {
-					if (apiResponse.Response.profileRecords.data.score >= 50000) return resolve(true);
-				}
-				else {
-					try {
-						const triumph = apiResponse.Response.profileRecords.data.records[medal.acquisitionMethod.data.recordId];
-						if (triumph) { // Profile Record
-							const pTriumphState = new CollectableState(triumph.state);
-							if (!pTriumphState.objectiveNotCompleted) return resolve(true);
-						}
-						else { // Character Record
-							for (const characterId in apiResponse.Response.characterRecords.data) {
-								if (characterId) {
-									const cTriumph = apiResponse.Response.characterRecords.data[characterId].records[medal.acquisitionMethod.data.recordId];
-									const cTriumphState = new CollectableState(cTriumph.state);
-									if (!cTriumphState.objectiveNotCompleted) return resolve(true);
-								}
-							}
-						}
-					}
-					catch (e) {
-						return reject(`Failed to Find Record: ${medal.acquisitionMethod.data.recordId}`);
-					}
-				}
-			}
-			return resolve(false);
-		}
-		catch (e) {
-			return resolve(false);
-		}
-	});
-}
-function medalFunction(member: discord.GuildMember, medal: MedalData, databaseClient?: Database, existingRecords?: any): Promise<boolean> {
+function medalFunction(member: discord.GuildMember, medal: MedalData, databaseClient?: Database, existingRecords?: RecordResponse[]): Promise<boolean> {
 	return new Promise(async (resolve, reject) => {
 		const dynamicFunctions: any = {
 			test: async (args: string[]) => {
@@ -302,6 +260,9 @@ function medalFunction(member: discord.GuildMember, medal: MedalData, databaseCl
 			objectDefinition: async (args: string[]) => {
 
 				return false;
+			},
+			nitroBooster: async (args: string[]) => {
+				return member.premiumSinceTimestamp !== null;
 			}
 		};
 		try {
@@ -338,8 +299,20 @@ interface RecordResponse {
 	profileRecords: {
 		data: {
 			score: number;
-			trackedRecordHash: number;
-			records: any;
+			trackedRecordHash?: number;
+			records: {
+				[recordId: string]: Record
+			}
+		}
+	};
+	characterRecords: {
+		data: {
+			[characterId: string]: {
+				featuredRecordHashes?: number[];
+				records: {
+					[recordId: string]: Record
+				}
+			}
 		}
 	};
 }
@@ -410,6 +383,7 @@ function voiceChannelXp(member: discord.GuildMember | undefined, xpPerTick: numb
 }
 
 function handleRoles() {
+
 
 }
 
