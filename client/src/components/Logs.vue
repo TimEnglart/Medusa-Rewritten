@@ -7,9 +7,10 @@
             <h1>{{error}}</h1>
         </div>
         <div v-if="logData.length" class="logConatiner">
-            <ul>
-                <li v-for="item in logData" v-bind:key="item.date">{{ item.message }}</li>
-            </ul>
+            <div v-for="item in logData" v-bind:key="item.date" class="log-block">
+                <div class="log-date">[{{item.type}}] - {{item.time}}</div>
+                <div class="log-data">{{item.message}}</div>
+            </div>
         </div>
     </section>
 </template>
@@ -24,7 +25,7 @@ export default {
     async created() {
         this.loading = true;
         try {
-            const logData = await axios.get('http://localhost:3000/logs');
+            const logData = await axios.get('api/logs');
             console.log(logData.headers);
             this.logData = logData.data.logs;
         } catch (e) {
@@ -54,5 +55,18 @@ a {
 li {
     margin: 20px;
     display: block;
+}
+.log-block {
+    margin-bottom: 30px;
+    background-color: #add8e6;
+    border-radius: 25px;
+    border: 2px solid #01193b;
+}
+.log-date {
+    float: left;
+}
+.log-data {
+    display: inline-block;
+    width: 100%;
 }
 </style>

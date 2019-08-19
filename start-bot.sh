@@ -19,6 +19,11 @@ chmod +x "./start-bot.sh"; # Make Updated Script Execuatble
 npm i;
 fi
 
+# Get Vue Sorted
+cd './client';
+npm i && npm run build;
+cd $REPO_DIR;
+
 # Update NPM Packagaes & Start Bot
 npm update && npm audit fix;
-npm run dev;
+npm run build && npm run start;

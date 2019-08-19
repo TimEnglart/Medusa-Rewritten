@@ -6,3 +6,4 @@ webdata/connection-settings.ini
 *.log
 logs/
 /lib/
+/public/
