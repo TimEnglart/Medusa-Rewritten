@@ -1,10 +1,16 @@
 'use strict';
 import * as fs from 'fs';
+import { RateLimiter } from './rate-limiter';
 const writeLine = console.log;
 export class Logger {
 	public logFile: string;
-	private queue: string[] = [];
+	private rateLimiter: RateLimiter;
 	constructor(logFileLocation = './logs', public filters: LogFilter[] | null = [LogFilter.Info], public json?: boolean) {
+		this.rateLimiter = new RateLimiter({
+			operations: 1,
+			returnTokenOnCompletion: true,
+			rate: 300
+		});
 		if (!fs.existsSync(logFileLocation)) {
 			fs.mkdirSync(logFileLocation);
 		}
@@ -13,9 +19,7 @@ export class Logger {
 		this.log('Logging Process Started', LogFilter.Debug);
 		return this;
 	}
-	public log(message: string, filter: LogFilter = LogFilter.Info): void {
-		const seed = Math.random().toString().slice(2, 11);
-		this.queue.push(seed);
+	public async log(message: string, filter: LogFilter = LogFilter.Info): Promise<void> {
 		// New Message
 		if (this.filters && !this.filters.includes(filter)) {
 			return;
@@ -33,9 +37,10 @@ export class Logger {
 		if (!formattedMessage) {
 			return;
 		}
-
-		this.startLog(formattedMessage, seed);
-
+		// tslint:disable-next-line: no-floating-promises
+		this.rateLimiter.addP(async () => {
+			await this.startLog(formattedMessage);
+		});
 	}
 
 	public returnLogFile() {
@@ -52,12 +57,7 @@ export class Logger {
 		});
 	}
 
-	// TODO: Allow queue to have X operations every Y Seconds
-	private startLog(formattedMessage: IFormattedLogMessage, seed: string): void {
-		if (this.queue[0] !== seed) {
-			setTimeout(() => this.startLog(formattedMessage, seed), 400);
-			return;
-		}
+	private async startLog(formattedMessage: IFormattedLogMessage): Promise<void> {
 		// Old Content
 		const logFileContent: string[] = [];
 		const readLogs = fs.createReadStream(this.logFile, { encoding: 'utf8' })
@@ -67,7 +67,6 @@ export class Logger {
 				writeLine(err);
 				return;
 			}).on('end', () => {
-				// 
 				let newLogFileContent = logFileContent.join('');
 				if (this.json) {
 					const obj = JSON.parse(newLogFileContent) as LogFile;
@@ -79,8 +78,8 @@ export class Logger {
 				}
 				fs.createWriteStream(this.logFile, { encoding: 'utf8' })
 					.write(newLogFileContent, (err) => {
-						if (err) writeLine(err);
-						this.queue.shift();
+						if (err) writeLine('Writing Error' + err);
+						return;
 					});
 			});
 	}

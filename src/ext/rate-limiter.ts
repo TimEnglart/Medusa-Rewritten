@@ -2,25 +2,27 @@ class RateLimiter {
 	private _operations: number;
 	private _rate: number;
 	private _delay: number;
-	private _paused: boolean = false;
 
 	private _queue: Queue<IProcessingRateLimiterObject>;
 
-	private _executing: number = 0;
-
-
-
-
+	private _running: boolean = false;
+	private _tokens: number = 1;
+	private _limiting: boolean = false;
 	private _stdOut: (message?: any) => void;
 	private _stdErr: (message?: any) => void;
 
-	private _interval: number = 0;
+	private _returnTokenOnCompletion: boolean;
+	private _nonConcurrent: boolean;
+	private _debugOutput: boolean;
+	private _resetting: boolean = false;
 
-	constructor(options: RateLimiterOptions = {}) {
+	constructor(options: IRateLimiterOptions = {}) {
 		this._operations = options.operations || 1;
 		this._rate = options.rate || 1000;
 		this._delay = options.delay || 4000;
-
+		this._nonConcurrent = this._operations === 1;
+		this._returnTokenOnCompletion = options.returnTokenOnCompletion || false;
+		this._debugOutput = options.debugOutput || false;
 
 		// tslint:disable-next-line: no-console
 		this._stdOut = options.stdOut || console.log;
@@ -28,20 +30,23 @@ class RateLimiter {
 		this._stdErr = options.stdErr || console.error;
 
 		this._queue = new Queue();
+		if (!this._nonConcurrent) this.resetOperations(this._rate);
 	}
 
-	public add(fn: () => void, callback?: (response: ICompletedRateLimiterObject, err?: Error) => void): void {
+
+	public add(fn: () => void | Promise<void>, callback?: (response: ICompletedRateLimiterObject, err?: Error) => void): void {
 		const rateLimitedCall: IProcessingRateLimiterObject = {
 			callback,
 			function: fn,
 			seed: Math.random().toString().slice(2, 11),
 			timeAdded: Date.now(),
-			promise: new Promise((resolve: (fn: void) => void) => {
-				return resolve(fn());
-			})
+			//promise: new Promise(async (resolve: (fn: void) => void | Promise<void>) => {
+			//	return resolve(await fn());
+			//})
 		};
 		this._queue.enqueue(rateLimitedCall);
-		this.process();
+		// tslint:disable-next-line: no-floating-promises
+		this.run();
 		// do queuing magic
 	}
 
@@ -53,56 +58,65 @@ class RateLimiter {
 			});
 		});
 	}
-	public pause() {
-		this._paused = true;
+	private resetOperations(...args: any[]) {
+		this._resetting = true;
+		if (this._debugOutput) this._stdOut(`RESETING TOKENS --- LIMITING: ${this._limiting} --- Wait Was: ${this._limiting ? this._delay : this._rate}`);
+		if (args.length && args[0] !== this._rate) this._limiting = false;
+		this._tokens = this._operations;
+		if (this._queue.populated) setTimeout(() => this.resetOperations(), this._limiting ? this._delay : this._rate, this._limiting ? this._delay : this._rate);
+		else this._resetting = false;
 	}
-	public start() {
-		this._paused = false;
-	}
-	private process(runs: number = 0) {
-		if (this._interval >= this._rate * this.operations && !this.canStartTask) {
-			this.coolDown();
-		}
-		else if (this._queue.populated && !this.paused && this.canStartTask) {
-			const request = this._queue.dequeue();
-			if (!request) return;
-			this._interval += this.operationWeight;
-			this._executing++;
-			request.function();
-			if (request.callback) {
+
+	private async run(bypass: boolean = false) {
+		if (!this._resetting && (!this._nonConcurrent || !this._returnTokenOnCompletion)) this.resetOperations();
+		if (this._running && !bypass) return;
+		this._running = true;
+		while (this._queue.populated) {
+			if (this._tokens > 0) {
+				if (this._debugOutput) this._stdOut(`IN LOOP --- TOKENS: ${this._tokens}`);
+				this._tokens--;
+				const request = this._queue.dequeue();
+				if (!request) return;
+				// request.function();
 				// tslint:disable-next-line: no-floating-promises
-				request.promise.then(r => {
-					request.callback!(Object.assign(request, {
-						timeCompleted: Date.now()
-					}) as ICompletedRateLimiterObject);
+				await this.handleCallback(request);
+				//});
+			}
+			else {
+				this._limiting = true;
+				await new Promise(resolve => {
+					setTimeout(() => resolve(), this.rate);
 				});
 			}
-
-			setTimeout(() => { this._executing--; this._interval -= this.operationWeight; }, this._rate);
-			if (runs > 0) this.process(--runs);
 		}
+		if (this._debugOutput) this._stdOut(`Exiting LOOP --- TOKENS: ${this._tokens} --- QueuePop: ${this._queue.populated}`);
+		// tslint:disable-next-line: no-floating-promises
+		if (this._queue.populated) this.run(true);
+		this._running = false;
 	}
-	private coolDown() {
-		if (this.paused) return;
-		this.pause();
-		setTimeout(() => {
-			this.start();
-			if (this._executing === 0) this.process(this._operations);
-		}, this.delay);
-	}
-	private get canStartTask() {
-		return this._executing < this._operations;
-	}
+	private async handleCallback(request: IProcessingRateLimiterObject) {
+		if (request.callback) {
+			await request.function();
+			//request.promise.then(async r => {
+			if (this._returnTokenOnCompletion) {
+				await new Promise(resolve => {
+					setTimeout(() => resolve(), this.rate);
+				});
+				this._tokens++;
+			}
+			if (request.callback) {
+				request.callback(Object.assign(request, {
+					timeCompleted: Date.now()
+				}) as ICompletedRateLimiterObject);
+			}
+			return;
+		}
+		else {
+			request.function();
+			return;
+		}
 
-	private get operationWeight() {
-		return this.rate / this._operations;
 	}
-
-	get paused() {
-		return this._paused;
-	}
-
-
 
 	get pendingRequests() {
 		return this._queue.toArray();
@@ -139,8 +153,8 @@ interface IRateLimiterObject {
 interface IProcessingRateLimiterObject {
 	seed: string;
 	timeAdded: number;
-	function: () => void;
-	promise: Promise<void>;
+	function: () => void | Promise<void>;
+	promise?: Promise<void>;
 	callback?: (response: ICompletedRateLimiterObject, err?: Error) => void;
 }
 interface ICompletedRateLimiterObject {
@@ -150,13 +164,14 @@ interface ICompletedRateLimiterObject {
 	callback?: (response: ICompletedRateLimiterObject, err?: Error) => void;
 }
 
-interface RateLimiterOptions {
+interface IRateLimiterOptions {
 	operations?: number; // Number of Allowed Operations During Rate Limit
 	rate?: number; // How Long to Wait for max operations to be hit to implement delay
 	delay?: number; // Once Rate Limit is Hit How long to wait
-
+	returnTokenOnCompletion?: boolean;
 	stdOut?: void;
 	stdErr?: void;
+	debugOutput?: boolean;
 }
 interface ILinkedListNode<T> {
 	next?: ILinkedListNode<T>;
@@ -198,7 +213,7 @@ class Queue<T> {
 		return this.head ? this.head.data : undefined;
 	}
 	get populated() {
-		return this.head !== undefined;
+		return !!this.head;
 	}
 	get size() {
 		let size = 0;
