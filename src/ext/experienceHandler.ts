@@ -13,14 +13,20 @@ function disconnectUser(userId: string | null, databaseClient: Database) {
 }
 function connectUser(userId: string | null, databaseClient: Database) {
 	return new Promise(async (resolve, reject) => {
+
+		/* Add User to Experience Table */
 		const response = await databaseClient.query(`SELECT * FROM U_Experience WHERE user_id = ${userId}`);
 		if (response.length) await databaseClient.query(`UPDATE U_Experience SET connected = ${true} WHERE user_id = ${userId}`);
 		else await databaseClient.query(`INSERT INTO U_Experience(user_id, connected) VALUES(${userId}, ${true})`);
+
+		/* Add User to Medal Tables */
+		// const medalsResponse = await databaseClient.query(`SELECT * FROM `)
+
 		return resolve();
 	});
 }
 
-function giveExperience(userId: string | null, xp: number | null, databaseClient: Database): Promise<ExperienceResponse> {
+function giveExperience(userId: string | null, xp: number | null, databaseClient: Database): Promise<IExperienceResponse> {
 	return new Promise(async (resolve, reject) => {
 		if (!userId) return reject('No User Provided');
 		if (!xp) xp = Math.floor(7) + Math.floor(Math.random() * 4) + 1; // Xp Can Be Between 8 and 12
@@ -34,35 +40,7 @@ function giveExperience(userId: string | null, xp: number | null, databaseClient
 		return resolve(xpData);
 	});
 }
-interface MedalData {
-	name: string;
-	emoji: string;
-	dbData: {
-		column: string,
-		table: string
-	};
-	acquisitionMethod: {
-		function: string,
-		data: any
-	};
-	xp: number;
-	category: string;
-	description: string;
-	limited: boolean;
-	available: boolean;
-}
-
-interface RankData {
-	name: string;
-	icon: string;
-	emoji: {
-		name: string;
-		id: string;
-		animated: boolean;
-		text: string;
-	};
-}
-function giveMedal(userId: string | null, medals: MedalData[], databaseClient: Database): Promise<void> {
+function giveMedal(userId: string | null, medals: IMedalData[], databaseClient: Database): Promise<void> {
 	return new Promise(async (resolve, reject) => {
 		if (!userId) return reject('No User Provided');
 		for (const medal of medals) {
@@ -75,7 +53,7 @@ function giveMedal(userId: string | null, medals: MedalData[], databaseClient: D
 		return resolve();
 	});
 }
-function revokeMedal(userId: string | null, medals: MedalData[], databaseClient: Database): Promise<void> {
+function revokeMedal(userId: string | null, medals: IMedalData[], databaseClient: Database): Promise<void> {
 	return new Promise(async (resolve: () => void, reject) => {
 		if (!userId) return reject('No User Provided');
 		for (const medal of medals) {
@@ -88,14 +66,8 @@ function revokeMedal(userId: string | null, medals: MedalData[], databaseClient:
 		return resolve();
 	});
 }
-interface ExperienceResponse {
-	difference: number;
-	level: number;
-	levelUps: RankData[];
-	nextLevelAmount: number;
-	xp: number;
-}
-function calculateExperience(xp: number, currLevel: number): ExperienceResponse {
+
+function calculateExperience(xp: number, currLevel: number): IExperienceResponse {
 	let nextLevelRequirement = currLevel * 3000;
 	const levelUps = [];
 	while (xp >= nextLevelRequirement) {
@@ -116,20 +88,20 @@ function calculateExperience(xp: number, currLevel: number): ExperienceResponse 
 	};
 }
 
-function checkAllMedals(member: discord.GuildMember | null, databaseClient: Database, getRecords: boolean): Promise<MedalData[]> {
+function checkAllMedals(member: discord.GuildMember | null, databaseClient: Database, getRecords: boolean): Promise<IMedalData[]> {
 	return new Promise(async (resolve, reject) => {
 		if (!member) return reject('No User Supplied');
 		const records = getRecords ? await getUserRecords(member, databaseClient) : undefined;
-		const unlockedMedals: MedalData[] = [];
+		const unlockedMedals: IMedalData[] = [];
 		for (const medalKey in Settings.lighthouse.medals) {
 			if (!medalKey) continue;
-			const medal: MedalData = (Settings.lighthouse.medals as any)[medalKey];
+			const medal: IMedalData = (Settings.lighthouse.medals as any)[medalKey];
 			if (medal.available && await checkMedal(member, medal, databaseClient, records)) unlockedMedals.push(medal);
 		}
 		return resolve(unlockedMedals);
 	});
 }
-function checkMedal(member: discord.GuildMember, medal: MedalData, databaseClient?: Database, records?: RecordResponse[]): Promise<boolean> {
+function checkMedal(member: discord.GuildMember, medal: IMedalData, databaseClient?: Database, records?: IRecordResponse[]): Promise<boolean> {
 	return new Promise(async (resolve, reject) => {
 		try {
 			switch (medal.acquisitionMethod.function.toUpperCase()) {
@@ -160,14 +132,14 @@ function checkMedal(member: discord.GuildMember, medal: MedalData, databaseClien
 		}
 	});
 }
-function medalRoles(member: discord.GuildMember, medal: MedalData): boolean {
+function medalRoles(member: discord.GuildMember, medal: IMedalData): boolean {
 	if (medal.acquisitionMethod.data.roleId && member.roles.get(medal.acquisitionMethod.data.roleId)) return true; // Using Id
 	if (medal.acquisitionMethod.data.roleName && member.roles.find(role => role.name.toLowerCase() === medal.acquisitionMethod.data.roleName)) return true; // Using Name. Probs Better
 	return false;
 }
-function getUserRecords(member: discord.GuildMember, databaseClient: Database, fails: number = 0): Promise<RecordResponse[]> {
+function getUserRecords(member: discord.GuildMember, databaseClient: Database, fails: number = 0): Promise<IRecordResponse[]> {
 	return new Promise(async (resolve, reject) => {
-		const records = [];
+		const records: IRecordResponse[] = [];
 		try {
 			const requester = new MyRequester({
 				hostname: 'www.bungie.net',
@@ -185,30 +157,30 @@ function getUserRecords(member: discord.GuildMember, databaseClient: Database, f
 			const destinyAccounts = await databaseClient.query(`SELECT * FROM U_Destiny_Profile WHERE bungie_id = ${bungieAccounts[0].bungie_id}`);
 			if (!destinyAccounts.length) reject('User Has No Destiny Profiles [Xbox, Playstation, PC]');
 			for (const dProfile of destinyAccounts) {
-				const pRecords: BungieResponse<RecordResponse> = await requester.request({ path: `/Platform/Destiny2/${dProfile.membership_id}/Profile/${dProfile.destiny_id}/?components=900` });
+				const pRecords: BungieResponse<IRecordResponse> = await requester.request({ path: `/Platform/Destiny2/${dProfile.membership_id}/Profile/${dProfile.destiny_id}/?components=900` });
 
 				if (pRecords) records.push(pRecords.Response);
 			}
 		}
 		catch (e) {
-			if (fails > 2) return reject('Failed to Get API Data');
+			if (fails > 2) return reject('Failed to Get API Data:\n' + e);
 			return resolve(await getUserRecords(member, databaseClient, ++fails));
 		}
 		return resolve(records);
 	});
 }
-function checkTriumph(medal: MedalData, response: RecordResponse): boolean {
+function checkTriumph(medal: IMedalData, response: IRecordResponse): boolean {
 	if (isNaN(Number(medal.acquisitionMethod.data.recordId))) {
 		if (response.profileRecords.data.score >= 50000) return true;
 	}
 	else {
 		try {
 			const triumph = response.profileRecords.data.records[medal.acquisitionMethod.data.recordId];
-			if (triumph) { // Profile Record
+			if (triumph) { // Profile IRecord
 				const pTriumphState = new CollectableState(triumph.state);
 				if (!pTriumphState.objectiveNotCompleted) return true;
 			}
-			else { // Character Record
+			else { // Character IRecord
 				for (const characterId in response.characterRecords.data) {
 					if (characterId) {
 						const cTriumph = response.characterRecords.data[characterId].records[medal.acquisitionMethod.data.recordId];
@@ -219,16 +191,19 @@ function checkTriumph(medal: MedalData, response: RecordResponse): boolean {
 			}
 		}
 		catch (e) {
+			console.error(e);
 			return false;
 		}
 	}
 	return false;
 }
-function medalFunction(member: discord.GuildMember, medal: MedalData, databaseClient?: Database, existingRecords?: RecordResponse[]): Promise<boolean> {
+function medalFunction(member: discord.GuildMember, medal: IMedalData, databaseClient?: Database, existingRecords?: IRecordResponse[]): Promise<boolean> {
 	return new Promise(async (resolve, reject) => {
-		const dynamicFunctions: any = {
+		const dynamicFunctions: {
+			[functionName: string]: (args: string[]) => Promise<boolean>
+		} = {
 			test: async (args: string[]) => {
-				return true;
+				return false;
 			},
 			medalMaster: async (args: string[]) => {
 
@@ -280,7 +255,7 @@ function medalFunction(member: discord.GuildMember, medal: MedalData, databaseCl
 
 	});
 }
-function categoriseMedals(): CategorisedMedal {
+function categoriseMedals(): ICategorisedMedal {
 	return Settings.lighthouse.medals.map(v => (
 		{
 			[v.category]: v
@@ -289,65 +264,8 @@ function categoriseMedals(): CategorisedMedal {
 		Object.keys(obj).forEach(k => {
 			newObj[k] = (newObj[k] || []).concat(obj[k]);
 		});
-		return newObj as CategorisedMedal; // Can Remove Categorised Medal Typing and Replace with any if errors occur
+		return newObj as ICategorisedMedal; // Can Remove Categorised Medal Typing and Replace with any if errors occur
 	}, {});
-}
-interface CategorisedMedal {
-	[key: string]: MedalData[];
-}
-interface RecordResponse {
-	profileRecords: {
-		data: {
-			score: number;
-			trackedRecordHash?: number;
-			records: {
-				[recordId: string]: Record
-			}
-		}
-	};
-	characterRecords: {
-		data: {
-			[characterId: string]: {
-				featuredRecordHashes?: number[];
-				records: {
-					[recordId: string]: Record
-				}
-			}
-		}
-	};
-}
-interface Record {
-	state: number;
-	objectives: Array<{
-		objectiveHash: number;
-		progress: number;
-		completionValue: number;
-		complete: boolean;
-		visible: boolean;
-	}>;
-}
-
-class CollectableState {
-	public none: boolean;
-	public recordRedeemed: boolean;
-	public rewardUnavailable: boolean;
-	public objectiveNotCompleted: boolean;
-	public obscured: boolean;
-	public invisible: boolean;
-	public entitlementUnowned: boolean;
-	public canEquipTitle: boolean;
-	constructor(public state: number) {
-		// tslint:disable: no-bitwise
-		this.none = !!(state & 0);
-		this.recordRedeemed = !!(state & 1);
-		this.rewardUnavailable = !!(state & 2);
-		this.objectiveNotCompleted = !!(state & 4);
-		this.obscured = !!(state & 8);
-		this.invisible = !!(state & 16);
-		this.entitlementUnowned = !!(state & 32);
-		this.canEquipTitle = !!(state & 64);
-	}
-
 }
 
 function voiceChannelXp(member: discord.GuildMember | undefined, xpPerTick: number, discordBot: ExtendedClient, timeOut: number = 300000) {
@@ -387,4 +305,99 @@ function handleRoles() {
 
 }
 
-export { calculateExperience, giveExperience, giveMedal, voiceChannelXp, categoriseMedals, disconnectUser, connectUser, checkAllMedals, revokeMedal, MedalData };
+
+class CollectableState {
+	public none: boolean;
+	public recordRedeemed: boolean;
+	public rewardUnavailable: boolean;
+	public objectiveNotCompleted: boolean;
+	public obscured: boolean;
+	public invisible: boolean;
+	public entitlementUnowned: boolean;
+	public canEquipTitle: boolean;
+	constructor(public state: number) {
+		// tslint:disable: no-bitwise
+		this.none = !!(state & 0);
+		this.recordRedeemed = !!(state & 1);
+		this.rewardUnavailable = !!(state & 2);
+		this.objectiveNotCompleted = !!(state & 4);
+		this.obscured = !!(state & 8);
+		this.invisible = !!(state & 16);
+		this.entitlementUnowned = !!(state & 32);
+		this.canEquipTitle = !!(state & 64);
+	}
+
+}
+
+interface IMedalData {
+	name: string;
+	emoji: string;
+	dbData: {
+		column: string,
+		table: string
+	};
+	acquisitionMethod: {
+		function: string,
+		data: any
+	};
+	xp: number;
+	category: string;
+	description: string;
+	limited: boolean;
+	available: boolean;
+}
+
+interface IRankData {
+	name: string;
+	icon: string;
+	emoji: {
+		name: string;
+		id: string;
+		animated: boolean;
+		text: string;
+	};
+}
+
+interface ICategorisedMedal {
+	[key: string]: IMedalData[];
+}
+interface IRecordResponse {
+	profileRecords: {
+		data: {
+			score: number;
+			trackedRecordHash?: number;
+			records: {
+				[recordId: string]: IRecord
+			}
+		}
+	};
+	characterRecords: {
+		data: {
+			[characterId: string]: {
+				featuredRecordHashes?: number[];
+				records: {
+					[recordId: string]: IRecord
+				}
+			}
+		}
+	};
+}
+interface IRecord {
+	state: number;
+	objectives: Array<{
+		objectiveHash: number;
+		progress: number;
+		completionValue: number;
+		complete: boolean;
+		visible: boolean;
+	}>;
+}
+interface IExperienceResponse {
+	difference: number;
+	level: number;
+	levelUps: IRankData[];
+	nextLevelAmount: number;
+	xp: number;
+}
+
+export { calculateExperience, giveExperience, giveMedal, voiceChannelXp, categoriseMedals, disconnectUser, connectUser, checkAllMedals, revokeMedal, IMedalData as MedalData };

@@ -15,10 +15,10 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			let myMedal: exp.MedalData | undefined = Settings.lighthouse.medals.find(medal => medal.name.toLowerCase() === possibleMedal.toLowerCase());
 			if (!myMedal) {
 				const matchMedal = yobboCorrector(possibleMedal.toLowerCase());
-				if (matchMedal[1] > 30) {
+				if (matchMedal.correctness > 30) {
 					const correctionMessage = await message.channel.send(
-						`Did You Mean ${matchMedal[0]}?`
-					) as discord.Message;
+						`Did You Mean ${matchMedal.name}?`
+					);
 					await correctionMessage.react(`✅`);
 					const filter = (reaction: discord.MessageReaction, user: discord.User) =>
 						reaction.emoji.name === `✅` && user.id === message.author!.id;
@@ -30,7 +30,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 					);
 					await correctionMessage.delete();
 					if (collectedReactions.size > 0) {
-						myMedal = Settings.lighthouse.medals.find(x => x.name === matchMedal[0] as string);
+						myMedal = Settings.lighthouse.medals.find(x => x.name === matchMedal.name);
 					}
 				}
 			}
@@ -91,15 +91,18 @@ function yobboCorrector(medalString: string) {
 			}
 		}
 	}
-	let selection = ['', 0];
+	let selection = {
+		name: '',
+		correctness: 0
+	};
 	for (const checkedMedal in medalCheck) {
 		if (!checkedMedal) continue;
 		const percentCheck =
 			(medalCheck[checkedMedal].filter(element => element).length /
 				checkedMedal.length) *
 			100;
-		if (selection[1] < percentCheck) {
-			selection = [checkedMedal, percentCheck];
+		if (selection.correctness < percentCheck) {
+			selection = { name: checkedMedal, correctness: percentCheck };
 		}
 	}
 	return selection;

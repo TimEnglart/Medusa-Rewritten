@@ -18,7 +18,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			const statusMessage = await message.channel.send(`Currently Checking Medals for ${subject.displayName}`);
 			const awardedMedals = await exp.checkAllMedals(subject, discordBot.databaseClient, true);
 			await exp.giveMedal(subject.id, awardedMedals, discordBot.databaseClient);
-			awardedMedals.length ? statusMessage.edit(`Successfully Added Medals for ${subject.displayName}:\n- ${awardedMedals.map(x => x.name).join('\n- ')}`) : statusMessage.edit(`No New Medals Awarded for ${subject.displayName}`);
+			await statusMessage.edit(awardedMedals.length ? `Successfully Added Medals for ${subject.displayName}:\n- ${awardedMedals.map(x => x.name).join('\n- ')}` : `No New Medals Awarded for ${subject.displayName}`);
 			return resolve();
 		} catch (e) {
 			return reject(e);

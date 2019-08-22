@@ -129,7 +129,7 @@ class Utility {
 		if (userId) return message.guild.member(userId); // Was a Mention
 		if (!isNaN(+userData) && isFinite(+userData)) return message.guild.member(userData); // Was a Direct Id
 		userData = this.quotedWords(userData)[0];
-		const nameLookup = message.guild.members.find(member => (member.displayName.toLowerCase() === userData.toLowerCase()) || (member.nickname !== undefined && member.nickname.toLowerCase() === userData.toLowerCase()));
+		const nameLookup = message.guild.members.find(member => (member.displayName !== undefined && member.displayName.toLowerCase() === userData.toLowerCase()) || (member.nickname !== undefined && member.nickname.toLowerCase() === userData.toLowerCase()));
 		if (nameLookup) return nameLookup; // was plain text Name
 		return null;
 	}

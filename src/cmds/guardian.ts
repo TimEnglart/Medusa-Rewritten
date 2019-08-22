@@ -109,9 +109,13 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			// For Loop for medals
 			const categorisedMedals = expHandler.categoriseMedals();
 			for (const [key, value] of Object.entries(categorisedMedals)) {
-				if (key === 'Locked') continue;
 				const firstEntry = value[0];
+				if (key === 'Locked' || !firstEntry) continue;
 				const categoryDB = await discordBot.databaseClient.query(`SELECT * FROM ${firstEntry.dbData.table} WHERE user_id = ${user.id}`);
+				if (!categoryDB.length) {
+					await discordBot.databaseClient.query(`INSERT INTO ${firstEntry.dbData.table} (user_id) VALUES (${user.id})`);
+					continue;
+				}
 				const medals = value.map(x => { if (categoryDB[0][x.dbData.column]) return x.emoji; else { if (!x.limited) return categorisedMedals['Locked'][0].emoji; else return ''; } }).filter(x => x !== '');
 				if (medals.length) guardianEmbed.addField(`${key}`, `${fixEmbed(medals).join(' ')}`, true);
 			}

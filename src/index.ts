@@ -124,8 +124,9 @@ discordBot.on('message', async (message: Message) => {
 			.split(/ +/g);
 
 		// Separate Command And Arguments
-		const command = args.shift()!.toLowerCase();
-
+		let command = args.shift();
+		if (!command) return;
+		command = command.toLowerCase();
 		// Attempt to Run Supplied Command
 		const commandFile = discordBot.commands.get(command);
 		if (commandFile) {
