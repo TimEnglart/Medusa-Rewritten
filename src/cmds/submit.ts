@@ -53,7 +53,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 					const charactersLastNightfall = await requester.request({ path: `/Platform/Destiny2/${destinyProfile.parsedData.profile.data.userInfo.membershipType}/Account/${destinyProfile.parsedData.profile.data.userInfo.membershipId}/Character/${characterId}/Stats/Activities/?mode=46&count=1` });
 					for (const activity of charactersLastNightfall.Response.activities) {
 						const timeCompleted = new Date(activity.period);
-						if (!mostRecentNightfall || (mostRecentNightfall && mostRecentNightfall.completed && mostRecentNightfall.completed > timeCompleted)) {
+						if (!mostRecentNightfall || (mostRecentNightfall && mostRecentNightfall.completed && mostRecentNightfall.completed < timeCompleted)) {
 							mostRecentNightfall = {
 								completed: timeCompleted,
 								nightfallData: activity
@@ -134,7 +134,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				.setAuthor('✅ to Submit | ❌ to Decline Submission');
 			for (const entry of pgcr.Response.entries) {
 				embed.addField(
-					`${entry.player.destinyPlayerInfo.displayName} ${
+					`${entry.player.destinyUserInfo.displayName} ${
 					entry.player.lightLevel
 					}`,
 					`K: **${entry.values.kills.basic.displayValue}** D: **${
@@ -155,9 +155,9 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			if (reactionCollection.size) {
 				const messageReaction = reactionCollection.get('✅');
 				if (messageReaction) { // Accepted
-					const count = (await discordBot.databaseClient.query(`SELECT COUNT(*) FROM SB_Submissions`))[0].COUNT;
+					const count = +(await discordBot.databaseClient.query(`SELECT COUNT(*) as count FROM SB_Submissions`))[0].count;
 					const selectQuery = await discordBot.databaseClient.query(`SELECT * FROM SB_Submissions WHERE pgcr_id = ${activityId}`);
-					if (!selectQuery) {
+					if (!selectQuery.length) {
 						await discordBot.databaseClient.query(`INSERT INTO SB_Submissions (pgcr_id, score, time, date_completed) VALUES (${activityId}, ${pgcr.Response.entries[0].values.teamScore.basic.value}, ${pgcr.Response.entries[0].values.activityDurationSeconds.basic.value}, ${ScoreBook.dateToMySql(new Date(pgcr.Response.period))})`);
 						await message.author.send(
 							Embeds
@@ -165,14 +165,14 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 									'NightFall Successfully Submitted',
 									`Strike: ${
 									entityDef.Response.selectionScreenDisplayProperties.name
-									}\nPlayers: ${pgcr.Response.entries.map(entry => entry.player.destinyPlayerInfo.displayName).join(', ')}\nScore: ${
+									}\nPlayers: ${pgcr.Response.entries.map(entry => entry.player.destinyUserInfo.displayName).join(', ')}\nScore: ${
 									pgcr.Response.entries[0].values.teamScore.basic.value
 									}\nTime: ${
 									pgcr.Response.entries[0].values.activityDurationSeconds.basic.displayValue
 									}`
 								)
 								.setFooter(
-									`${(+count) + 1} Submission(s)`
+									`${count + 1} Submission(s)`
 								)
 						);
 					}

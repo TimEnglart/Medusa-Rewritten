@@ -1,6 +1,7 @@
-import { ExtendedClient, Database, MyRequester } from "..";
+import { ExtendedClient, Database, MyRequester, discord } from "..";
 import { calculateExperience, giveMedal } from "../experienceHandler";
 import { BungieResponse } from '../discordToBungie';
+import { LogFilter } from "../logger";
 class ScoreBook {
 	public static toReadableTime(time: number) {
 		time = Number(time);
@@ -36,9 +37,12 @@ class ScoreBook {
 	}
 
 	public async start(): Promise<void> {
-
-
-		setTimeout(() => this.start(), 600000); // check every 10 mins
+		if (this.minutesToNextReset <= 5) { // is absolute so there is a 10 min window
+			this.discordInstance.logger.logClient.log(`[WORKS???] adding winners to Database`, 0);
+			await this.addWinners();
+			setTimeout(() => this.start(), 1200000); // wait 20mins to avoid re submit
+		}
+		else setTimeout(() => this.start(), 600000); // check every 10 mins
 	}
 	public async totalWinners(): Promise<number> {
 		const allWinners = await this.databaseClient.query(`SELECT COUNT(*) FROM SBWinners`);
@@ -62,6 +66,9 @@ class ScoreBook {
 		utcDate.setUTCHours(17, 0, 0, 0); // UTC Reset is at 5pm
 		utcDate.setDate(utcDate.getDate() - (utcDate.getDay() + 5) % 7); // + Value = 7 - 1 - getDay() Value
 		return utcDate;
+	}
+	get minutesToNextReset(): number {
+		return Math.abs((this.lastReset.getTime() - new Date().getTime()) / (60 * 1000));
 	}
 	public async thisWeekSubmissions(): Promise<ISubmissionResponse[]> {
 		const response = await this.databaseClient.query(`SELECT * FROM SB_Submissions WHERE date_completed >= ${ScoreBook.dateToMySql(this.lastReset)}`);
@@ -102,10 +109,10 @@ class ScoreBook {
 		const winners: IWinner[] = [];
 		for (const entry of activityEntries) {
 			const winnerObj: IWinner = {
-				name: entry.player.destinyPlayerInfo.displayName,
+				name: entry.player.destinyUserInfo.displayName,
 				type
 			};
-			const destinyProfiles = await this.databaseClient.query(`SELECT * FROM U_Destiny_Profile WHERE destiny_id = ${entry.player.destinyPlayerInfo.membershipId}`);
+			const destinyProfiles = await this.databaseClient.query(`SELECT * FROM U_Destiny_Profile WHERE destiny_id = ${entry.player.destinyUserInfo.membershipId}`);
 			if (destinyProfiles.length) {
 				const bungieProfiles = await this.databaseClient.query(`SELECT * FROM U_Bungie_Account WHERE bungie_id = ${destinyProfiles[0].bungie_id}`);
 				if (bungieProfiles.length) {
@@ -135,6 +142,16 @@ class ScoreBook {
 		// Update Winner Table
 		await this.databaseClient.query(`INSERT INTO SB_Winners (week, type, pgcr_id, season) VALUES (${await this.currentWeek()}, ${'SPEED'}, ${winners.speedBreakers.activity.Response.activityDetails.instanceId}, ${this.currentSeason}); ` +
 			`INSERT INTO SB_Winners (week, type, pgcr_id, season) VALUES (${await this.currentWeek()}, ${'POINT'}, ${winners.pointBreakers.activity.Response.activityDetails.instanceId}, ${this.currentSeason});`);
+
+		const guild = this.discordInstance.guilds.get(this.discordInstance.settings.lighthouse.discordId);
+		if (!guild) return;
+		const channel = guild.channels.get(this.discordInstance.settings.lighthouse.scorebook.channelId) as discord.TextChannel;
+		if (!channel) return;
+		// channel.send();
+	}
+	private async generateHistoryEmbed() {
+		const allSpeedBreakers = await this.databaseClient.query(`SELECT * FROM U_SB_Statistics WHERE speedbreaker_wins IS NOT NULL AND speedbreaker_wins > 0 ORDER BY speedbreaker_wins DESC`);
+		const allPointBreakers = await this.databaseClient.query(`SELECT * FROM U_SB_Statistics WHERE pointbreaker_wins IS NOT NULL AND pointbreaker_wins > 0 ORDER BY pointbreaker_wins DESC`);
 	}
 }
 export interface IPostGameCarnageReport {
@@ -176,7 +193,7 @@ interface IActivityEntry {
 
 }
 interface IActivityPlayer {
-	destinyPlayerInfo: {
+	destinyUserInfo: {
 		iconPath: string;
 		membershipType: number;
 		membershipId: number;

@@ -9,7 +9,7 @@ export class Logger {
 		this.rateLimiter = new RateLimiter({
 			operations: 1,
 			returnTokenOnCompletion: true,
-			rate: 300
+			rate: 400
 		});
 		if (!fs.existsSync(logFileLocation)) {
 			fs.mkdirSync(logFileLocation);

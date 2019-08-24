@@ -20,6 +20,7 @@ import * as fs from 'fs';
 import { CommandFile, Database, ExtendedClient, LogFilter, Logger, Settings, Embeds } from './ext/';
 import * as exp from './ext/experienceHandler';
 import { WebServer } from './ext/web-server';
+import { ScoreBook } from './ext/score-book';
 
 
 const discordBot: ExtendedClient = new Client({
@@ -427,7 +428,9 @@ discordBot.on('ready', async () => {
 	discordBot.logger.logClient.log(`Deleted All Empty Temp Channels`, LogFilter.Debug);
 	if (!discordBot.settings.debug) {
 		randomPresence(); // Cycles Through Set Presences (in 'discordBot.activites')
-		// yeet automatedScorePoint(); // Starts The Automated Score Book Process
+		discordBot.scoreBook = new ScoreBook(discordBot);
+		// tslint:disable-next-line: no-floating-promises
+		discordBot.scoreBook.start(); // Starts The Automated Score Book Process
 	} else {
 		discordBot.logger.logClient.log('DEBUG MODE ENABLED');
 	}

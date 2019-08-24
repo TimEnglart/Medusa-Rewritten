@@ -6,6 +6,7 @@ import { Utility } from './utility';
 import { MyRequester } from './webClient';
 import * as express from 'express';
 import { WebServer } from './web-server/index.js';
+import { ScoreBook } from './score-book/index.js';
 type CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => Promise<void>;
 
 interface CommandHelp {
@@ -38,6 +39,7 @@ interface ExtendedClient extends discord.Client {
 	};
 	databaseClient: Database;
 	webServer: WebServer;
+	scoreBook: ScoreBook;
 }
 class Embeds {
 	public static permissionEmbed(permissionTitle: string, permissionDescription: string, overrideOptions?: discord.MessageEmbedOptions): discord.MessageEmbed {
