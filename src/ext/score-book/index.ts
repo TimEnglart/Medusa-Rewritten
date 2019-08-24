@@ -8,9 +8,9 @@ class ScoreBook {
 		const seconds = time - minutes * 60;
 		return `${minutes}m ${seconds}s`;
 	}
-
-
-
+	public static dateToMySql(date: Date): string {
+		return `FROM_UNIXTIME(${(date.getTime() / 1000).toFixed(0)})`;
+	}
 	private epoch?: Date;
 	private discordInstance: ExtendedClient;
 	private databaseClient: Database;
@@ -22,7 +22,7 @@ class ScoreBook {
 		this.requester = new MyRequester({
 			hostname: 'www.bungie.net',
 			port: 443,
-			path: `/Destiny2/Stats/PostGameCarnageReport/{activityId}/`,
+			path: `/Platform/Destiny2/Stats/PostGameCarnageReport/{activityId}/`,
 			method: 'GET',
 			headers: {
 				'X-API-Key': this.discordInstance.settings.bungie.apikey
@@ -63,34 +63,13 @@ class ScoreBook {
 		utcDate.setDate(utcDate.getDate() - (utcDate.getDay() + 5) % 7); // + Value = 7 - 1 - getDay() Value
 		return utcDate;
 	}
-	public dateToMySql(date: Date): string {
-		return `FROM_UNIXTIME(${(date.getTime() / 1000).toFixed(0)})`;
-	}
 	public async thisWeekSubmissions(): Promise<ISubmissionResponse[]> {
-		const response = await this.databaseClient.query(`SELECT * FROM SB_Submissions WHERE date_completed >= ${this.dateToMySql(this.lastReset)}`);
+		const response = await this.databaseClient.query(`SELECT * FROM SB_Submissions WHERE date_completed >= ${ScoreBook.dateToMySql(this.lastReset)}`);
 		return response;
 	}
 	public async getPostGameCarnageReport(activityId: number | string): Promise<BungieResponse<IPostGameCarnageReport>> {
-		const bungieData = await this.requester.request({ path: `/Destiny2/Stats/PostGameCarnageReport/${activityId}/` });
+		const bungieData = await this.requester.request({ path: `/Platform/Destiny2/Stats/PostGameCarnageReport/${activityId}/` });
 		return bungieData;
-	}
-	public async resolveWeekWinners(type: 'SPEED' | 'POINT', activityEntries: IActivityEntry[]) {
-		const winners: IWinner[] = [];
-		for (const entry of activityEntries) {
-			const winnerObj: IWinner = {
-				name: entry.player.destinyPlayerInfo.displayName,
-				type
-			};
-			const destinyProfiles = await this.databaseClient.query(`SELECT * FROM U_Destiny_Profile WHERE destiny_id = ${entry.player.destinyPlayerInfo.membershipId}`);
-			if (destinyProfiles.length) {
-				const bungieProfiles = await this.databaseClient.query(`SELECT * FROM U_Bungie_Account WHERE bungie_id = ${destinyProfiles[0].bungie_id}`);
-				if (bungieProfiles.length) {
-					winnerObj.userId = bungieProfiles[0].user_id;
-				}
-			}
-			winners.push(winnerObj);
-		}
-		return winners;
 	}
 	public async getWeekWinners()/*: Promise<void>*/ {
 		// SPEED VS POINT
@@ -119,7 +98,25 @@ class ScoreBook {
 			}
 		};
 	}
-	public async addWinners() {
+	private async resolveWeekWinners(type: 'SPEED' | 'POINT', activityEntries: IActivityEntry[]) {
+		const winners: IWinner[] = [];
+		for (const entry of activityEntries) {
+			const winnerObj: IWinner = {
+				name: entry.player.destinyPlayerInfo.displayName,
+				type
+			};
+			const destinyProfiles = await this.databaseClient.query(`SELECT * FROM U_Destiny_Profile WHERE destiny_id = ${entry.player.destinyPlayerInfo.membershipId}`);
+			if (destinyProfiles.length) {
+				const bungieProfiles = await this.databaseClient.query(`SELECT * FROM U_Bungie_Account WHERE bungie_id = ${destinyProfiles[0].bungie_id}`);
+				if (bungieProfiles.length) {
+					winnerObj.userId = bungieProfiles[0].user_id;
+				}
+			}
+			winners.push(winnerObj);
+		}
+		return winners;
+	}
+	private async addWinners() {
 		const winners = await this.getWeekWinners();
 		if (!winners) return;
 		for (const winner of winners.pointBreakers.players) {
@@ -140,14 +137,14 @@ class ScoreBook {
 			`INSERT INTO SB_Winners (week, type, pgcr_id, season) VALUES (${await this.currentWeek()}, ${'POINT'}, ${winners.pointBreakers.activity.Response.activityDetails.instanceId}, ${this.currentSeason});`);
 	}
 }
-interface IPostGameCarnageReport {
+export interface IPostGameCarnageReport {
 	period: string;
 	startingPhaseIndex: number;
 	activityDetails: IActivityDetails;
 	entries: IActivityEntry[];
 	teams: IActivityTeam[];
 }
-interface IActivityDetails {
+export interface IActivityDetails {
 	referenceId: number;
 	directorActivityHash: number;
 	instanceId: string;
@@ -168,7 +165,14 @@ interface IActivityEntry {
 	};
 	player: IActivityPlayer;
 	characterId: string;
-	values: any;
+	values: {
+		[key: string]: {
+			basic: {
+				value: number;
+				displayValue: string;
+			}
+		}
+	};
 
 }
 interface IActivityPlayer {

@@ -69,6 +69,7 @@ class MyRequester {
 	public cookies: Map<string, Cookie[]>;
 	constructor(public options: ExtendedRequestOptions) {
 		this.cookies = new Map<string, Cookie[]>();
+		// options.protocol = 'https:';
 	}
 	public request(options?: ExtendedRequestOptions, postData = null): Promise<any | Error> {
 		if (!this.options && !options) throw new Error('No Options');
@@ -84,7 +85,7 @@ class MyRequester {
 						case '3':
 							if (!res.headers.location || overrideOptions.doNotFollowRedirect) return reject(new Error(`Bad Http Redirect Made:\nStatus Code: ${res.statusCode}\nHostname: ${overrideOptions.hostname}\nPath: ${overrideOptions.path}`));
 							const redirectUrl = new URL(res.headers.location);
-							return resolve(this.request({ hostname: redirectUrl.hostname, path: redirectUrl.pathname, protocol: redirectUrl.protocol, port: redirectUrl.port || (redirectUrl.protocol === 'https:' ? 443 : 80) }));
+							return resolve(this.request({ hostname: redirectUrl.hostname, path: redirectUrl.pathname /*, protocol: redirectUrl.protocol , port: redirectUrl.port || (redirectUrl.protocol === 'https:' ? 443 : 80)*/ }));
 						default:
 							return reject(new Error(`Bad Http Request Made:\nStatus Code: ${res.statusCode}\nHostname: ${overrideOptions.hostname}\nPath: ${overrideOptions.path}`));
 					}

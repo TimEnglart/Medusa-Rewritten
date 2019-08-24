@@ -32,13 +32,12 @@ export class Logger {
 			message,
 			time: new Date(),
 			type: filter,
-		} as LogMessage);
+		});
 
 		if (!formattedMessage) {
 			return;
 		}
-		// tslint:disable-next-line: no-floating-promises
-		this.rateLimiter.addP(async () => {
+		this.rateLimiter.add(async () => {
 			await this.startLog(formattedMessage);
 		});
 	}
@@ -69,7 +68,7 @@ export class Logger {
 			}).on('end', () => {
 				let newLogFileContent = logFileContent.join('');
 				if (this.json) {
-					const obj = JSON.parse(newLogFileContent) as LogFile;
+					const obj: ILogFile = JSON.parse(newLogFileContent);
 					obj.logs.push(formattedMessage);
 					newLogFileContent = JSON.stringify(obj);
 				}
@@ -83,7 +82,7 @@ export class Logger {
 					});
 			});
 	}
-	private formatMessage(message: LogMessage): IFormattedLogMessage | undefined {
+	private formatMessage(message: ILogMessage): IFormattedLogMessage | undefined {
 		if (message.message) {
 			return {
 				type: LogFilter[message.type],
@@ -99,12 +98,12 @@ export enum LogFilter {
 	Debug,
 	Error,
 }
-interface LogMessage {
+interface ILogMessage {
 	type: LogFilter;
 	message: string;
 	time: Date;
 }
-interface LogFile {
+interface ILogFile {
 	logs: IFormattedLogMessage[];
 }
 interface IFormattedLogMessage {

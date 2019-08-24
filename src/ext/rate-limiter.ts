@@ -38,7 +38,6 @@ class RateLimiter {
 		const rateLimitedCall: IProcessingRateLimiterObject = {
 			callback,
 			function: fn,
-			seed: Math.random().toString().slice(2, 11),
 			timeAdded: Date.now(),
 			//promise: new Promise(async (resolve: (fn: void) => void | Promise<void>) => {
 			//	return resolve(await fn());
@@ -53,7 +52,10 @@ class RateLimiter {
 	public addP(fn: () => void): Promise<ICompletedRateLimiterObject> {
 		return new Promise((resolve, reject) => {
 			this.add(fn, (response: ICompletedRateLimiterObject, err?: Error) => {
-				if (err) reject(err);
+				if (err) {
+					this._stdErr(err);
+					return reject(err);
+				}
 				return resolve(response);
 			});
 		});
@@ -67,7 +69,7 @@ class RateLimiter {
 		else this._resetting = false;
 	}
 
-	private async run(bypass: boolean = false) {
+	private async run(bypass?: boolean) {
 		if (!this._resetting && (!this._nonConcurrent || !this._returnTokenOnCompletion)) this.resetOperations();
 		if (this._running && !bypass) return;
 		this._running = true;
@@ -77,16 +79,10 @@ class RateLimiter {
 				this._tokens--;
 				const request = this._queue.dequeue();
 				if (!request) return;
-				// request.function();
-				// tslint:disable-next-line: no-floating-promises
 				await this.handleCallback(request);
-				//});
 			}
 			else {
 				this._limiting = true;
-				await new Promise(resolve => {
-					setTimeout(() => resolve(), this.rate);
-				});
 			}
 		}
 		if (this._debugOutput) this._stdOut(`Exiting LOOP --- TOKENS: ${this._tokens} --- QueuePop: ${this._queue.populated}`);
@@ -95,25 +91,27 @@ class RateLimiter {
 		this._running = false;
 	}
 	private async handleCallback(request: IProcessingRateLimiterObject) {
-		if (request.callback) {
-			await request.function();
-			//request.promise.then(async r => {
-			if (this._returnTokenOnCompletion) {
-				await new Promise(resolve => {
-					setTimeout(() => resolve(), this.rate);
-				});
-				this._tokens++;
-			}
-			if (request.callback) {
-				request.callback(Object.assign(request, {
-					timeCompleted: Date.now()
-				}) as ICompletedRateLimiterObject);
-			}
-			return;
+		let error: Error | undefined;
+		let returnValue: any | undefined;
+		try {
+			returnValue = request.callback ? await request.function() : request.function();
 		}
-		else {
-			request.function();
-			return;
+		catch (e) {
+			this._stdErr(e);
+			error = e;
+		}
+		if (request.callback) {
+			//request.promise.then(async r => {
+			request.callback(Object.assign(request, {
+				timeCompleted: Date.now(),
+				returnValue
+			}), error);
+		}
+		if (this._returnTokenOnCompletion) { // give it a bit of time to catch up
+			await new Promise(resolve => {
+				setTimeout(() => resolve(), this.rate);
+			});
+			this._tokens++;
 		}
 
 	}
@@ -145,13 +143,11 @@ class RateLimiter {
 }
 
 interface IRateLimiterObject {
-	seed: string;
 	timeAdded: number;
 	function: () => void;
 	callback?: (response: ICompletedRateLimiterObject, err?: Error) => void;
 }
 interface IProcessingRateLimiterObject {
-	seed: string;
 	timeAdded: number;
 	function: () => void | Promise<void>;
 	promise?: Promise<void>;
@@ -162,6 +158,7 @@ interface ICompletedRateLimiterObject {
 	timeAdded: number;
 	function: () => void;
 	callback?: (response: ICompletedRateLimiterObject, err?: Error) => void;
+	returnValue?: any;
 }
 
 interface IRateLimiterOptions {
