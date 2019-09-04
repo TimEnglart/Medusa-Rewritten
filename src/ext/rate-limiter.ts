@@ -21,7 +21,7 @@ class RateLimiter {
 		this._rate = options.rate || 1000;
 		this._delay = options.delay || 4000;
 		this._nonConcurrent = this._operations === 1;
-		this._returnTokenOnCompletion = options.returnTokenOnCompletion || false;
+		this._returnTokenOnCompletion = options.returnTokenOnCompletion && this.operations === 1 || false;
 		this._debugOutput = options.debugOutput || false;
 
 		// tslint:disable-next-line: no-console

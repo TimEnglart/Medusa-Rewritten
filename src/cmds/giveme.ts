@@ -13,7 +13,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			if (!discordBot.user) return reject(new Error('No Bot User')); 	// If Bot Instance is Needed
 
 			let subject = message.member;
-			if (args.length) subject = Utility.LookupMember(message, args.join(' ')) || message.member;
+			if (args.length) subject = Utility.LookupMember(message.guild, args.join(' ')) || message.member;
 
 			const statusMessage = await message.channel.send(`Currently Checking Medals for ${subject.displayName}`);
 			const awardedMedals = await exp.checkAllMedals(subject, discordBot.databaseClient, true);

@@ -123,22 +123,24 @@ class Utility {
 		if (typePref) throw new Error('Unable to Find User or Member');
 		return message.author || message.member || null;
 	}
-	public static LookupMember(message: discord.Message, userData: string): discord.GuildMember | null {
-		if (!message.guild) throw new Error('Message Not Sent From Guild');
+	public static LookupMember(guild: discord.Guild | null, userData: string, destinyInGameName?: boolean): discord.GuildMember | null {
+		if (!guild) throw new Error('Message Not Sent From Guild');
 		const userId = this.parseUserMentionToId(userData);
-		if (userId) return message.guild.member(userId); // Was a Mention
-		if (!isNaN(+userData) && isFinite(+userData)) return message.guild.member(userData); // Was a Direct Id
+		if (userId) return guild.member(userId); // Was a Mention
+		if (!isNaN(+userData) && isFinite(+userData)) return guild.member(userData); // Was a Direct Id
 		userData = this.quotedWords(userData)[0];
-		const nameLookup = message.guild.members.find(member => (member.displayName !== undefined && member.displayName.toLowerCase() === userData.toLowerCase()) || (member.nickname !== undefined && member.nickname.toLowerCase() === userData.toLowerCase()));
+		let nameLookup;
+		if (destinyInGameName) nameLookup = guild.members.find(member => (!!member.displayName && member.displayName.split('#')[0].toLowerCase() === userData.toLowerCase()) || (!!member.nickname && member.nickname.split('#')[0].toLowerCase() === userData.toLowerCase()));
+		else nameLookup = guild.members.find(member => (!!member.displayName && member.displayName.toLowerCase() === userData.toLowerCase()) || (!!member.nickname && member.nickname.toLowerCase() === userData.toLowerCase()));
 		if (nameLookup) return nameLookup; // was plain text Name
 		return null;
 	}
-	public static LookupRole(message: discord.Message, roleData: string): discord.Role | null {
-		if (!message.guild) throw new Error('Message Not Sent From Guild');
+	public static LookupRole(guild: discord.Guild, roleData: string): discord.Role | null {
+		if (!guild) throw new Error('Message Not Sent From Guild');
 		const userId = this.parseRoleMentionToId(roleData);
-		if (userId) return message.guild.roles.get(roleData) || null; // Was a Mention
-		if (!isNaN(+roleData) && isFinite(+roleData)) return message.guild.roles.get(roleData) || null; // Was a Direct Id
-		const roleLookup = message.guild.roles.find(role => role.name.toLowerCase() === roleData.toLowerCase());
+		if (userId) return guild.roles.get(roleData) || null; // Was a Mention
+		if (!isNaN(+roleData) && isFinite(+roleData)) return guild.roles.get(roleData) || null; // Was a Direct Id
+		const roleLookup = guild.roles.find(role => role.name.toLowerCase() === roleData.toLowerCase());
 		if (roleLookup) return roleLookup; // was plain text Name
 		return null;
 	}

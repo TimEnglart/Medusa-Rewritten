@@ -42,28 +42,38 @@ function giveExperience(userId: string | null, xp: number | null, databaseClient
 }
 function giveMedal(userId: string | null, medals: IMedalData[], databaseClient: Database): Promise<void> {
 	return new Promise(async (resolve, reject) => {
-		if (!userId) return reject('No User Provided');
-		for (const medal of medals) {
-			const response = await databaseClient.query(`SELECT ${medal.dbData.column} FROM ${medal.dbData.table} WHERE user_id = ${userId}`);
-			if (!response.length) await databaseClient.query(`INSERT INTO ${medal.dbData.table}(${medal.dbData.column}) VALUES(${true}) WHERE user_id = ${userId}`);
-			else if (response[0][medal.dbData.column]) continue;
-			await databaseClient.query(`UPDATE ${medal.dbData.table} SET ${medal.dbData.column} = ${true} WHERE user_id = ${userId}`);
-			await giveExperience(userId, medal.xp, databaseClient);
+		try {
+			if (!userId) return reject('No User Provided');
+			for (const medal of medals) {
+				const response = await databaseClient.query(`SELECT ${medal.dbData.column} FROM ${medal.dbData.table} WHERE user_id = ${userId}`);
+				if (!response.length) await databaseClient.query(`INSERT INTO ${medal.dbData.table}(${medal.dbData.column}) VALUES(${true}) WHERE user_id = ${userId}`);
+				else if (response[0][medal.dbData.column]) continue;
+				await databaseClient.query(`UPDATE ${medal.dbData.table} SET ${medal.dbData.column} = ${true} WHERE user_id = ${userId}`);
+				await giveExperience(userId, medal.xp, databaseClient);
+			}
+			return resolve();
 		}
-		return resolve();
+		catch (e) {
+			reject(e);
+		}
 	});
 }
 function revokeMedal(userId: string | null, medals: IMedalData[], databaseClient: Database): Promise<void> {
 	return new Promise(async (resolve: () => void, reject) => {
-		if (!userId) return reject('No User Provided');
-		for (const medal of medals) {
-			const response = await databaseClient.query(`SELECT ${medal.dbData.column} FROM ${medal.dbData.table} WHERE user_id = ${userId}`);
-			if (!response.length) await databaseClient.query(`INSERT INTO ${medal.dbData.table}(${medal.dbData.column}) VALUES(${false}) WHERE user_id = ${userId}`);
-			else if (!response[0][medal.dbData.column]) continue;
-			await databaseClient.query(`UPDATE ${medal.dbData.table} SET ${medal.dbData.column} = ${false} WHERE user_id = ${userId}`);
-			await giveExperience(userId, -medal.xp, databaseClient);
+		try {
+			if (!userId) return reject('No User Provided');
+			for (const medal of medals) {
+				const response = await databaseClient.query(`SELECT ${medal.dbData.column} FROM ${medal.dbData.table} WHERE user_id = ${userId}`);
+				if (!response.length) await databaseClient.query(`INSERT INTO ${medal.dbData.table}(${medal.dbData.column}) VALUES(${false}) WHERE user_id = ${userId}`);
+				else if (!response[0][medal.dbData.column]) continue;
+				await databaseClient.query(`UPDATE ${medal.dbData.table} SET ${medal.dbData.column} = ${false} WHERE user_id = ${userId}`);
+				await giveExperience(userId, -medal.xp, databaseClient);
+			}
+			return resolve();
 		}
-		return resolve();
+		catch (e) {
+			reject(e);
+		}
 	});
 }
 
@@ -90,15 +100,20 @@ function calculateExperience(xp: number, currLevel: number): IExperienceResponse
 
 function checkAllMedals(member: discord.GuildMember | null, databaseClient: Database, getRecords: boolean): Promise<IMedalData[]> {
 	return new Promise(async (resolve, reject) => {
-		if (!member) return reject('No User Supplied');
-		const records = getRecords ? await getUserRecords(member, databaseClient) : undefined;
-		const unlockedMedals: IMedalData[] = [];
-		for (const medalKey in Settings.lighthouse.medals) {
-			if (!medalKey) continue;
-			const medal: IMedalData = (Settings.lighthouse.medals as any)[medalKey];
-			if (medal.available && await checkMedal(member, medal, databaseClient, records)) unlockedMedals.push(medal);
+		try {
+			if (!member) return reject('No User Supplied');
+			const records = getRecords ? await getUserRecords(member, databaseClient) : undefined;
+			const unlockedMedals: IMedalData[] = [];
+			for (const medalKey in Settings.lighthouse.medals) {
+				if (!medalKey) continue;
+				const medal: IMedalData = (Settings.lighthouse.medals as any)[medalKey];
+				if (medal.available && await checkMedal(member, medal, databaseClient, records)) unlockedMedals.push(medal);
+			}
+			return resolve(unlockedMedals);
 		}
-		return resolve(unlockedMedals);
+		catch (e) {
+			reject(e);
+		}
 	});
 }
 function checkMedal(member: discord.GuildMember, medal: IMedalData, databaseClient?: Database, records?: IRecordResponse[]): Promise<boolean> {

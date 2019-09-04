@@ -6,7 +6,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 	return new Promise(async (resolve: () => void, reject: (err: Error) => void) => {
 		try {
 			args = Utility.quotedWords(args.join(' '));
-			const user: discord.GuildMember | null = Utility.LookupMember(message, args[0]);
+			const user: discord.GuildMember | null = Utility.LookupMember(message.guild, args[0]);
 			if (!user) {
 				await message.channel.send(Embeds.errorEmbed('Error Locating User', `I was unable to find the user ${args[0]} in the Server`));
 				return resolve();

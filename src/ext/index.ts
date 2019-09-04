@@ -21,7 +21,12 @@ interface CommandHelp {
 		example: string
 	}>;
 }
-
+class CommandError {
+	public error: Error;
+	constructor(reason: string) {
+		this.error = new Error(reason);
+	}
+}
 interface CommandFile {
 	run: CommandRun;
 	help: CommandHelp;
@@ -41,6 +46,7 @@ interface ExtendedClient extends discord.Client {
 	webServer: WebServer;
 	scoreBook: ScoreBook;
 }
+// tslint:disable-next-line: max-classes-per-file
 class Embeds {
 	public static permissionEmbed(permissionTitle: string, permissionDescription: string, overrideOptions?: discord.MessageEmbedOptions): discord.MessageEmbed {
 		const basicEmbed: discord.MessageEmbedOptions = {
@@ -140,4 +146,4 @@ class Embeds {
 }
 
 
-export { discord, Logger, LogFilter, Database, SqlQuery, Settings, ExtendedClient, CommandFile, CommandHelp, CommandRun, Utility, MyRequester, Embeds };
+export { discord, Logger, LogFilter, Database, SqlQuery, Settings, ExtendedClient, CommandFile, CommandHelp, CommandRun, Utility, MyRequester, Embeds, CommandError };

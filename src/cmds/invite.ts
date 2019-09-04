@@ -9,9 +9,9 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 		try {
 			let selectUser: discord.GuildMember | null = null;
 			if (args[0]) {
-				selectUser = Utility.LookupMember(message, args[0]);
+				selectUser = Utility.LookupMember(message.guild, args[0]);
 				if (!selectUser) {
-					selectUser = Utility.LookupMember(message, Utility.quotedWords(args.join(' ')).join(' '));
+					selectUser = Utility.LookupMember(message.guild, Utility.quotedWords(args.join(' ')).join(' '));
 				}
 			}
 			if (!selectUser) {

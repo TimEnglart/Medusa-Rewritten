@@ -153,6 +153,9 @@ class ScoreBook {
 		const allSpeedBreakers = await this.databaseClient.query(`SELECT * FROM U_SB_Statistics WHERE speedbreaker_wins IS NOT NULL AND speedbreaker_wins > 0 ORDER BY speedbreaker_wins DESC`);
 		const allPointBreakers = await this.databaseClient.query(`SELECT * FROM U_SB_Statistics WHERE pointbreaker_wins IS NOT NULL AND pointbreaker_wins > 0 ORDER BY pointbreaker_wins DESC`);
 	}
+	private async generateWinnersEmbed() {
+
+	}
 }
 export interface IPostGameCarnageReport {
 	period: string;

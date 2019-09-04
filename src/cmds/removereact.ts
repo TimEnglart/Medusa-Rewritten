@@ -16,7 +16,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			const messageId = args[0];
 			const roleResolvable = args[1];
 
-			const role = Utility.LookupRole(message, roleResolvable);
+			const role = Utility.LookupRole(message.guild, roleResolvable);
 
 			if (!role) {
 				await message.channel.send(Embeds.errorEmbed('No Role Found', 'Couldn\'t Find That Role in The Lighthouse'));

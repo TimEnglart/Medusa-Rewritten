@@ -1,4 +1,4 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Settings, Embeds, Utility } from '../ext/index';
+import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Settings, Embeds, Utility, LogFilter } from '../ext/index';
 import * as expHandler from '../ext/experienceHandler';
 import * as destiny from '../ext/discordToBungie';
 
@@ -55,7 +55,8 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				}
 				return resolve();
 			} else if (args[0]) {
-				user = Utility.LookupMember(message, args.join(' '));
+				discordBot.logger.logClient.log(`Guradian Command: Looking uP Member: ${args.join(' ')}`, LogFilter.Debug)
+				user = Utility.LookupMember(message.guild, args.join(' '));
 			} else {
 				user = message.member;
 			}
