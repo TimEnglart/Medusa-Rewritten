@@ -19,6 +19,25 @@ export class Logger {
 		this.log('Logging Process Started', LogFilter.Debug);
 		return this;
 	}
+	public static async log(message: string, filter: LogFilter = LogFilter.Info) {
+		// Always Log Just Check if you Want to Print
+		if (filter === LogFilter.Info) {
+			writeLine(/*`[${LogFilter[filter]}] ${message}`*/ message);
+		}
+		const formattedMessage = Logger.formatMessage({
+			message,
+			time: new Date(),
+			type: filter,
+		});
+
+		if (!formattedMessage) {
+			return;
+		}
+		//this.rateLimiter.add(async () => {
+		//	await this.startLog(formattedMessage);
+		//});
+
+	}
 	public async log(message: string, filter: LogFilter = LogFilter.Info): Promise<void> {
 		// New Message
 		if (this.filters && !this.filters.includes(filter)) {
@@ -28,7 +47,7 @@ export class Logger {
 		if (filter === LogFilter.Info) {
 			writeLine(/*`[${LogFilter[filter]}] ${message}`*/ message);
 		}
-		const formattedMessage = this.formatMessage({
+		const formattedMessage = Logger.formatMessage({
 			message,
 			time: new Date(),
 			type: filter,
@@ -82,7 +101,7 @@ export class Logger {
 					});
 			});
 	}
-	private formatMessage(message: ILogMessage): IFormattedLogMessage | undefined {
+	private static formatMessage(message: ILogMessage): IFormattedLogMessage | undefined {
 		if (message.message) {
 			return {
 				type: LogFilter[message.type],

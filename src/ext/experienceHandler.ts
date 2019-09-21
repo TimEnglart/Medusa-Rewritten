@@ -54,6 +54,7 @@ function giveMedal(userId: string | null, medals: IMedalData[], databaseClient: 
 			return resolve();
 		}
 		catch (e) {
+			console.log(e);
 			reject(e);
 		}
 	});
@@ -72,6 +73,7 @@ function revokeMedal(userId: string | null, medals: IMedalData[], databaseClient
 			return resolve();
 		}
 		catch (e) {
+			console.log(e);
 			reject(e);
 		}
 	});
@@ -107,11 +109,13 @@ function checkAllMedals(member: discord.GuildMember | null, databaseClient: Data
 			for (const medalKey in Settings.lighthouse.medals) {
 				if (!medalKey) continue;
 				const medal: IMedalData = (Settings.lighthouse.medals as any)[medalKey];
-				if (medal.available && await checkMedal(member, medal, databaseClient, records)) unlockedMedals.push(medal);
+				if (medal.available && await checkMedal(member, medal, databaseClient, records)) { console.log(`SUCCESS TO UNLOCK: Medal - ${medal.name}`); unlockedMedals.push(medal);}
+				else console.log(`FAILED TO UNLOCK: Medal - ${medal.name}`);
 			}
 			return resolve(unlockedMedals);
 		}
 		catch (e) {
+			console.log(e);
 			reject(e);
 		}
 	});
@@ -143,12 +147,16 @@ function checkMedal(member: discord.GuildMember, medal: IMedalData, databaseClie
 			return resolve(false);
 		}
 		catch (e) {
+			console.log(e);
 			return resolve(false);
 		}
 	});
 }
 function medalRoles(member: discord.GuildMember, medal: IMedalData): boolean {
-	if (medal.acquisitionMethod.data.roleId && member.roles.get(medal.acquisitionMethod.data.roleId)) return true; // Using Id
+	if(medal.acquisitionMethod.data.roleIds)
+		for(const roleId of medal.acquisitionMethod.data.roleIds) {
+			if (member.roles.get(roleId)) return true; // Using Id
+		}
 	if (medal.acquisitionMethod.data.roleName && member.roles.find(role => role.name.toLowerCase() === medal.acquisitionMethod.data.roleName)) return true; // Using Name. Probs Better
 	return false;
 }
@@ -173,14 +181,16 @@ function getUserRecords(member: discord.GuildMember, databaseClient: Database, f
 			if (!destinyAccounts.length) reject('User Has No Destiny Profiles [Xbox, Playstation, PC]');
 			for (const dProfile of destinyAccounts) {
 				const pRecords: BungieResponse<IRecordResponse> = await requester.request({ path: `/Platform/Destiny2/${dProfile.membership_id}/Profile/${dProfile.destiny_id}/?components=900` });
-
+				console.log(`Response: ${JSON.stringify(pRecords)}`);
 				if (pRecords) records.push(pRecords.Response);
 			}
 		}
 		catch (e) {
+			console.log(e);
 			if (fails > 2) return reject('Failed to Get API Data:\n' + e);
 			return resolve(await getUserRecords(member, databaseClient, ++fails));
 		}
+		console.log(`Record Count: ${records.length}`);
 		return resolve(records);
 	});
 }
@@ -193,6 +203,7 @@ function checkTriumph(medal: IMedalData, response: IRecordResponse): boolean {
 			const triumph = response.profileRecords.data.records[medal.acquisitionMethod.data.recordId];
 			if (triumph) { // Profile IRecord
 				const pTriumphState = new CollectableState(triumph.state);
+				console.log(JSON.stringify(pTriumphState));
 				if (!pTriumphState.objectiveNotCompleted) return true;
 			}
 			else { // Character IRecord
@@ -200,6 +211,7 @@ function checkTriumph(medal: IMedalData, response: IRecordResponse): boolean {
 					if (characterId) {
 						const cTriumph = response.characterRecords.data[characterId].records[medal.acquisitionMethod.data.recordId];
 						const cTriumphState = new CollectableState(cTriumph.state);
+						console.log(JSON.stringify(cTriumphState));
 						if (!cTriumphState.objectiveNotCompleted) return true;
 					}
 				}
@@ -230,11 +242,16 @@ function medalFunction(member: discord.GuildMember, medal: IMedalData, databaseC
 					for (const record of records) {
 						for (const arg of args) {
 							const falseMedal = medal;
-							falseMedal.acquisitionMethod.data = {
-								recordId: arg
+							falseMedal.acquisitionMethod = {
+								function: 'TRIUMPH',
+								data: {
+									recordId: arg
+								}
 							};
+							console.log("False Medal: " + JSON.stringify(falseMedal));
 							if (checkTriumph(falseMedal, record)) return true;
 						}
+						console.log("ARGS: " + JSON.stringify(args));
 					}
 				}
 				return false;
@@ -259,6 +276,7 @@ function medalFunction(member: discord.GuildMember, medal: IMedalData, databaseC
 			// Get User Bungie/Destiny Data
 			const args: string[] = medal.acquisitionMethod.data.args;
 			// GOT USER DATA
+			console.log(`In Medal Functions: Function Name: ${medal.acquisitionMethod.data.functionName}`);
 			if (!medal.acquisitionMethod.data.functionName) return resolve(false);
 			return resolve(await dynamicFunctions[medal.acquisitionMethod.data.functionName](args));
 		}

