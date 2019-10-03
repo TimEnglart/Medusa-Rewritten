@@ -17,6 +17,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				return array;
 			};
 			if (!message.member) return reject(new Error('No Member'));
+			if (!message.author) return reject(new Error('No Author'));
 			if (!message.guild) {
 				await message.reply('CAN ONLY BE USED IN LIGHTHOUSE DISCORD AT THIS MOMENT');
 				return resolve();
@@ -64,7 +65,10 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				await message.channel.send(Embeds.errorEmbed('Error Locating User', `I was unable to find the user ${args.join(' ')} in the Server`));
 				return resolve();
 			}
-			let score = 'registration required';
+			let score: string | number = 'registration required';
+			const destinyProfiles: {
+				[key: string]: destiny.DestinyPlayer
+			} = {};
 			// Get Destiny Data From Database
 			const destinyProfilesData = await discordBot.databaseClient.query(`SELECT * FROM U_Destiny_Profile WHERE bungie_id = (SELECT bungie_id FROM U_Bungie_Account WHERE user_id = ${user.id});`);
 			if (!destinyProfilesData.length) {
@@ -72,12 +76,21 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				//return resolve();
 			}
 			else {
-				const destinyProfiles = await destiny.DestinyPlayer.lookup({
-					membershipId: destinyProfilesData[0].destiny_id || undefined,
-					// displayName: Utility.,
-					membershipType: destinyProfilesData[0].membership_id
-				}, ['100', '900']);
-				score = destinyProfiles[0].data.profileRecords.data.score;
+				if (destinyProfilesData.length === 1 && destinyProfilesData[0].membership_id === 4) {
+					await message.channel.send(`Zoinks is that a Bnet Account Linked to Your Discord Account.\nUse the \`register\` Command to Link Another Platform`);
+					return;
+				}
+				for (const profile of destinyProfilesData) {
+					const lookupResults = await destiny.DestinyPlayer.lookup({
+						membershipId: profile.destiny_id || undefined,
+						// displayName: Utility.,
+						membershipType: profile.membership_id
+					}, ['100', '900']);
+					for (const result of lookupResults) { // Should be index 0 bc of the search using ids
+						destinyProfiles[result.parsedData.profile.data.userInfo.membershipType] = result;
+						if (+result.data.profileRecords.data.score > +score) score = +result.data.profileRecords.data.score;
+					}
+				}
 			}
 
 			const userExperience = await discordBot.databaseClient.query(`SELECT * FROM U_Experience WHERE user_id = ${message.member.id}`);
@@ -120,7 +133,18 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				const medals = value.map(x => { if (categoryDB[0][x.dbData.column]) return x.emoji; else { if (!x.limited) return categorisedMedals['Locked'][0].emoji; else return ''; } }).filter(x => x !== '');
 				if (medals.length) guardianEmbed.addField(`${key}`, `${fixEmbed(medals).join(' ')}`, true);
 			}
-			await message.channel.send(guardianEmbed);
+			const guardianMessage = await message.channel.send(guardianEmbed);
+			for (const membershipType in destinyProfiles) {
+				if (membershipType === '4') continue;
+				await guardianMessage.react(membershipType);
+			}
+			await guardianMessage.awaitReactions((reaction, user) => {
+				if (destinyProfiles[reaction.emoji.name] && user.id === message.author!.id) {
+					// Would Update
+				}
+				return false;
+			}, {time: 300000});
+
 			return resolve();
 		} catch (e) {
 			return reject(e);
