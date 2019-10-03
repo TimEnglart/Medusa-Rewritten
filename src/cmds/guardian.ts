@@ -88,7 +88,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 					}, ['100', '900']);
 					for (const result of lookupResults) { // Should be index 0 bc of the search using ids
 						destinyProfiles[result.parsedData.profile.data.userInfo.membershipType] = result;
-						if (+result.data.profileRecords.data.score > +score) score = +result.data.profileRecords.data.score;
+						if (+result.data.profileRecords.data.score > +score || isNaN(+score)) score = +result.data.profileRecords.data.score;
 					}
 				}
 			}
@@ -135,9 +135,13 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			}
 			const guardianMessage = await message.channel.send(guardianEmbed);
 			for (const membershipType in destinyProfiles) {
-				if (membershipType === '4') continue;
-				await guardianMessage.react(membershipType);
+				if (!membershipType) continue;
+				await discordBot.logger.logClient.log(JSON.stringify(membershipType), 1);
+				await discordBot.logger.logClient.log(JSON.stringify(destinyProfiles[membershipType].data.profileRecords.data.score), 2);
+				// if (membershipType === '4') continue;
+				// await guardianMessage.react(membershipType);
 			}
+			return resolve();
 			await guardianMessage.awaitReactions((reaction, user) => {
 				if (destinyProfiles[reaction.emoji.name] && user.id === message.author!.id) {
 					// Would Update
