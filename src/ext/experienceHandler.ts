@@ -181,16 +181,13 @@ function getUserRecords(member: discord.GuildMember, databaseClient: Database, f
 			if (!destinyAccounts.length) reject('User Has No Destiny Profiles [Xbox, Playstation, PC]');
 			for (const dProfile of destinyAccounts) {
 				const pRecords: BungieResponse<IRecordResponse> = await requester.request({ path: `/Platform/Destiny2/${dProfile.membership_id}/Profile/${dProfile.destiny_id}/?components=900` });
-				console.log(`Response: ${JSON.stringify(pRecords)}`);
 				if (pRecords) records.push(pRecords.Response);
 			}
 		}
 		catch (e) {
-			console.log(e);
 			if (fails > 2) return reject('Failed to Get API Data:\n' + e);
 			return resolve(await getUserRecords(member, databaseClient, ++fails));
 		}
-		console.log(`Record Count: ${records.length}`);
 		return resolve(records);
 	});
 }

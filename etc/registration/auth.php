@@ -76,8 +76,8 @@ class Registeree
 	    parse_str($state, $this->state_data);
         $this->response_data = $response;
         $this->bungie_id = $this->response_data->membership_id;
-        $this->player_data = $this->getPlayerData($this->response_data->membership_id);
-
+		$this->player_data = $this->getPlayerData($this->response_data->membership_id);
+		
 
         $discord_id = $this->state_data['did'];
         $destiny_profiles = $this->player_data->Response->profiles;
