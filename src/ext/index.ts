@@ -45,7 +45,7 @@ interface ExtendedClient extends discord.Client {
 	databaseClient: Database;
 	webServer: WebServer;
 	scoreBook: ScoreBook;
-	disabledCommands: {
+	disabledCommands?: {
 		[commandName: string]: {
 			reason?: string;
 		};

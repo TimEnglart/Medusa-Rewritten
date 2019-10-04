@@ -149,7 +149,7 @@ discordBot.on('message', async (message: Message) => {
 						// Command Cant be used in this Channel
 						discordBot.logger.logClient.log(`[COMMAND IN WRONG CHANNEL] Command: ${command}. Executed by ${message.author.tag}`);
 						await message.channel.send(`Can only use this command in the following Text Channels: ${commandFile.help.environments}\nReference: https://discord.js.org/#/docs/main/master/class/Channel?scrollTo=type`);
-					} else if (discordBot.disabledCommands[commandFile.help.name]) {
+					} else if (discordBot.disabledCommands && discordBot.disabledCommands[commandFile.help.name]) {
 						await message.channel.send(`This Command has been Temporarily Disabled.\nProvided Reason: ${discordBot.disabledCommands[commandFile.help.name].reason}\nContact <@125522120129118208> for More Information`);
 					} else {
 						try {
