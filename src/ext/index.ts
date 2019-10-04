@@ -45,6 +45,11 @@ interface ExtendedClient extends discord.Client {
 	databaseClient: Database;
 	webServer: WebServer;
 	scoreBook: ScoreBook;
+	disabledCommands: {
+		[commandName: string]: {
+			reason?: string;
+		};
+	};
 }
 // tslint:disable-next-line: max-classes-per-file
 class Embeds {

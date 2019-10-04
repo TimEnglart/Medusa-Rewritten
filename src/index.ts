@@ -62,6 +62,8 @@ discordBot.usersEarningXp = {
 	'userId': 'voiceChannelId'
 };
 discordBot.commands = new Collection();
+// tslint:disable-next-line: no-string-literal
+discordBot.disabledCommands = discordBot.settings.disabledCommands || {};
 fs.readdir('./cmds/', (err, files) => {
 	if (err) {
 		discordBot.logger.logClient.log(`Unknown Error Occurred with fs:\n${err}`, LogFilter.Error);
@@ -143,13 +145,12 @@ discordBot.on('message', async (message: Message) => {
 				if (args[0] === 'help') { // args.includes('help')
 					await message.channel.send(Embeds.helpEmbed(commandFile, prefix));
 				} else {
-					const disabledCommand = discordBot.settings.disabledCommands.find(x => x.command === commandFile.help.name);
 					if (commandFile.help.environments && !commandFile.help.environments.includes(message.channel.type)) {
 						// Command Cant be used in this Channel
 						discordBot.logger.logClient.log(`[COMMAND IN WRONG CHANNEL] Command: ${command}. Executed by ${message.author.tag}`);
 						await message.channel.send(`Can only use this command in the following Text Channels: ${commandFile.help.environments}\nReference: https://discord.js.org/#/docs/main/master/class/Channel?scrollTo=type`);
-					} else if (disabledCommand) {
-						await message.channel.send(`This Command has been Temporarily Disabled.\nProvided Reason:${disabledCommand.reason}\nContact <@125522120129118208> for More Information`);
+					} else if (discordBot.disabledCommands[commandFile.help.name]) {
+						await message.channel.send(`This Command has been Temporarily Disabled.\nProvided Reason: ${discordBot.disabledCommands[commandFile.help.name].reason}\nContact <@125522120129118208> for More Information`);
 					} else {
 						try {
 							await commandFile.run(discordBot, message, args);
