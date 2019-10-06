@@ -83,9 +83,14 @@ class MyRequester {
 				if (res.statusCode !== 200) { // Not Successful
 					switch (res.statusCode!.toString()[0]) { // handle accordingly
 						case '3':
-							if (!res.headers.location || overrideOptions.doNotFollowRedirect) return reject(new Error(`Bad Http Redirect Made:\nStatus Code: ${res.statusCode}\nHostname: ${overrideOptions.hostname}\nPath: ${overrideOptions.path}`));
-							const redirectUrl = new URL(res.headers.location);
-							return resolve(this.request({ hostname: redirectUrl.hostname, path: redirectUrl.pathname /*, protocol: redirectUrl.protocol , port: redirectUrl.port || (redirectUrl.protocol === 'https:' ? 443 : 80)*/ }));
+								if (!res.headers.location || overrideOptions.doNotFollowRedirect) return reject(new Error(`Bad Http Redirect Made:\nStatus Code: ${res.statusCode}\nHostname: ${overrideOptions.hostname}\nPath: ${overrideOptions.path}`));
+								const redirectUrl = new URL(res.headers.location);
+							try {
+								return resolve(this.request({ hostname: redirectUrl.hostname, path: redirectUrl.pathname /*, protocol: redirectUrl.protocol , port: redirectUrl.port || (redirectUrl.protocol === 'https:' ? 443 : 80)*/ }));
+							}
+							catch (e) {
+								return reject(new Error(`Failed to Redirect to: ${redirectUrl.hostname} from ${overrideOptions.hostname}\nNew Path: ${redirectUrl.pathname} from ${overrideOptions.path}`));
+							}
 						default:
 							return reject(new Error(`Bad Http Request Made:\nStatus Code: ${res.statusCode}\nHostname: ${overrideOptions.hostname}\nPath: ${overrideOptions.path}`));
 					}
