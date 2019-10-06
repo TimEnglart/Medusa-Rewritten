@@ -89,7 +89,7 @@ class MyRequester {
 								return resolve(this.request({ hostname: redirectUrl.hostname, path: redirectUrl.pathname /*, protocol: redirectUrl.protocol , port: redirectUrl.port || (redirectUrl.protocol === 'https:' ? 443 : 80)*/ }));
 							}
 							catch (e) {
-								return reject(new Error(`Failed to Redirect to: ${redirectUrl.hostname} from ${overrideOptions.hostname}\nNew Path: ${redirectUrl.pathname} from ${overrideOptions.path}`));
+								return reject(new Error(`Failed to Redirect:\nHostname: ${overrideOptions.hostname} --> ${redirectUrl.hostname}\nPath: ${overrideOptions.path} --> ${redirectUrl.pathname}`));
 							}
 						default:
 							return reject(new Error(`Bad Http Request Made:\nStatus Code: ${res.statusCode}\nHostname: ${overrideOptions.hostname}\nPath: ${overrideOptions.path}`));
