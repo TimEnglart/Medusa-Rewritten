@@ -117,7 +117,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				.setColor(`#4287f5`)
 
 				// Add Fields
-				.addField(`Triumph Score`, `${ user.id === '173760892268183552' ? score : +score + 4500 }\n**_**`) // Triumph Score
+				.addField(`Triumph Score`, `${ user.id !== '173760892268183552' ? score : +score + 4500 }\n**_**`) // Triumph Score
 				.addField(`${currentExperience} / ${experienceRequiredForNextLevel} XP`, `${xpBar}\n**_**`, true) // Xp Bar
 				.addField(`${currentRank.name} ${romanReset.length > 5 ? currentReset : romanReset}`, `${rankBar}\n**_**`, true) // Level Bar
 				;
