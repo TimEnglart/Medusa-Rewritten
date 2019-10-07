@@ -37,14 +37,26 @@ class ClanSync {
 			if (!clan) continue;
 			for (const player of this.clanPlayers[clan]) {
 				try {
-					let playerInGuild = Utility.LookupMember(guild, player.destinyUserInfo.displayName, true);
+					const playerInGuild = Utility.LookupMember(guild, player.destinyUserInfo.displayName, true);
 					if (playerInGuild) await playerInGuild.roles.add((this.discordInstance.settings.lighthouse.roleIds as any)[clan]);
+					else {
+						// Lookup Via Database
+						const discordId = await this.discordInstance.databaseClient.query(`SELECT user_id FROM U_Bungie_Account WHERE bungie_id = ${player.bungieNetUserInfo.membershipId}`);
+						if (discordId.length) {
+							const possibleUser = guild.member(discordId[0]);
+							if (possibleUser) await possibleUser.roles.add((this.discordInstance.settings.lighthouse.roleIds as any)[clan]);
+						}
+					}
 				}
 				catch (e) {
-					console.error('Failed to Parse Player Name');
+					await this.discordInstance.logger.logClient.log(`Failed to Parse Player Name: ${player.destinyUserInfo.displayName}`, 1);
 				}
 			}
 		}
+	}
+	public async fullUpdate() {
+		await this.update();
+		await this.updateRoles();
 	}
 
 }
@@ -79,3 +91,5 @@ interface IClanListPlayer {
 	};
 	joinDate: string;
 }
+
+export { ClanSync };

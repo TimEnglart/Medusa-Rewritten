@@ -158,7 +158,7 @@ discordBot.on('message', async (message: Message) => {
 						} catch (e) {
 							discordBot.logger.logClient.log(`[FAILED] Failed to Run ${command}. Executed by ${message.author.tag}`);
 							discordBot.logger.logClient.log(`Command Error Occurred:\nFailing Command: ${commandFile.help.name}\nRaw Error:\n${e}`, LogFilter.Error);
-							await message.channel.send(`An Error Occurred While Running That Command.`);
+							await message.channel.send(`An Error Occurred While Running That Command.\nError: ${e ? e.message : null}`);
 						}
 					}
 				}

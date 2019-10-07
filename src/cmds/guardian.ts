@@ -76,10 +76,10 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				//return resolve();
 			}
 			else {
-				if (destinyProfilesData.length === 1 && destinyProfilesData[0].membership_id === 4) {
-					score = `Zoinks is that a Bnet Account Linked to Your Discord Account.\nUse the \`register\` Command to Link Another Platform`;
-				}
-				else {
+				// if (destinyProfilesData.length === 1 && destinyProfilesData[0].membership_id === 4) {
+				// 	score = `Zoinks is that a Bnet Account Linked to Your Discord Account.\nUse the \`register\` Command to Link Another Platform`;
+				// }
+				//else {
 				for (const profile of destinyProfilesData) {
 					const lookupResults = await destiny.DestinyPlayer.lookup({
 						membershipId: profile.destiny_id || undefined,
@@ -91,7 +91,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 						if (+result.data.profileRecords.data.score > +score || isNaN(+score)) score = +result.data.profileRecords.data.score;
 					}
 				}
-			}
+			//}
 			}
 
 			const userExperience = await discordBot.databaseClient.query(`SELECT * FROM U_Experience WHERE user_id = ${message.member.id}`);

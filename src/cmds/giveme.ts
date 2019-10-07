@@ -15,10 +15,6 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			let subject = message.member;
 			if (args.length) subject = Utility.LookupMember(message.guild, args.join(' ')) || message.member;
 			const check = await discordBot.databaseClient.query(`SELECT * FROM U_Destiny_Profile WHERE bungie_id = (SELECT bungie_id FROM U_Bungie_Account WHERE user_id = ${subject.id});`);
-			if (check.length === 1 && check[0].membership_id === 4) {
-				await message.channel.send(`No. Just No. Please Re-Register or I'll have to resort to a form of punishment`);
-				return;
-			}
 			const statusMessage = await message.channel.send(`Currently Checking Medals for ${subject.displayName}`);
 			const awardedMedals = await exp.checkAllMedals(subject, discordBot.databaseClient, true);
 			await exp.giveMedal(subject.id, awardedMedals, discordBot.databaseClient);
