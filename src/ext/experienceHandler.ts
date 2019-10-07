@@ -176,12 +176,17 @@ function getUserRecords(member: discord.GuildMember, databaseClient: Database, f
 			});
 			// Get User Bungie/Destiny Data
 			const bungieAccounts = await databaseClient.query(`SELECT * FROM U_Bungie_Account WHERE user_id = ${member.id}`);
-			if (!bungieAccounts.length) reject('User Bungie Account Not Registered');
+			if (!bungieAccounts.length) return reject('User Bungie Account Not Registered');
 			const destinyAccounts = await databaseClient.query(`SELECT * FROM U_Destiny_Profile WHERE bungie_id = ${bungieAccounts[0].bungie_id}`);
-			if (!destinyAccounts.length) reject('User Has No Destiny Profiles [Xbox, Playstation, PC]');
+			if (!destinyAccounts.length) return reject('User Has No Destiny Profiles [Xbox, Playstation, PC]');
 			for (const dProfile of destinyAccounts) {
+				try {
 				const pRecords: BungieResponse<IRecordResponse> = await requester.request({ path: `/Platform/Destiny2/${dProfile.membership_id}/Profile/${dProfile.destiny_id}/?components=900` });
 				if (pRecords) records.push(pRecords.Response);
+				}
+				catch (e) {
+					// EndPoint Not Available
+				}
 			}
 		}
 		catch (e) {
