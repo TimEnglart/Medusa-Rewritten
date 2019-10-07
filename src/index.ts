@@ -32,7 +32,7 @@ discordBot.logger = {
 };
 process
 	.on('unhandledRejection', (reason, p) => {
-		discordBot.logger.logClient.log(`Uncaught Promise Rejection:\nReason:\n${reason}\n\nPromise:\n${p}`, LogFilter.Error);
+		discordBot.logger.logClient.log(`Uncaught Promise Rejection:\nReason:\n${reason}\n\nPromise:\n${JSON.stringify(p)}`, LogFilter.Error);
 	})
 	.on('uncaughtException', err => {
 		console.log(err);
