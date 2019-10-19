@@ -21,6 +21,7 @@ import { CommandFile, Database, ExtendedClient, LogFilter, Logger, Settings, Emb
 import * as exp from './ext/experienceHandler';
 import { WebServer } from './ext/web-server';
 import { ScoreBook } from './ext/score-book';
+import { performance } from 'perf_hooks';
 
 
 const discordBot: ExtendedClient = new Client({
