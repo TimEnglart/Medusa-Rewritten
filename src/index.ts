@@ -182,8 +182,7 @@ discordBot.on('message', async (message: Message) => {
 });
 
 discordBot.on('error', error => discordBot.logger.logClient.log(`Unknown Discord.js Error Occurred:\nRaw Error:\n${error}`, LogFilter.Error));
-discordBot.on('warn', async info => discordBot.logger.logClient.log(`Discord Warn Message: ${info}`, LogFilter.Debug));
-discordBot.on('debug', async info => discordBot.logger.logClient.log(`Discord Debug Message: ${info}`, LogFilter.Debug));
+discordBot.on('warn' || 'debug', async info => discordBot.logger.logClient.log(`Discord Warn/Debug Message: ${info}`, LogFilter.Debug));
 
 discordBot.on('guildCreate', async guild => {
 	const eventRecv = performance.now();
@@ -199,6 +198,7 @@ discordBot.on('guildCreate', async guild => {
 
 discordBot.on('guildMemberAdd', async member => {
 	const eventRecv = performance.now();
+	if (!member.guild || !member.user || !member.roles) return; // wtf is this master update
 	try {
 		const userInDatabase = await discordBot.databaseClient.query(`SELECT user_id FROM U_Connected_Users WHERE user_id = ${member.id}`);
 		if (!userInDatabase.length) await discordBot.databaseClient.query(`INSERT INTO U_Connected_Users VALUES(${member.id})`);
@@ -235,6 +235,7 @@ discordBot.on('guildMemberAdd', async member => {
 
 discordBot.on('guildMemberRemove', async member => {
 	const eventRecv = performance.now();
+	if (!member.guild || !member.user) return; // wtf is this master update
 	// Disable User in Xp Database
 	await exp.disconnectUser(member.id, discordBot.databaseClient);
 	// Send User Left Message to Moderator Channel
