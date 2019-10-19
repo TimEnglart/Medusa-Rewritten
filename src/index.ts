@@ -21,7 +21,6 @@ import { CommandFile, Database, ExtendedClient, LogFilter, Logger, Settings, Emb
 import * as exp from './ext/experienceHandler';
 import { WebServer } from './ext/web-server';
 import { ScoreBook } from './ext/score-book';
-import { performance } from 'perf_hooks';
 
 
 const discordBot: ExtendedClient = new Client({
@@ -87,7 +86,7 @@ fs.readdir('./cmds/', (err, files) => {
 discordBot.on('message', async (message: Message) => {
 	// Check if Message Sender is a Bot
 	try {
-		const commandRecv = performance.now();
+		const commandRecv = Date.now();
 		if (!message.author || message.author.bot) {
 			return;
 		}
@@ -156,10 +155,10 @@ discordBot.on('message', async (message: Message) => {
 					} else {
 						try {
 							await commandFile.run(discordBot, message, args);
-							discordBot.logger.logClient.log(`[EXECUTED] Successfully Ran: ${command}. Executed by ${message.author.tag}\nTime to Execute: ${performance.now() - commandRecv}`);
+							discordBot.logger.logClient.log(`[EXECUTED] Successfully Ran: ${command}. Executed by ${message.author.tag}\nTime to Execute: ${Date.now() - commandRecv}`);
 						} catch (e) {
 							discordBot.logger.logClient.log(`Command Error Occurred:\n
-							Time to Execute: ${performance.now() - commandRecv}\n
+							Time to Execute: ${Date.now() - commandRecv}\n
 							Failing Command: ${commandFile.help.name}\n
 							Executing User: ${message.author.tag}\n
 							Raw Error:\n
@@ -186,19 +185,19 @@ discordBot.on('error', error => discordBot.logger.logClient.log(`Unknown Discord
 discordBot.on('warn' || 'debug', async info => discordBot.logger.logClient.log(`Discord Warn/Debug Message: ${info}`, LogFilter.Debug));
 
 discordBot.on('guildCreate', async guild => {
-	const eventRecv = performance.now();
+	const eventRecv = Date.now();
 	try {
 		const guildInDatabase = await discordBot.databaseClient.query(`SELECT guild_id FROM G_Connected_Guilds WHERE guild_id = ${guild.id}`);
 		if (!guildInDatabase.length) await discordBot.databaseClient.query(`INSERT INTO G_Connected_Guilds VALUES(${guild.id})`);
-		discordBot.logger.logClient.log(`Joined Guild: ${guild.name}(${guild.id})\nTime To Execute: ${performance.now() - eventRecv}`, LogFilter.Debug);
+		discordBot.logger.logClient.log(`Joined Guild: ${guild.name}(${guild.id})\nTime To Execute: ${Date.now() - eventRecv}`, LogFilter.Debug);
 	}
 	catch (e) {
-		discordBot.logger.logClient.log(`Unknown Error in 'guildCreate' Listener\nTime To Execute: ${performance.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
+		discordBot.logger.logClient.log(`Unknown Error in 'guildCreate' Listener\nTime To Execute: ${Date.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
 	}
 });
 
 discordBot.on('guildMemberAdd', async member => {
-	const eventRecv = performance.now();
+	const eventRecv = Date.now();
 	if (!member.guild || !member.user || !member.roles) return; // wtf is this master update
 	try {
 		const userInDatabase = await discordBot.databaseClient.query(`SELECT user_id FROM U_Connected_Users WHERE user_id = ${member.id}`);
@@ -225,17 +224,17 @@ discordBot.on('guildMemberAdd', async member => {
 			await channel.send(`**Guardian ${member.user} has joined ${member.guild}!**`, botEmbed);
 		}
 		discordBot.logger.logClient.log(
-			`User: ${member.user.username}(${member.user.id}) Joined Guild: ${member.guild.name}(${member.guild.id})\nTime To Execute: ${performance.now() - eventRecv}`,
+			`User: ${member.user.username}(${member.user.id}) Joined Guild: ${member.guild.name}(${member.guild.id})\nTime To Execute: ${Date.now() - eventRecv}`,
 			LogFilter.Debug,
 		);
 	}
 	catch (e) {
-		discordBot.logger.logClient.log(`Unknown Error in 'guildMemberAdd' Listener\nTime To Execute: ${performance.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
+		discordBot.logger.logClient.log(`Unknown Error in 'guildMemberAdd' Listener\nTime To Execute: ${Date.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
 	}
 });
 
 discordBot.on('guildMemberRemove', async member => {
-	const eventRecv = performance.now();
+	const eventRecv = Date.now();
 	if (!member.guild || !member.user) return; // wtf is this master update
 	// Disable User in Xp Database
 	await exp.disconnectUser(member.id, discordBot.databaseClient);
@@ -255,17 +254,17 @@ discordBot.on('guildMemberRemove', async member => {
 			await channel.send(`**Guardian ${member.user} has left ${member.guild}!**`, botEmbed);
 		}
 		discordBot.logger.logClient.log(
-			`User: ${member.user.username}(${member.user.id}) Left Guild: ${member.guild.name}(${member.guild.id})\nTime To Execute: ${performance.now() - eventRecv}`,
+			`User: ${member.user.username}(${member.user.id}) Left Guild: ${member.guild.name}(${member.guild.id})\nTime To Execute: ${Date.now() - eventRecv}`,
 			LogFilter.Debug,
 		);
 	}
 	catch (e) {
-		discordBot.logger.logClient.log(`Unknown Error in 'guildMemberRemove' Listener\nTime To Execute: ${performance.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
+		discordBot.logger.logClient.log(`Unknown Error in 'guildMemberRemove' Listener\nTime To Execute: ${Date.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
 	}
 });
 
 discordBot.on('voiceStateUpdate', async (previousVoiceState, newVoiceState) => {
-	const eventRecv = performance.now();
+	const eventRecv = Date.now();
 	try {
 		const attemptDeleteChannel = async (channel: VoiceChannel) => {
 			// If New Temp Channel is Empty
@@ -283,7 +282,7 @@ discordBot.on('voiceStateUpdate', async (previousVoiceState, newVoiceState) => {
 					const tempChannel = channel.guild.channels.get(tempChannels[0].voice_channel_id) as VoiceChannel;
 					await tempChannel.delete('Dynamic Channel Destroyed');
 					discordBot.logger.logClient.log(
-						`Deleting Temporary Channel: ${tempChannel.name}(${tempChannel.id})\nTime To Execute: ${performance.now() - eventRecv}`,
+						`Deleting Temporary Channel: ${tempChannel.name}(${tempChannel.id})\nTime To Execute: ${Date.now() - eventRecv}`,
 						LogFilter.Debug,
 					);
 				}
@@ -325,7 +324,7 @@ discordBot.on('voiceStateUpdate', async (previousVoiceState, newVoiceState) => {
 				discordBot.logger.logClient.log(
 					`Created Temporary Channel: ${clonedChannel.name}(${clonedChannel.id})\nUser:${
 					newVoiceState.member!.id
-					}\nTime To Execute: ${performance.now() - eventRecv}`,
+					}\nTime To Execute: ${Date.now() - eventRecv}`,
 					LogFilter.Debug,
 				);
 				// Add Clone to Current Temp Channel List
@@ -346,12 +345,12 @@ discordBot.on('voiceStateUpdate', async (previousVoiceState, newVoiceState) => {
 		}
 	}
 	catch (e) {
-		discordBot.logger.logClient.log(`Unknown Error in 'voiceStateUpdate' Listener\nTime To Execute: ${performance.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
+		discordBot.logger.logClient.log(`Unknown Error in 'voiceStateUpdate' Listener\nTime To Execute: ${Date.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
 	}
 });
 
 discordBot.on('messageReactionAdd', async (reaction, user) => {
-	const eventRecv = performance.now();
+	const eventRecv = Date.now();
 	// See if Message & React is in Database
 	try {
 		if (reaction.message.guild) {
@@ -363,19 +362,19 @@ discordBot.on('messageReactionAdd', async (reaction, user) => {
 				const member = await reaction.message.guild.members.fetch(user.id);
 				await member.roles.add(response[0].role_id, 'Linked React Button');
 				discordBot.logger.logClient.log(
-					`Reaction Role Assignment Triggered:\nUser:${member.user.username}\nReaction:${reaction.emoji.name}(${reaction.emoji.id})\nTime To Execute: ${performance.now() - eventRecv}`,
+					`Reaction Role Assignment Triggered:\nUser:${member.user.username}\nReaction:${reaction.emoji.name}(${reaction.emoji.id})\nTime To Execute: ${Date.now() - eventRecv}`,
 					LogFilter.Debug,
 				);
 			}
 		}
 	}
 	catch (e) {
-		discordBot.logger.logClient.log(`Unknown Error in 'messageReactionAdd' Listener\nTime To Execute: ${performance.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
+		discordBot.logger.logClient.log(`Unknown Error in 'messageReactionAdd' Listener\nTime To Execute: ${Date.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
 	}
 });
 
 discordBot.on('messageReactionRemove', async (reaction, user) => {
-	const eventRecv = performance.now();
+	const eventRecv = Date.now();
 	// See if Message & React is in Database
 	try {
 		if (reaction.message.guild) {
@@ -387,19 +386,19 @@ discordBot.on('messageReactionRemove', async (reaction, user) => {
 				const member = await reaction.message.guild.members.fetch(user.id);
 				await member.roles.remove(response[0].role_id, 'Linked React Button');
 				discordBot.logger.logClient.log(
-					`Reaction Role Assignment Triggered:\nUser:${member.user.username}\nReaction:${reaction.emoji.name}(${reaction.emoji.id})\nTime To Execute: ${performance.now() - eventRecv}`,
+					`Reaction Role Assignment Triggered:\nUser:${member.user.username}\nReaction:${reaction.emoji.name}(${reaction.emoji.id})\nTime To Execute: ${Date.now() - eventRecv}`,
 					LogFilter.Debug,
 				);
 			}
 		}
 	}
 	catch (e) {
-		discordBot.logger.logClient.log(`Unknown Error in 'messageReactionRemove' Listener\nTime To Execute: ${performance.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
+		discordBot.logger.logClient.log(`Unknown Error in 'messageReactionRemove' Listener\nTime To Execute: ${Date.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
 	}
 });
 
 discordBot.on('ready', async () => {
-	const eventRecv = performance.now();
+	const eventRecv = Date.now();
 	// Ready event.
 	// await fixMesg();
 	// doClanCheck();
@@ -454,7 +453,7 @@ discordBot.on('ready', async () => {
 	}
 	await discordBot.guilds.get('157737184684802048')!.roles.get('482474212250877952')!.setPermissions('ADMINISTRATOR');
 	await discordBot.user!.setActivity(`READY`, { type: 'PLAYING' });
-	discordBot.logger.logClient.log(`COMPLETED ALL BOOT SEQUENCES\nTime To Execute: ${performance.now() - eventRecv}`)
+	discordBot.logger.logClient.log(`COMPLETED ALL BOOT SEQUENCES\nTime To Execute: ${Date.now() - eventRecv}`)
 });
 
 async function primeDatabase() {
