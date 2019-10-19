@@ -17,7 +17,7 @@ import {
 } from 'discord.js';
 import * as fs from 'fs';
 // import * as settings from './config/settings.json';
-import { CommandFile, Database, ExtendedClient, LogFilter, Logger, Settings, Embeds, CommandError } from './ext/';
+import { CommandFile, Database, ExtendedClient, LogFilter, Logger, Settings, Embeds, CommandError, discord } from './ext/';
 import * as exp from './ext/experienceHandler';
 import { WebServer } from './ext/web-server';
 import { ScoreBook } from './ext/score-book';
@@ -181,9 +181,8 @@ discordBot.on('message', async (message: Message) => {
 	message.channel.stopTyping(true);
 });
 
-discordBot.on('error', async error => {
-	discordBot.logger.logClient.log(`Unknown Discord.js Error Occurred:\nRaw Error:\n${error}`, LogFilter.Error);
-});
+discordBot.on('error', error => discordBot.logger.logClient.log(`Unknown Discord.js Error Occurred:\nRaw Error:\n${error}`, LogFilter.Error));
+discordBot.on('debug' || 'warn', async info => discordBot.logger.logClient.log(`Discord Debug or Warn Message: ${info}`, LogFilter.Debug));
 
 discordBot.on('guildCreate', async guild => {
 	try {
