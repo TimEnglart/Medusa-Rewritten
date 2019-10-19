@@ -1,33 +1,27 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Utility } from '../ext/';
+import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Utility, CommandError } from '../ext/';
 
 
 
 const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
-	return new Promise(async (resolve: () => void, reject: (err: Error) => void) => {
+	return new Promise(async (resolve: () => void, reject: (err: CommandError) => void) => {
 		try {
-			if (args.length === 0) return resolve();
+			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
+			if (!message.member) throw new CommandError('NO_MEMBER');	// If Member is Needed
+			if (!message.guild) throw new CommandError('NO_GUILD'); 		// If Guild is Needed
+			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
+			if (args.length === 0) throw new CommandError('NO_ARGUMENTS');
 			const emojiInfo = Utility.parseEmojiMentionToObject(args[1]);
-			const roleId = determineRole(message, args);
-			const role = message.guild!.roles.get(roleId!);
-			if (!role) {
-				await message.channel.send(`Unable to Find Role`);
-				return resolve();
-			}
-			try {
-				if ((role.position >= message.member!.roles.highest.position || role.position >= message.guild!.me!.roles.highest.position) && !message.guild!.me!.hasPermission('ADMINISTRATOR')) {
-					await message.channel.send(`Don't Have Roles`);
-					return resolve();
-				}
-			} catch (e) {
-				await message.channel.send(`Incorrect Usage`);
-				// message.channel.send(myEmbeds.errorEmbed("Incorrect Usage", this.help.usage));
-				return resolve();
-			}
+			if (!emojiInfo) throw new CommandError('FAILED_EMOJI_PARSE');
+			const roleId = Utility.parseRoleMentionToId(args.slice(2).join(' '));
+			if (!roleId) throw new CommandError('FAILED_ROLE_PARSE');
+			const role = message.guild.roles.get(roleId);
+			if (!role) throw new CommandError('NO_ROLE_FOUND');
+			if ((role.position >= message.member.roles.highest.position || role.position >= message.guild.me!.roles.highest.position) && !message.guild.me!.hasPermission('ADMINISTRATOR')) throw new CommandError('INSUFFICIENT_PRIVILEGES');
 			const statusMessage = await message.channel.send('Attempting To Find Message....');
-			const textChannels = message.guild!.channels.filter(guildChannel => guildChannel.type === 'text');
-			let foundMessageChannel = null;
-			let foundMessage = null;
-			for (const [channelId, channel] of textChannels as discord.Collection<string, discord.TextChannel>) {
+			const textChannels = message.guild.channels.filter(guildChannel => guildChannel.type === 'text') as discord.Collection<string, discord.TextChannel>;
+			let foundMessageChannel: discord.TextChannel | undefined;
+			let foundMessage: discord.Message | undefined;
+			for (const [channelId, channel] of textChannels) {
 				try {
 					const messageLookup = await channel.messages.fetch(args[0]);
 					if (messageLookup) {
@@ -37,14 +31,15 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 					}
 				}
 				catch (e) {
+					continue;
 					// message was not found in channel
 				}
 			}
 			if (foundMessageChannel && foundMessage) {
-				const databaseResponse = await discordBot.databaseClient.query(`SELECT * FROM G_Reaction_Roles WHERE guild_id = ${message.guild!.id} AND message_id = ${foundMessage.id} AND channel_id = ${foundMessageChannel.id} AND role_id = ${role.id}`);
+				const databaseResponse = await discordBot.databaseClient.query(`SELECT * FROM G_Reaction_Roles WHERE guild_id = ${message.guild.id} AND message_id = ${foundMessage.id} AND channel_id = ${foundMessageChannel.id} AND role_id = ${role.id}`);
 				if (!databaseResponse.length) {
-					await discordBot.databaseClient.query(`INSERT INTO G_Reaction_Roles(guild_id, message_id, channel_id, role_id, reaction_name, reaction_id, reaction_animated) VALUES(${message.guild!.id}, ${foundMessage.id}, ${foundMessageChannel.id}, ${role.id}, '${emojiInfo!.name}', ${emojiInfo!.id}, ${emojiInfo!.animated})`);
-					await foundMessage.react(emojiInfo!.id || emojiInfo!.name);
+					await discordBot.databaseClient.query(`INSERT INTO G_Reaction_Roles(guild_id, message_id, channel_id, role_id, reaction_name, reaction_id, reaction_animated) VALUES(${message.guild.id}, ${foundMessage.id}, ${foundMessageChannel.id}, ${role.id}, '${emojiInfo!.name}', ${emojiInfo!.id}, ${emojiInfo!.animated})`);
+					await foundMessage.react(emojiInfo.id || emojiInfo.name);
 					// Update Response Message
 					await statusMessage.edit('Done'/*, Place embed Here*/);
 				}

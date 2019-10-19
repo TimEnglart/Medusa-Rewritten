@@ -1,24 +1,25 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Embeds } from '../ext/index';
+import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Embeds, CommandError } from '../ext/index';
 
 // Only Reject Promise if a Real Error Occurs
 // run Function is pretty convoluted
 
 
 const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
-	return new Promise(async (resolve: () => void, reject: (err: Error) => void) => {
+	return new Promise(async (resolve: () => void, reject: (err: CommandError) => void) => {
 		try {
-			const resolvedId = message.guild ? message.guild.id : message.author ? message.author.id : null;
-			if (!resolvedId) return;
+			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
+			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
+			const resolvedId = message.guild ? message.guild.id : message.author.id;
 			const response = await discordBot.databaseClient.query(`SELECT prefix FROM G_Prefix WHERE guild_id = ${resolvedId}`);
 			const prefix = response ? response[0].prefix : discordBot.settings.defaultPrefix;
 			const botEmbed = new discord.MessageEmbed()
 				.setTitle('List of Commands')
 				.setColor('#00dde0')
-				.setThumbnail(discordBot.user!.displayAvatarURL())
+				.setThumbnail(discordBot.user.displayAvatarURL())
 				.setDescription(`Admin Permissions Required. **\\⚠️**\nVersion: ${discordBot.settings.version}`);
-			for (const [name, commandf] of discordBot.commands.filter(command => command.help.name !== 'cmds')) {
-				if (commandf.help.permissionRequired === 'SEND_MESSAGES' || (message.guild && message.member!.hasPermission(commandf.help.permissionRequired))) {
-					botEmbed.addField(`${prefix}${name} ${commandf.help.permissionRequired !== 'SEND_MESSAGES' ? '\\⚠️' : ''}`, `Desc - ${commandf.help.description}\nUsage - ${Embeds.generateUsage(module.exports, prefix)}`);
+			for (const [name, commandFile] of discordBot.commands.filter(command => command.help.name !== 'cmds')) {
+				if (commandFile.help.permissionRequired === 'SEND_MESSAGES' || (message.guild && message.member!.hasPermission(commandFile.help.permissionRequired))) {
+					botEmbed.addField(`${prefix}${name} ${commandFile.help.permissionRequired !== 'SEND_MESSAGES' ? '\\⚠️' : ''}`, `Desc - ${commandFile.help.description}\nUsage - ${Embeds.generateUsage(module.exports, prefix)}`);
 				}
 			}
 			await message.channel.send(botEmbed);

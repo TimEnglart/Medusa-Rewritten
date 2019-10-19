@@ -1,29 +1,32 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient } from '../ext/index';
+import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, CommandError, Utility } from '../ext/index';
 
 
 
 const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
-	return new Promise(async (resolve: () => void, reject: (err: Error) => void) => {
+	return new Promise(async (resolve: () => void, reject: (err: CommandError) => void) => {
 		try {
-			const channelId = args[0] || (message.member!.voice.channel !== null ? message.member!.voice.channel.id : null);
+			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
+			if (!message.member) throw new CommandError('NO_MEMBER');	// If Member is Needed
+			if (!message.guild) throw new CommandError('NO_GUILD'); 		// If Guild is Needed
+			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
+			const channelId = Utility.parseChannelMentionToId(args[0]) || (message.member.voice.channel !== null ? message.member.voice.channel.id : null);
 			if (channelId) {
-				const currentTempChannelMasters = await discordBot.databaseClient.query(`SELECT * FROM G_Master_Temp_Channels WHERE guild_id = ${message.guild!.id} AND voice_channel_id = ${args[0]}`);
+				const channel = message.guild.channels.get(channelId);
+				if (!channel) throw new CommandError('NO_CHANNEL_FOUND');
+				const currentTempChannelMasters = await discordBot.databaseClient.query(`SELECT * FROM G_Master_Temp_Channels WHERE guild_id = ${message.guild.id} AND voice_channel_id = ${channelId}`);
 				if (currentTempChannelMasters.length) {
 					// Already a Temp Channel Master
 					await message.reply('Already Temp');
 				} else {
-					await discordBot.databaseClient.query(`INSERT INTO G_Master_Temp_Channels(guild_id, voice_channel_id) VALUES(${message.guild!.id}, ${args[0]})`);
+					await discordBot.databaseClient.query(`INSERT INTO G_Master_Temp_Channels(guild_id, voice_channel_id) VALUES(${message.guild.id}, ${channelId})`);
 					// Added Channel Master
 					await message.reply('Added Temp');
 				}
 			}
-			else {
-				// No Channel Selected
-				await message.reply('no');
-			}
+			else throw new CommandError('FAILED_CHANNEL_PARSE'); // No Channel Selected
 			return resolve();
 		} catch (e) {
-			return reject(e);
+			return reject(e instanceof CommandError ? e : new CommandError(e.message));
 		}
 	});
 };

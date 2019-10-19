@@ -1,16 +1,16 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Utility } from '../ext/index';
+import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Utility, CommandError } from '../ext/index';
 import * as exp from '../ext/experienceHandler'
 // Only Reject Promise if a Real Error Occurs
 // run Function is pretty convoluted
 
 
 const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
-	return new Promise(async (resolve: () => void, reject: (err: Error) => void) => {
+	return new Promise(async (resolve: () => void, reject: (err: CommandError) => void) => {
 		try {
-			if (!message.author) return reject(new Error('No Author')); 	// If Author is Needed
-			if (!message.member) return reject(new Error('No Member')); 	// If Member is Needed
-			if (!message.guild) return reject(new Error('No Guild')); 		// If Guild is Needed
-			if (!discordBot.user) return reject(new Error('No Bot User')); 	// If Bot Instance is Needed
+			if (!message.author) throw new CommandError('No Author'); 	// If Author is Needed
+			if (!message.member) throw new CommandError('No Member'); 	// If Member is Needed
+			if (!message.guild) throw new CommandError('No Guild'); 		// If Guild is Needed
+			if (!discordBot.user) throw new CommandError('No Bot User'); 	// If Bot Instance is Needed
 
 			let subject = message.member;
 			if (args.length) subject = Utility.LookupMember(message.guild, args.join(' ')) || message.member;

@@ -1,13 +1,15 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Embeds } from '../ext/index';
+import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Embeds, CommandError } from '../ext/index';
 
 // Only Reject Promise if a Real Error Occurs
 // run Function is pretty convoluted
 
 
 const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
-	return new Promise(async (resolve: () => void, reject: (err: Error) => void) => {
+	return new Promise(async (resolve: () => void, reject: (err: CommandError) => void) => {
 		try {
-			if (!message.author) return reject(new Error('No Author'));
+			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
+			message.channel.stopTyping();
+			message.author.dmChannel.startTyping();
 			const initialTimeStamp = new Date();
 			const registerEmbed = new discord.MessageEmbed()
 				.setURL(`https://medusabot.tk/initialize.php?did=${message.author.id}`)
@@ -19,9 +21,9 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			let hasRegistered = false;
 			let timePassed = 0;
 			while (!hasRegistered && timePassed < 1200) {
-				await new Promise(resolve =>
+				await new Promise(completeTimeout =>
 					setTimeout(() => {
-						return resolve();
+						return completeTimeout();
 					}, 5000)
 				);
 				timePassed += 5;
@@ -33,8 +35,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 					return resolve();
 				}
 			}
-			await registerMsg.edit(Embeds.errorEmbed('Registration Request Timed Out', 'Reuse the `register` Command to Attempt to Sign Up Again'));
-			return resolve();
+			throw new CommandError('REGISTRATION_TIMEOUT', 'Reuse the `register` Command to Attempt to Sign Up Again');
 		} catch (e) {
 			return reject(e);
 		}

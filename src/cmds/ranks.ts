@@ -4,18 +4,17 @@ module.exports.help = {
 
 	permissionRequired: null
 }
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Embeds, Settings } from '../ext/index';
+import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Embeds, Settings, CommandError } from '../ext/index';
 
 // Only Reject Promise if a Real Error Occurs
 // run Function is pretty convoluted
 
 
 const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
-	return new Promise(async (resolve: () => void, reject: (err: Error) => void) => {
+	return new Promise(async (resolve: () => void, reject: (err: CommandError) => void) => {
 		try {
-			if (!message.author) return reject(new Error('No Author')); 	// If Author is Needed
-			if (!message.member) return reject(new Error('No Member')); 	// If Member is Needed
-			if (!discordBot.user) return reject(new Error('No Bot User')); 	// If Bot Instance is Needed
+			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
+			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
 
 			const guildIcon = message.guild ? message.guild.iconURL() || '' : '';
 			const ranksEmbed = new discord.MessageEmbed()

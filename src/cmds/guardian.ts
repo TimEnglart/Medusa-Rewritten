@@ -117,7 +117,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				.setColor(`#4287f5`)
 
 				// Add Fields
-				.addField(`Triumph Score`, `${ user.id !== '173760892268183552' ? score : +score + 4500 }\n**_**`) // Triumph Score
+				.addField(`Triumph Score`, `${score}\n**_**`) // Triumph Score
 				.addField(`${currentExperience} / ${experienceRequiredForNextLevel} XP`, `${xpBar}\n**_**`, true) // Xp Bar
 				.addField(`${currentRank.name} ${romanReset.length > 5 ? currentReset : romanReset}`, `${rankBar}\n**_**`, true) // Level Bar
 				;
@@ -135,6 +135,8 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				if (medals.length) guardianEmbed.addField(`${key}`, `${fixEmbed(medals).join(' ')}`, true);
 			}
 			const guardianMessage = await message.channel.send(guardianEmbed);
+			
+			return resolve();
 			for (const membershipType in destinyProfiles) {
 				if (!membershipType) continue;
 				await discordBot.logger.logClient.log(JSON.stringify(membershipType), 1);
@@ -142,7 +144,6 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				// if (membershipType === '4') continue;
 				// await guardianMessage.react(membershipType);
 			}
-			return resolve();
 			await guardianMessage.awaitReactions((reaction, user) => {
 				if (destinyProfiles[reaction.emoji.name] && user.id === message.author!.id) {
 					// Would Update

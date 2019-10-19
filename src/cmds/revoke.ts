@@ -1,24 +1,23 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Utility, Embeds, Settings } from '../ext/index';
+import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Utility, Embeds, Settings, CommandError } from '../ext/index';
 import * as exp from '../ext/experienceHandler'
 // Only Reject Promise if a Real Error Occurs
 
 const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
 	return new Promise(async (resolve: () => void, reject: (err: Error) => void) => {
 		try {
+			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
+			if (!message.member) throw new CommandError('NO_MEMBER');	// If Member is Needed
+			if (!message.guild) throw new CommandError('NO_GUILD'); 		// If Guild is Needed
+			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
 			args = Utility.quotedWords(args.join(' '));
 			const user: discord.GuildMember | null = Utility.LookupMember(message.guild, args[0]);
-			if (!user) {
-				await message.channel.send(Embeds.errorEmbed('Error Locating User', `I was unable to find the user ${args[0]} in the Server`));
-				return resolve();
-			}
+			if (!user) throw new CommandError('NO_USER_FOUND');
 			const possibleMedal = args.slice(1).join(' ');
 			let myMedal: exp.MedalData | undefined = Settings.lighthouse.medals.find(medal => medal.name.toLowerCase() === possibleMedal.toLowerCase());
 			if (!myMedal) {
 				const matchMedal = yobboCorrector(possibleMedal.toLowerCase());
 				if (matchMedal[1] > 30) {
-					const correctionMessage = await message.channel.send(
-						`Did You Mean ${matchMedal[0]}?`
-					) as discord.Message;
+					const correctionMessage = await message.channel.send(`Did You Mean ${matchMedal[0]}?`);
 					await correctionMessage.react(`✅`);
 					const filter = (reaction: discord.MessageReaction, user: discord.User) =>
 						reaction.emoji.name === `✅` && user.id === message.author!.id;
@@ -34,10 +33,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 					}
 				}
 			}
-			if (!myMedal) {
-				await message.channel.send(Embeds.errorEmbed(`${possibleMedal}`, `Was not found in the Medal List.`));
-				return resolve();
-			}
+			if (!myMedal) throw new CommandError('NO_MEDAL_FOUND', `Was Unable to Find Medal Matching: ${possibleMedal}.`);
 			await exp.revokeMedal(user.id, [myMedal], discordBot.databaseClient);
 			await message.channel.send(Embeds.successEmbed(`Successfully Revoked ${myMedal.name}`, `To User ${user.displayName}`));
 			return resolve();

@@ -1,20 +1,21 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Utility, Embeds, Settings } from '../ext/index';
+import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Utility, Embeds, Settings, CommandError } from '../ext/index';
 import * as exp from '../ext/experienceHandler'
 // Only Reject Promise if a Real Error Occurs
 
 const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
-	return new Promise(async (resolve: () => void, reject: (err: Error) => void) => {
+	return new Promise(async (resolve: () => void, reject: (err: CommandError) => void) => {
 		try {
-			args = Utility.quotedWords(args.join(' '));
-			const user: discord.GuildMember | null = Utility.LookupMember(message.guild, args[0]);
-			if (!user) {
-				await message.channel.send(Embeds.errorEmbed('Error Locating User', `I was unable to find the user ${args[0]} in the Server`));
-				return resolve();
-			}
-			const possibleMedal = args.slice(1).join(' ');
-			let myMedal: exp.MedalData | undefined = Settings.lighthouse.medals.find(medal => medal.name.toLowerCase() === possibleMedal.toLowerCase());
+			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
+			if (!message.member) throw new CommandError('NO_MEMBER');	// If Member is Needed
+			if (!message.guild) throw new CommandError('NO_GUILD'); 		// If Guild is Needed
+			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
+			if (args.length === 0) throw new CommandError('NO_ARGUMENTS');
+			const [userResolvable, medalName] = Utility.quotedWords(args.join(' '));
+			const user: discord.GuildMember | null = Utility.LookupMember(message.guild, userResolvable);
+			if (!user) throw new CommandError('NO_USER_FOUND');
+			let myMedal: exp.MedalData | undefined = Settings.lighthouse.medals.find(medal => medal.name.toLowerCase() === medalName.toLowerCase());
 			if (!myMedal) {
-				const matchMedal = yobboCorrector(possibleMedal.toLowerCase());
+				const matchMedal = yobboCorrector(medalName.toLowerCase());
 				if (matchMedal.correctness > 30) {
 					const correctionMessage = await message.channel.send(
 						`Did You Mean ${matchMedal.name}?`
@@ -30,14 +31,11 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 					);
 					await correctionMessage.delete();
 					if (collectedReactions.size > 0) {
-						myMedal = Settings.lighthouse.medals.find(x => x.name === matchMedal.name);
+						myMedal = Settings.lighthouse.medals.find(medal => medal.name === matchMedal.name);
 					}
 				}
 			}
-			if (!myMedal) {
-				await message.channel.send(Embeds.errorEmbed(`${possibleMedal}`, `Was not found in the Medal List.`));
-				return resolve();
-			}
+			if (!myMedal) throw new CommandError('NO_MEDAL_FOUND', `Was Unable to Find Medal Matching: ${medalName}.`);
 			await exp.giveMedal(user.id, [myMedal], discordBot.databaseClient);
 			await message.channel.send(Embeds.successEmbed(`Successfully Awarded ${myMedal.name}`, `To User ${user.displayName}`));
 			return resolve();

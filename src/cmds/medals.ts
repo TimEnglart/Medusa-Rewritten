@@ -1,5 +1,5 @@
 
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Embeds } from '../ext/index';
+import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Embeds, CommandError } from '../ext/index';
 import * as expHandler from '../ext/experienceHandler';
 
 // Only Reject Promise if a Real Error Occurs
@@ -7,24 +7,19 @@ import * as expHandler from '../ext/experienceHandler';
 
 
 const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
-	return new Promise(async (resolve: () => void, reject: (err: Error) => void) => {
+	return new Promise(async (resolve: () => void, reject: (err: CommandError) => void) => {
 		try {
-			if (!message.author) return reject(new Error('No Author')); 	// If Author is Needed
-			if (!discordBot.user) return reject(new Error('No Bot User')); 	// If Bot Instance is Needed
-
-			const embedsToSend = [];
+			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
+			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
 			const categorisedMedals = expHandler.categoriseMedals();
-			for (const [key, value] of Object.entries(categorisedMedals)) {
-				if (key === 'Locked') continue;
+			for (const [medalCategory, medals] of Object.entries(categorisedMedals)) {
+				if (medalCategory === 'Locked') continue;
 				const embed = new discord.MessageEmbed()
-					.setTitle(`${key} Medals`);
-				for (const medal of value) {
+					.setTitle(`${medalCategory} Medals`);
+				for (const medal of medals) {
 					embed.addField(`${medal.name} ${medal.emoji}`, `${medal.description}\n**${medal.xp} XP**`);
 				}
-				embedsToSend.push(embed);
-			}
-			for (const boi of embedsToSend) {
-				await message.author.send(boi);
+				await message.author.send(embed);
 			}
 			await message.channel.send(Embeds.notifyEmbed(`Prove your Worth Guardian <:Legend:518606062195310629>`, `List of ${message.guild} Medals has been sent, best of luck on your hunt!`));
 

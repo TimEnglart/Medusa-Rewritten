@@ -1,4 +1,4 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Embeds } from '../ext/index';
+import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Embeds, CommandError } from '../ext/index';
 
 // Only Reject Promise if a Real Error Occurs
 // run Function is pretty convoluted
@@ -7,20 +7,14 @@ import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Embeds }
 const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
 	return new Promise(async (resolve: () => void, reject: (err: Error) => void) => {
 		try {
-			if (!message.author) return reject(new Error('No Author')); 	// If Author is Needed
-			if (!message.member) return reject(new Error('No Member')); 	// If Member is Needed
-			if (!message.guild) return reject(new Error('No Guild')); 		// If Guild is Needed
-			if (!discordBot.user) return reject(new Error('No Bot User')); 	// If Bot Instance is Needed
+			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
+			if (!message.member) throw new CommandError('NO_MEMBER');	// If Member is Needed
+			if (!message.guild) throw new CommandError('NO_GUILD'); 		// If Guild is Needed
+			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
 
 			const voiceChannel = message.member.voice.channel;
-			if (!voiceChannel) {
-				await message.channel.send(Embeds.errorEmbed('You Currently are Not in a Channel', 'Join a Channel To Use This Command'));
-				return resolve();
-			}
-			if (voiceChannel.name.substr(0).indexOf('🔒') === -1) {
-				await message.channel.send(Embeds.errorEmbed('Channel isn\'t Locked', 'You Need to Lock a Channel in order to Unlock.'));
-				return resolve();
-			}
+			if (!voiceChannel) throw new CommandError('NO_CHANNEL');
+			if (voiceChannel.name.substr(0).indexOf('🔒') === -1) throw new CommandError('VOICE_CHANNEL_NOT_LOCKED', 'This Command Requires the Current Voice Channel to Be Unlocked');
 			await voiceChannel.lockPermissions();
 			await voiceChannel.edit({
 				userLimit: voiceChannel.parent ? (voiceChannel.parent.children.first()! as discord.VoiceChannel).userLimit : 0,

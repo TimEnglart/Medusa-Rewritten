@@ -1,4 +1,4 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, LogFilter, MyRequester, Embeds } from '../ext/index';
+import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, LogFilter, MyRequester, Embeds, CommandError } from '../ext/index';
 import * as d2b from '../ext/discordToBungie';
 import { ScoreBook, IActivityDetails, IPostGameCarnageReport } from '../ext/score-book';
 // Only Reject Promise if a Real Error Occurs
@@ -19,34 +19,31 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 
 	return new Promise(async (resolve: () => void, reject: (err: Error) => void) => {
 		try {
-			if (!message.author) return reject(new Error('No Author')); 	// If Author is Needed	// If Guild is Needed
-			if (!discordBot.user) return reject(new Error('No Bot User')); 	// If Bot Instance is Needed
+			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
+			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
 			let activityId = null;
-			if (message.guild) try { await message.delete(); } catch (e) { }
+			if (message.guild && message.guild.me && message.guild.me.hasPermission('MANAGE_MESSAGES')) await message.delete();
 			if (args.length) {
 				const bungieSiteRegex = /https:\/\/www.bungie.net\/en\/PGCR\/(\d+)(\?character=(\d+))?/; //data[1] = ActivityId, data[3] = CharacterId
 				const regex = args[0].match(bungieSiteRegex);
-				if (regex && regex.length > 1) activityId = regex[1];
-				else if (args.length === 1) activityId = args[0];
+				if (regex && regex.length > 1) activityId = regex[1]; //PGCR Link as Arg
+				else if (args.length === 1) activityId = args[0]; //Acivity Id as Arg
 				else {
-					//Blue
+					// TODO: Add the Ability to Add Custom Run?
 				}
 			}
 			else {
 				const destinyData = await discordBot.databaseClient.query(`SELECT b.user_id, d.bungie_id, d.destiny_id, d.membership_id FROM U_Bungie_Account as b JOIN U_Destiny_Profile as d ON d.bungie_id = b.bungie_id WHERE user_id = ${message.author.id}`);
-				if (!destinyData.length) {
-					await message.author.send('Your Not in The Lighthouse Database.\nYou Can use The `register` to enable usage of this command\nYou Can Manually Input Your Nightfall Using a Bungie.Net Link:\nExample:https://www.bungie.net/en/PGCR/<activityId>/\n<activityId>');
-					return resolve();
-				}
+				if (!destinyData.length) throw new CommandError('DATABASE_ENTRY_NOT_FOUND', 'You Can use The `register` to enable usage of this command\nYou Can Manually Input Your Nightfall Using a Bungie.Net Link:\nExample:https://www.bungie.net/en/PGCR/<activityId>/\n<activityId>');
 				const destinyProfiles = await d2b.DestinyPlayer.lookup({
 					membershipId: destinyData[0].destiny_id,
 					membershipType: destinyData[0].membership_id
 				});
-				if (destinyProfiles.length !== 1) {
-					await message.author.send('An Error Has Occurred During the Player Lookup Process. This has been logged');
-					discordBot.logger.logClient.log(`Multiple Destiny Accounts Have Been Found on the Credentials\nDestiny Id: ${destinyData[0].destiny_id}\nMembership Type: ${destinyData[0].membership_id}`, LogFilter.Error);
-					return resolve();
-				}
+				// if (destinyProfiles.length !== 1) {
+				// 	await message.author.send('An Error Has Occurred During the Player Lookup Process. This has been logged');
+				// 	discordBot.logger.logClient.log(`Multiple Destiny Accounts Have Been Found on the Credentials\nDestiny Id: ${destinyData[0].destiny_id}\nMembership Type: ${destinyData[0].membership_id}`, LogFilter.Error);
+				// 	return resolve();
+				// }
 				const destinyProfile = destinyProfiles[0];
 				let mostRecentNightfall: INightfallSubmission | undefined;
 				for (const characterId of destinyProfile.parsedData.profile.data.characterIds) {
@@ -61,21 +58,13 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 						}
 					}
 				}
-				if (!mostRecentNightfall) {
-					await message.author.send('Unable to Find Most Recent Nightfall. This has been logged');
-					discordBot.logger.logClient.log(`No Nighfalls Found: ${JSON.stringify(mostRecentNightfall)}`, LogFilter.Error);
-					return resolve();
-				}
+				if (!mostRecentNightfall) throw new CommandError('FAILED_NIGHTFALL_SELECTION');
 				// console.log(JSON.stringify(mostRecentNightfall));
 				activityId = mostRecentNightfall.nightfallData.activityDetails.instanceId;
 				// destinyProfile.
 			}
 			// console.log(activityId);
-			if (!activityId) {
-				await message.author.send('No Activity Id Has been Found. This has been logged');
-				discordBot.logger.logClient.log(`No Activity Id Found`, LogFilter.Error);
-				return resolve();
-			}
+			if (!activityId) throw new CommandError('B_API_NO_INSTANCE_ID');
 			const scoreBook = new ScoreBook(discordBot);
 			const pgcr = await scoreBook.getPostGameCarnageReport(activityId);
 
@@ -107,10 +96,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				return resolve();
 			}
 			const entityDef: d2b.BungieResponse<IActivityDefinition> = await requester.request({ path: `/Platform/Destiny2/Manifest/${'DestinyActivityDefinition'}/${pgcr.Response.activityDetails.referenceId}/` })
-			if (!entityDef) {
-				await message.author.send('Failed to Find Entity Definition. This has been logged');
-				return resolve();
-			}
+			if (!entityDef) throw new CommandError('B_API_NO_ENTITY');
 			let embed = new discord.MessageEmbed()
 				.setTitle(`Nightfall to Submit`)
 				.setDescription(

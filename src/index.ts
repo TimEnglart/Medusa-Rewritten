@@ -17,7 +17,7 @@ import {
 } from 'discord.js';
 import * as fs from 'fs';
 // import * as settings from './config/settings.json';
-import { CommandFile, Database, ExtendedClient, LogFilter, Logger, Settings, Embeds } from './ext/';
+import { CommandFile, Database, ExtendedClient, LogFilter, Logger, Settings, Embeds, CommandError } from './ext/';
 import * as exp from './ext/experienceHandler';
 import { WebServer } from './ext/web-server';
 import { ScoreBook } from './ext/score-book';
@@ -86,6 +86,7 @@ fs.readdir('./cmds/', (err, files) => {
 discordBot.on('message', async (message: Message) => {
 	// Check if Message Sender is a Bot
 	try {
+		const commandRecv = performance.now();
 		if (!message.author || message.author.bot) {
 			return;
 		}
@@ -154,11 +155,15 @@ discordBot.on('message', async (message: Message) => {
 					} else {
 						try {
 							await commandFile.run(discordBot, message, args);
-							discordBot.logger.logClient.log(`[EXECUTED] Successfully Ran: ${command}. Executed by ${message.author.tag}`);
+							discordBot.logger.logClient.log(`[EXECUTED] Successfully Ran: ${command}. Executed by ${message.author.tag}\nTime to Execute: ${performance.now() - commandRecv}`);
 						} catch (e) {
-							discordBot.logger.logClient.log(`[FAILED] Failed to Run ${command}. Executed by ${message.author.tag}`);
-							discordBot.logger.logClient.log(`Command Error Occurred:\nFailing Command: ${commandFile.help.name}\nRaw Error:\n${e}`, LogFilter.Error);
-							await message.channel.send(`An Error Occurred While Running That Command.\nError: ${e ? e.message : null}`);
+							discordBot.logger.logClient.log(`Command Error Occurred:\n
+							Time to Execute: ${performance.now() - commandRecv}\n
+							Failing Command: ${commandFile.help.name}\n
+							Executing User: ${message.author.tag}\n
+							Raw Error:\n
+							${e}`, LogFilter.Error);
+							await message.channel.send(`An Error Occurred While Running That Command.${e.reason ? `\nReason For This Error Occurring: ${e.reason}` : null}`);
 						}
 					}
 				}

@@ -1,4 +1,4 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Utility, Embeds } from '../ext/index';
+import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Utility, Embeds, CommandError } from '../ext/index';
 
 // Only Reject Promise if a Real Error Occurs
 // run Function is pretty convoluted
@@ -7,16 +7,12 @@ import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Utility,
 const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
 	return new Promise(async (resolve: () => void, reject: (err: Error) => void) => {
 		try {
-			if (!message.author) return reject(new Error('No Author')); 	// If Author is Needed
-			if (!message.member) return reject(new Error('No Member')); 	// If Member is Needed
-			if (!message.guild) return reject(new Error('No Guild')); 		// If Guild is Needed
-			if (!discordBot.user) return reject(new Error('No Bot User')); 	// If Bot Instance is Needed
-
+			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
+			if (!message.member) throw new CommandError('NO_MEMBER');	// If Member is Needed
+			if (!message.guild) throw new CommandError('NO_GUILD'); 		// If Guild is Needed
+			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
 			const userLogChannel = Utility.LookupChannel(message, args[0]);
-			if (!userLogChannel) {
-				await message.channel.send(Embeds.errorEmbed('Invalid Channel', 'Invalid Channel Resolvable Provided'));
-				return resolve();
-			}
+			if (!userLogChannel) throw new CommandError('NO_CHANNEL_FOUND');
 			const actualChannel = message.guild.channels.get(userLogChannel.id);
 			if (actualChannel) {
 				const select = await discordBot.databaseClient.query(`SELECT * FROM G_Event_Log_Channel WHERE guild_id = ${message.guild.id} AND text_channel_id = ${userLogChannel.id}`);

@@ -1,12 +1,17 @@
-import { CommandFile, CommandHelp, CommandRun, discord, Embeds, ExtendedClient, Utility } from '../ext/index';
+import { CommandFile, CommandHelp, CommandRun, discord, Embeds, ExtendedClient, Utility, CommandError } from '../ext/index';
 
 // Only Reject Promise if a Real Error Occurs
 // run Function is pretty convoluted
 
 
 const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
-	return new Promise(async (resolve: () => void, reject: (err: Error) => void) => {
+	return new Promise(async (resolve: () => void, reject: (err: CommandError) => void) => {
 		try {
+			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
+			if (!message.member) throw new CommandError('NO_MEMBER');	// If Member is Needed
+			if (!message.guild) throw new CommandError('NO_GUILD'); 		// If Guild is Needed
+			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
+
 			let selectUser: discord.GuildMember | null = null;
 			if (args[0]) {
 				selectUser = Utility.LookupMember(message.guild, args[0]);
@@ -14,17 +19,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 					selectUser = Utility.LookupMember(message.guild, Utility.quotedWords(args.join(' ')).join(' '));
 				}
 			}
-			if (!selectUser) {
-				await message.channel.send(
-					Embeds.errorEmbed(
-						'Error Locating User',
-						`I was unable to find the user ${args[0]} in the Server`
-					)
-				);
-				return resolve();
-			}
-
-			if (!message.member) return reject(new Error('No Member Object'));
+			if (!selectUser) throw new CommandError('NO_USER_FOUND', `I was unable to find the user ${args[0]} in the Server`);
 
 			const inviteEmbed = new discord.MessageEmbed()
 				.setColor('#00dde0')
@@ -52,7 +47,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 					}, `${selectUser.displayName} was invited to the Voice Channel by ${message.member.displayName}`);
 				}
 			}
-			const inviteMessage = await message.channel.send(inviteEmbed) as discord.Message;
+			const inviteMessage = await message.channel.send(inviteEmbed);
 			await inviteMessage.react(`✅`);
 
 			const filter = (reaction: discord.MessageReaction, user: discord.User) =>
@@ -64,7 +59,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			if (collectedReactions.size > 0) {
 				if (selectUser.voice.channel) await selectUser.voice.setChannel(message.member.voice.channel);
 				else {
-					const errorMessage = await message.channel.send(expiredEmbed) as discord.Message;
+					const errorMessage = await message.channel.send(expiredEmbed);
 					await errorMessage.delete({
 						timeout: 40000
 					});

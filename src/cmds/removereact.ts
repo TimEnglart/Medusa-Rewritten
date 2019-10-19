@@ -1,49 +1,32 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Utility, Embeds } from '../ext/index';
+import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Utility, Embeds, CommandError } from '../ext/index';
 
 // Only Reject Promise if a Real Error Occurs
 // run Function is pretty convoluted
 
 
 const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
-	return new Promise(async (resolve: () => void, reject: (err: Error) => void) => {
+	return new Promise(async (resolve: () => void, reject: (err: CommandError) => void) => {
 		try {
-			if (!message.author) return reject(new Error('No Author')); 	// If Author is Needed
-			if (!message.member) return reject(new Error('No Member')); 	// If Member is Needed
-			if (!message.guild) return reject(new Error('No Guild')); 		// If Guild is Needed
-			if (!discordBot.user) return reject(new Error('No Bot User')); 	// If Bot Instance is Needed
-
-			if (!args.length) return;
+			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
+			if (!message.member) throw new CommandError('NO_MEMBER');	// If Member is Needed
+			if (!message.guild) throw new CommandError('NO_GUILD'); 		// If Guild is Needed
+			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
+			if (args.length === 0) throw new CommandError('NO_ARGUMENTS');
 			const messageId = args[0];
-			const roleResolvable = args[1];
+			const roleResolvable = args.slice(1).join(' ');
 
 			const role = Utility.LookupRole(message.guild, roleResolvable);
 
-			if (!role) {
-				await message.channel.send(Embeds.errorEmbed('No Role Found', 'Couldn\'t Find That Role in The Lighthouse'));
-				return resolve();
-			}
+			if (!role) throw new CommandError('NO_ROLE_FOUND');
 			else {
-				try {
-					if ((role.position >= message.member.roles.highest.position || role.position >= message.guild.me!.roles.highest.position) && !message.guild.me!.hasPermission('ADMINISTRATOR')) {
-						await message.channel.send(Embeds.errorEmbed('Description', 'Your Rank is Too Low or I Will Not be able to Assign this Role'));
-						return resolve();
-					}
-				} catch (e) {
-					await message.channel.send(Embeds.errorEmbed('Incorrect Usage', `Use \`help ${help.name}\` Command`));
-					return resolve();
-				}
+				if ((role.position >= message.member.roles.highest.position || role.position >= message.guild.me!.roles.highest.position) && !message.guild.me!.hasPermission('ADMINISTRATOR')) throw new CommandError('INSUFFICIENT_PRIVILEGES');
 				const response = await discordBot.databaseClient.query(`SELECT * FROM G_Reaction_Roles WHERE guild_id = ${message.guild.id} AND message_id = ${messageId} AND role_id = ${role.id}`);
-				if (!response.length) {
-					await message.channel.send(Embeds.errorEmbed('No Reaction Found', 'The Given Message Doesn\'t have a registered Reaction Role'));
-					return resolve();
-				}
-				const statusMessage = await message.channel.send(`Removing Reaction For ${role.name} From the Selected Message`) as discord.Message;
-				const findMessage = message.guild.channels.get(response[0].channel_id) as discord.TextChannel;
-				if (!findMessage) {
-					await message.channel.send(Embeds.errorEmbed('No Reaction Found', 'The Given Message Doesn\'t have a registered Reaction Role'));
-					return resolve();
-				}
-				const reactionMessage = await findMessage.messages.fetch(messageId);
+				if (!response.length) throw new CommandError('DATABASE_ENTRY_NOT_FOUND', 'Reaction Role Not Linked to Provided Role');
+				const statusMessage = await message.channel.send(`Removing Reaction For ${role.name} From the Selected Message`);
+				const channelLookup = message.guild.channels.get(response[0].channel_id) as discord.TextChannel;
+				if (!channelLookup) throw new CommandError('NO_CHANNEL_FOUND');
+				const reactionMessage = await channelLookup.messages.fetch(messageId);
+				if (!reactionMessage) throw new CommandError('NO_MESSAGE_FOUND');
 				reactionMessage.reactions.remove(response[0].reaction_id === null ? response[0].reaction_name : discordBot.emojis.get(response[0].reaction_id));
 				await discordBot.databaseClient.query(`DELETE FROM G_Reaction_Roles WHERE guild_id = ${message.guild.id} AND message_id = ${messageId} AND role_id = ${role.id}`);
 				await statusMessage.edit('', Embeds.successEmbed('Role Reaction Successfully Removed From Message', `Reaction: ${response[0].reaction_id === null ? response[0].reaction_name : discordBot.emojis.get(response[0].reaction_id)}`));

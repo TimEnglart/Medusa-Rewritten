@@ -7,6 +7,7 @@ import { MyRequester } from './webClient';
 import * as express from 'express';
 import { WebServer } from './web-server/index.js';
 import { ScoreBook } from './score-book/index.js';
+import { CommandError } from './errorParser';
 type CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => Promise<void>;
 
 interface CommandHelp {
@@ -21,12 +22,9 @@ interface CommandHelp {
 		example: string
 	}>;
 }
-class CommandError {
-	public error: Error;
-	constructor(reason: string) {
-		this.error = new Error(reason);
-	}
-}
+
+
+
 interface CommandFile {
 	run: CommandRun;
 	help: CommandHelp;
