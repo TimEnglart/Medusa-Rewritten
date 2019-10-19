@@ -17,7 +17,7 @@ import {
 } from 'discord.js';
 import * as fs from 'fs';
 // import * as settings from './config/settings.json';
-import { CommandFile, Database, ExtendedClient, LogFilter, Logger, Settings, Embeds, CommandError, discord } from './ext/';
+import { CommandFile, Database, ExtendedClient, LogFilter, Logger, Settings, Embeds, CommandError } from './ext/';
 import * as exp from './ext/experienceHandler';
 import { WebServer } from './ext/web-server';
 import { ScoreBook } from './ext/score-book';
