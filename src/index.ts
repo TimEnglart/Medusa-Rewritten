@@ -182,7 +182,8 @@ discordBot.on('message', async (message: Message) => {
 });
 
 discordBot.on('error', error => discordBot.logger.logClient.log(`Unknown Discord.js Error Occurred:\nRaw Error:\n${error}`, LogFilter.Error));
-discordBot.on('debug' || 'warn', async info => discordBot.logger.logClient.log(`Discord Debug or Warn Message: ${info}`, LogFilter.Debug));
+discordBot.on('warn', async info => discordBot.logger.logClient.log(`Discord Warn Message: ${info}`, LogFilter.Debug));
+discordBot.on('debug', async info => discordBot.logger.logClient.log(`Discord Debug Message: ${info}`, LogFilter.Debug));
 
 discordBot.on('guildCreate', async guild => {
 	const eventRecv = performance.now();
