@@ -22,7 +22,7 @@ import * as exp from './ext/experienceHandler';
 import { WebServer } from './ext/web-server';
 import { ScoreBook } from './ext/score-book';
 import { RequestError } from './ext/webClient';
-
+import { inspect } from 'util'
 
 const discordBot: ExtendedClient = new Client({
 	disableEveryone: true,
@@ -163,7 +163,7 @@ discordBot.on('message', async (message: Message) => {
 							Failing Command: ${commandFile.help.name}\n
 							Executing User: ${message.author.tag}\n
 							Raw Error:\n
-							${JSON.stringify(e)}`, LogFilter.Error);
+							${inspect(e)}`, LogFilter.Error);
 							if (e instanceof RequestError) await message.channel.send(`A Request Error Occurred While Running That Command.\nReason: ${e.generateCommandError().reason}`);
 							else if (e instanceof CommandError)await message.channel.send(`A Command Error Occurred While Running That Command.\nReason: ${e.reason}`);
 							else await message.channel.send(`A Generic Error Occurred While Running That Command.`);
