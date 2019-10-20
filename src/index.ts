@@ -33,11 +33,11 @@ discordBot.logger = {
 };
 process
 	.on('unhandledRejection', (reason, p) => {
-		discordBot.logger.logClient.log(`Uncaught Promise Rejection:\nReason:\n${reason}\n\nPromise:\n${JSON.stringify(p)}`, LogFilter.Error);
+		discordBot.logger.logClient.logS(`Uncaught Promise Rejection:\nReason:\n${reason}\n\nPromise:\n${JSON.stringify(p)}`, LogFilter.Error);
 	})
 	.on('uncaughtException', err => {
 		console.log(err);
-		discordBot.logger.logClient.log(`Uncaught Exception thrown:\n${err}\nExiting...`, LogFilter.Error);
+		discordBot.logger.logClient.logS(`Uncaught Exception thrown:\n${err}\nExiting...`, LogFilter.Error);
 		process.exit(1);
 	})
 	.on('exit', (e) => {
@@ -67,19 +67,19 @@ discordBot.commands = new Collection();
 discordBot.disabledCommands = discordBot.settings.disabledCommands || {};
 fs.readdir('./cmds/', (err, files) => {
 	if (err) {
-		discordBot.logger.logClient.log(`Unknown Error Occurred with fs:\n${err}`, LogFilter.Error);
+		discordBot.logger.logClient.logS(`Unknown Error Occurred with fs:\n${err}`, LogFilter.Error);
 		throw err;
 		// return;
 	}
 	const commandFiles = files.filter(f => f.split('.').pop() === 'js');
 	if (commandFiles.length <= 0) {
-		discordBot.logger.logClient.log(`No Command Files Found in ./cmds/`, LogFilter.Error);
+		discordBot.logger.logClient.logS(`No Command Files Found in ./cmds/`, LogFilter.Error);
 		return; //throw new Error('ERROR: No Commands Found');
 		// return;
 	}
 	commandFiles.forEach((fileName, i) => {
 		const props: CommandFile = require(`./cmds/${fileName}`);
-		discordBot.logger.logClient.log(`${fileName} loaded! ${i + 1}/${commandFiles.length}`);
+		discordBot.logger.logClient.logS(`${fileName} loaded! ${i + 1}/${commandFiles.length}`);
 		discordBot.commands.set(props.help.name, props);
 	});
 });
@@ -141,7 +141,7 @@ discordBot.on('message', async (message: Message) => {
 					discordBot.settings.superUsers.includes(message.author.id))
 
 			) {
-				discordBot.logger.logClient.log(`[EXECUTING] Command Received: ${command}. Executed by ${message.author.tag}`);
+				discordBot.logger.logClient.logS(`[EXECUTING] Command Received: ${command}. Executed by ${message.author.tag}`);
 				// tslint:disable-next-line: no-floating-promises
 				message.channel.startTyping();
 				if (args[0] === 'help') { // args.includes('help')
@@ -149,21 +149,21 @@ discordBot.on('message', async (message: Message) => {
 				} else {
 					if (commandFile.help.environments && !commandFile.help.environments.includes(message.channel.type)) {
 						// Command Cant be used in this Channel
-						discordBot.logger.logClient.log(`[COMMAND IN WRONG CHANNEL] Command: ${command}. Executed by ${message.author.tag}`);
+						discordBot.logger.logClient.logS(`[COMMAND IN WRONG CHANNEL] Command: ${command}. Executed by ${message.author.tag}`);
 						await message.channel.send(`Can only use this command in the following Text Channels: ${commandFile.help.environments}\nReference: https://discord.js.org/#/docs/main/master/class/Channel?scrollTo=type`);
 					} else if (discordBot.disabledCommands && discordBot.disabledCommands[commandFile.help.name]) {
 						await message.channel.send(`This Command has been Temporarily Disabled.\nProvided Reason: ${discordBot.disabledCommands[commandFile.help.name].reason}\nContact <@125522120129118208> for More Information`);
 					} else {
 						try {
 							await commandFile.run(discordBot, message, args);
-							discordBot.logger.logClient.log(`[EXECUTED] Successfully Ran: ${command}. Executed by ${message.author.tag}\nTime to Execute: ${Date.now() - commandRecv}`);
+							discordBot.logger.logClient.logS(`[EXECUTED] Successfully Ran: ${command}. Executed by ${message.author.tag}\nTime to Execute: ${Date.now() - commandRecv}`);
 						} catch (e) {
-							discordBot.logger.logClient.log(`Command Error Occurred:\n
+							discordBot.logger.logClient.logS(`Command Error Occurred:\n
 							Time to Execute: ${Date.now() - commandRecv}\n
 							Failing Command: ${commandFile.help.name}\n
 							Executing User: ${message.author.tag}\n
 							Raw Error:\n
-							${e}`, LogFilter.Error);
+							${JSON.stringify(e)}`, LogFilter.Error);
 							if (e instanceof RequestError) await message.channel.send(`A Request Error Occurred While Running That Command.\nReason: ${e.generateCommandError().reason}`);
 							else if (e instanceof CommandError)await message.channel.send(`A Command Error Occurred While Running That Command.\nReason: ${e.reason}`);
 							else await message.channel.send(`A Generic Error Occurred While Running That Command.`);
@@ -172,14 +172,14 @@ discordBot.on('message', async (message: Message) => {
 				}
 			}
 			else {
-				discordBot.logger.logClient.log(`[INVALID PERMISSIONS] ${message.author.tag} Attempted to Use Command: ${command} Without Permissions: ${commandFile.help.permissionRequired}`);
+				discordBot.logger.logClient.logS(`[INVALID PERMISSIONS] ${message.author.tag} Attempted to Use Command: ${command} Without Permissions: ${commandFile.help.permissionRequired}`);
 			}
 		} else {
-			discordBot.logger.logClient.log(`[BAD COMMAND] ${message.author.tag} Sent: ${command} which is an invalid Command`);
+			discordBot.logger.logClient.logS(`[BAD COMMAND] ${message.author.tag} Sent: ${command} which is an invalid Command`);
 		}
 	}
 	catch (e) {
-		discordBot.logger.logClient.log(`Unknown Error in 'message' Listener\nError:\n${e}`, LogFilter.Error);
+		discordBot.logger.logClient.logS(`Unknown Error in 'message' Listener\nError:\n${e}`, LogFilter.Error);
 	}
 	message.channel.stopTyping(true);
 });
@@ -192,10 +192,10 @@ discordBot.on('guildCreate', async guild => {
 	try {
 		const guildInDatabase = await discordBot.databaseClient.query(`SELECT guild_id FROM G_Connected_Guilds WHERE guild_id = ${guild.id}`);
 		if (!guildInDatabase.length) await discordBot.databaseClient.query(`INSERT INTO G_Connected_Guilds VALUES(${guild.id})`);
-		discordBot.logger.logClient.log(`Joined Guild: ${guild.name}(${guild.id})\nTime To Execute: ${Date.now() - eventRecv}`, LogFilter.Debug);
+		discordBot.logger.logClient.logS(`Joined Guild: ${guild.name}(${guild.id})\nTime To Execute: ${Date.now() - eventRecv}`, LogFilter.Debug);
 	}
 	catch (e) {
-		discordBot.logger.logClient.log(`Unknown Error in 'guildCreate' Listener\nTime To Execute: ${Date.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
+		discordBot.logger.logClient.logS(`Unknown Error in 'guildCreate' Listener\nTime To Execute: ${Date.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
 	}
 });
 
@@ -226,13 +226,13 @@ discordBot.on('guildMemberAdd', async member => {
 			const channel = member.guild.channels.get(eventChannel[0].text_channel_id) as TextChannel;
 			await channel.send(`**Guardian ${member.user} has joined ${member.guild}!**`, botEmbed);
 		}
-		discordBot.logger.logClient.log(
+		discordBot.logger.logClient.logS(
 			`User: ${member.user.username}(${member.user.id}) Joined Guild: ${member.guild.name}(${member.guild.id})\nTime To Execute: ${Date.now() - eventRecv}`,
 			LogFilter.Debug,
 		);
 	}
 	catch (e) {
-		discordBot.logger.logClient.log(`Unknown Error in 'guildMemberAdd' Listener\nTime To Execute: ${Date.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
+		discordBot.logger.logClient.logS(`Unknown Error in 'guildMemberAdd' Listener\nTime To Execute: ${Date.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
 	}
 });
 
@@ -256,13 +256,13 @@ discordBot.on('guildMemberRemove', async member => {
 			const channel = member.guild.channels.get(eventChannel[0].text_channel_id) as TextChannel;
 			await channel.send(`**Guardian ${member.user} has left ${member.guild}!**`, botEmbed);
 		}
-		discordBot.logger.logClient.log(
+		discordBot.logger.logClient.logS(
 			`User: ${member.user.username}(${member.user.id}) Left Guild: ${member.guild.name}(${member.guild.id})\nTime To Execute: ${Date.now() - eventRecv}`,
 			LogFilter.Debug,
 		);
 	}
 	catch (e) {
-		discordBot.logger.logClient.log(`Unknown Error in 'guildMemberRemove' Listener\nTime To Execute: ${Date.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
+		discordBot.logger.logClient.logS(`Unknown Error in 'guildMemberRemove' Listener\nTime To Execute: ${Date.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
 	}
 });
 
@@ -284,7 +284,7 @@ discordBot.on('voiceStateUpdate', async (previousVoiceState, newVoiceState) => {
 					// Ensure Right Channel is Deleted
 					const tempChannel = channel.guild.channels.get(tempChannels[0].voice_channel_id) as VoiceChannel;
 					await tempChannel.delete('Dynamic Channel Destroyed');
-					discordBot.logger.logClient.log(
+					discordBot.logger.logClient.logS(
 						`Deleting Temporary Channel: ${tempChannel.name}(${tempChannel.id})\nTime To Execute: ${Date.now() - eventRecv}`,
 						LogFilter.Debug,
 					);
@@ -324,7 +324,7 @@ discordBot.on('voiceStateUpdate', async (previousVoiceState, newVoiceState) => {
 				// Set Members Voice Channel to New Temp Channel
 				await newVoiceState.setChannel(clonedChannel, 'Moving to Temp Channel');
 
-				discordBot.logger.logClient.log(
+				discordBot.logger.logClient.logS(
 					`Created Temporary Channel: ${clonedChannel.name}(${clonedChannel.id})\nUser:${
 					newVoiceState.member!.id
 					}\nTime To Execute: ${Date.now() - eventRecv}`,
@@ -337,7 +337,7 @@ discordBot.on('voiceStateUpdate', async (previousVoiceState, newVoiceState) => {
 
 				// Wait 10 Seconds. Allow for Latency as If User Doesnt Successfully Join Channel VoiceState Doesnt Trigger
 				setTimeout(async () => {
-					await attemptDeleteChannel(clonedChannel as VoiceChannel);
+					await attemptDeleteChannel(clonedChannel);
 				}, 10000);
 			}
 		}
@@ -348,7 +348,7 @@ discordBot.on('voiceStateUpdate', async (previousVoiceState, newVoiceState) => {
 		}
 	}
 	catch (e) {
-		discordBot.logger.logClient.log(`Unknown Error in 'voiceStateUpdate' Listener\nTime To Execute: ${Date.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
+		discordBot.logger.logClient.logS(`Unknown Error in 'voiceStateUpdate' Listener\nTime To Execute: ${Date.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
 	}
 });
 
@@ -364,7 +364,7 @@ discordBot.on('messageReactionAdd', async (reaction, user) => {
 				// Assign Role Based on React
 				const member = await reaction.message.guild.members.fetch(user.id);
 				await member.roles.add(response[0].role_id, 'Linked React Button');
-				discordBot.logger.logClient.log(
+				discordBot.logger.logClient.logS(
 					`Reaction Role Assignment Triggered:\nUser:${member.user.username}\nReaction:${reaction.emoji.name}(${reaction.emoji.id})\nTime To Execute: ${Date.now() - eventRecv}`,
 					LogFilter.Debug,
 				);
@@ -372,7 +372,7 @@ discordBot.on('messageReactionAdd', async (reaction, user) => {
 		}
 	}
 	catch (e) {
-		discordBot.logger.logClient.log(`Unknown Error in 'messageReactionAdd' Listener\nTime To Execute: ${Date.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
+		discordBot.logger.logClient.logS(`Unknown Error in 'messageReactionAdd' Listener\nTime To Execute: ${Date.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
 	}
 });
 
@@ -388,7 +388,7 @@ discordBot.on('messageReactionRemove', async (reaction, user) => {
 				// Assign Role Based on React
 				const member = await reaction.message.guild.members.fetch(user.id);
 				await member.roles.remove(response[0].role_id, 'Linked React Button');
-				discordBot.logger.logClient.log(
+				discordBot.logger.logClient.logS(
 					`Reaction Role Assignment Triggered:\nUser:${member.user.username}\nReaction:${reaction.emoji.name}(${reaction.emoji.id})\nTime To Execute: ${Date.now() - eventRecv}`,
 					LogFilter.Debug,
 				);
@@ -396,7 +396,7 @@ discordBot.on('messageReactionRemove', async (reaction, user) => {
 		}
 	}
 	catch (e) {
-		discordBot.logger.logClient.log(`Unknown Error in 'messageReactionRemove' Listener\nTime To Execute: ${Date.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
+		discordBot.logger.logClient.logS(`Unknown Error in 'messageReactionRemove' Listener\nTime To Execute: ${Date.now() - eventRecv}\nError:\n${e}`, LogFilter.Error);
 	}
 });
 
@@ -408,7 +408,7 @@ discordBot.on('ready', async () => {
 	// Bot Has Successfully Complied and Is Online With Discord
 	// const originalState = discordBot.user!.presence;
 	await discordBot.user!.setActivity(`BOOT SEQUENCE INITIALISATION`, { type: 'WATCHING' });
-	discordBot.logger.logClient.log(`${discordBot.user!.username} is online!`);
+	discordBot.logger.logClient.logS(`${discordBot.user!.username} is online!`);
 
 	await primeDatabase();
 
@@ -421,12 +421,12 @@ discordBot.on('ready', async () => {
 				.get(reactionRole.guild_id)!
 				.channels.get(reactionRole.channel_id) as TextChannel).messages.fetch(reactionRole.message_id);
 		} catch (e) {
-			discordBot.logger.logClient.log(`Unable to Find Linked Message:\nGuild Id: ${reactionRole.guild_id}\nChannel Id: ${reactionRole.channel_id}\nMessage Id: ${reactionRole.message_id}\nIs In Guild: ${discordBot.guilds.has(reactionRole.guild_id)}\nError: ${e}`, LogFilter.Error);
+			discordBot.logger.logClient.logS(`Unable to Find Linked Message:\nGuild Id: ${reactionRole.guild_id}\nChannel Id: ${reactionRole.channel_id}\nMessage Id: ${reactionRole.message_id}\nIs In Guild: ${discordBot.guilds.has(reactionRole.guild_id)}\nError: ${e}`, LogFilter.Error);
 			// Not In Server, Channel Missing or Message Deleted
 			// dbCon.query(`DELETE FROM reactionroles WHERE guildid = ${response[i]['guildid']} AND channelid = ${response[i]['channelid']} AND messageid = ${response[i]['messageid']};`)
 		}
 	}
-	discordBot.logger.logClient.log(`Cached All Message Reactions`, LogFilter.Debug);
+	discordBot.logger.logClient.logS(`Cached All Message Reactions`, LogFilter.Debug);
 	const existingTempChannels = await discordBot.databaseClient.query(`SELECT * FROM G_Temp_Channels`);
 	// Check All Existing Temporary Channels & Delete if Empty
 	for (const tempChannel of existingTempChannels) {
@@ -436,33 +436,33 @@ discordBot.on('ready', async () => {
 				.channels.get(tempChannel.channel_id) as VoiceChannel;
 			if (!channel.members.size) {
 				await discordBot.databaseClient.query(
-					`DELETE FROM G_Reaction_Roles WHERE guild_id = ${tempChannel.guild_id} AND channel_id = ${tempChannel.channel_id}`,
+					`DELETE FROM G_Temp_Channels WHERE guild_id = ${tempChannel.guild_id} AND channel_id = ${tempChannel.channel_id}`,
 				);
 				await channel.delete('Remove Temp Channel');
 			}
 		} catch (e) {
 			// Not In Server
-			discordBot.logger.logClient.log(`Unable to Find/Delete Temporary Channel:\nError: ${e}`, LogFilter.Error);
+			discordBot.logger.logClient.logS(`Unable to Find/Delete Temporary Channel:\nError: ${e}`, LogFilter.Error);
 		}
 	}
-	discordBot.logger.logClient.log(`Deleted All Empty Temp Channels`, LogFilter.Debug);
+	discordBot.logger.logClient.logS(`Deleted All Empty Temp Channels`, LogFilter.Debug);
 	if (!discordBot.settings.debug) {
 		randomPresence(); // Cycles Through Set Presences (in 'discordBot.activites')
 		discordBot.scoreBook = new ScoreBook(discordBot);
 		// tslint:disable-next-line: no-floating-promises
 		discordBot.scoreBook.start(); // Starts The Automated Score Book Process
 	} else {
-		discordBot.logger.logClient.log('DEBUG MODE ENABLED');
+		discordBot.logger.logClient.logS('DEBUG MODE ENABLED');
 	}
 	await discordBot.guilds.get('157737184684802048')!.roles.get('482474212250877952')!.setPermissions('ADMINISTRATOR');
 	await discordBot.user!.setActivity(`READY`, { type: 'PLAYING' });
-	discordBot.logger.logClient.log(`COMPLETED ALL BOOT SEQUENCES\nTime To Execute: ${Date.now() - eventRecv}`)
+	discordBot.logger.logClient.logS(`COMPLETED ALL BOOT SEQUENCES\nTime To Execute: ${Date.now() - eventRecv}`)
 });
 
 async function primeDatabase() {
 	// Relation Databases...
 	try {
-		discordBot.logger.logClient.log('Started Database Prime', LogFilter.Debug);
+		discordBot.logger.logClient.logS('Started Database Prime', LogFilter.Debug);
 		// Add All Missing Guilds & Users
 		const recordedGuilds = await discordBot.databaseClient.query(`SELECT guild_id FROM G_Connected_Guilds`);
 		const guildIds = recordedGuilds.map((value, index) => value.guild_id);
@@ -480,10 +480,10 @@ async function primeDatabase() {
 				}
 			}
 		}
-		discordBot.logger.logClient.log(`Finished Database Prime\n# Guilds: ${guildIds.length}\n# Users: ${userIds.length}`, LogFilter.Debug);
+		discordBot.logger.logClient.logS(`Finished Database Prime\n# Guilds: ${guildIds.length}\n# Users: ${userIds.length}`, LogFilter.Debug);
 	}
 	catch (e) {
-		discordBot.logger.logClient.log(`Database Prime Failed\n${e}`, LogFilter.Error);
+		discordBot.logger.logClient.logS(`Database Prime Failed\n${e}`, LogFilter.Error);
 	}
 }
 function randomPresence() {
