@@ -164,9 +164,9 @@ discordBot.on('message', async (message: Message) => {
 							Executing User: ${message.author.tag}\n
 							Raw Error:\n
 							${e}`, LogFilter.Error);
-							if (e instanceof RequestError) await message.channel.send();
-							else if (e instanceof CommandError) await message.channel.send();
-							else await message.channel.send(`An Generic Error Occurred While Running That Command.`);
+							if (e instanceof RequestError) await message.channel.send(`A Request Error Occurred While Running That Command.\nReason: ${e.generateCommandError().reason}`);
+							else if (e instanceof CommandError)await message.channel.send(`A Command Error Occurred While Running That Command.\nReason: ${e.reason}`);
+							else await message.channel.send(`A Generic Error Occurred While Running That Command.`);
 						}
 					}
 				}
