@@ -8,16 +8,18 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 	return new Promise(async (resolve: () => void, reject: (err: CommandError) => void) => {
 		try {
 			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
+			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
 			message.channel.stopTyping();
-			message.author.dmChannel.startTyping();
+			
 			const initialTimeStamp = new Date();
 			const registerEmbed = new discord.MessageEmbed()
 				.setURL(`https://medusabot.tk/initialize.php?did=${message.author.id}`)
 				.setTitle('Link Your Destiny Account to Your Lighthouse Progression')
 				.setColor('#1E90FF')
-				.setFooter('Medusa', discordBot.user!.displayAvatarURL())
+				.setFooter('Medusa', discordBot.user.displayAvatarURL())
 				.addField('Enhance Your Guardian Progression', `Completing this Registration Will Add Additional Features and Integrations Between Destiny and The Lighthouse Discord Server\n\n[Click Here To Register](https://medusabot.tk/initialize.php?did=${message.author.id})`);
 			const registerMsg = await message.author.send(registerEmbed);
+			registerMsg.channel.startTyping();
 			let hasRegistered = false;
 			let timePassed = 0;
 			while (!hasRegistered && timePassed < 1200) {

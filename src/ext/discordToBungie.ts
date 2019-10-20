@@ -102,7 +102,7 @@ class DestinyPlayer {
 	public static lookup(data: DestinyPlayerLookup, components?: string[]): Promise<DestinyPlayer[]> {
 		return new Promise(async (resolve: (destinyPlayer: DestinyPlayer[]) => void, reject: (err: Error) => void) => {
 			try {
-				if (!data.membershipId && !data.displayName) reject(new Error('No Data'));
+				if (!data.membershipId && !data.displayName) throw new Error('No Data');
 				const requester = new MyRequester({
 					hostname: 'www.bungie.net',
 					port: 443,

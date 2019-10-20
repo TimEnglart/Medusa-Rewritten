@@ -7,10 +7,10 @@ import * as exp from '../ext/experienceHandler'
 const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
 	return new Promise(async (resolve: () => void, reject: (err: CommandError) => void) => {
 		try {
-			if (!message.author) throw new CommandError('No Author'); 	// If Author is Needed
-			if (!message.member) throw new CommandError('No Member'); 	// If Member is Needed
-			if (!message.guild) throw new CommandError('No Guild'); 		// If Guild is Needed
-			if (!discordBot.user) throw new CommandError('No Bot User'); 	// If Bot Instance is Needed
+			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
+			if (!message.member) throw new CommandError('NO_MEMBER');	// If Member is Needed
+			if (!message.guild) throw new CommandError('NO_GUILD'); 		// If Guild is Needed
+			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
 
 			let subject = message.member;
 			if (args.length) subject = Utility.LookupMember(message.guild, args.join(' ')) || message.member;

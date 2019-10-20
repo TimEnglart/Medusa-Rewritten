@@ -21,6 +21,7 @@ import { CommandFile, Database, ExtendedClient, LogFilter, Logger, Settings, Emb
 import * as exp from './ext/experienceHandler';
 import { WebServer } from './ext/web-server';
 import { ScoreBook } from './ext/score-book';
+import { RequestError } from './ext/webClient';
 
 
 const discordBot: ExtendedClient = new Client({
@@ -163,7 +164,9 @@ discordBot.on('message', async (message: Message) => {
 							Executing User: ${message.author.tag}\n
 							Raw Error:\n
 							${e}`, LogFilter.Error);
-							await message.channel.send(`An Error Occurred While Running That Command.${e.reason ? `\nReason For This Error Occurring: ${e.reason}` : null}`);
+							if (e instanceof RequestError) await message.channel.send();
+							else if (e instanceof CommandError) await message.channel.send();
+							else await message.channel.send(`An Generic Error Occurred While Running That Command.`);
 						}
 					}
 				}

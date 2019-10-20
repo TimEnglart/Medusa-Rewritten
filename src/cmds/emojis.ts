@@ -7,7 +7,8 @@ import { CommandFile, CommandHelp, CommandRun, discord, Embeds, ExtendedClient, 
 const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
 	return new Promise(async (resolve: () => void, reject: (err: CommandError) => void) => {
 		try {
-			if (!message.author) throw new CommandError('No Author');
+			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
+			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
 			let stuff = 1;
 			let botEmbed = new discord.MessageEmbed().setTitle(`Emojis ;) Pt.${stuff}`);
 			for (const [snowflake, emoji] of message.guild!.emojis.entries()) {

@@ -60,6 +60,9 @@ export class Logger {
 			await this.startLog(formattedMessage);
 		});
 	}
+	public logS(message: string, filter: LogFilter = LogFilter.Info): void {
+		this.log(message, filter);
+	}
 
 	public returnLogFile() {
 		return new Promise((resolve: (logFile: string) => void, reject: (err: Error) => void) => {

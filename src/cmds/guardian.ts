@@ -1,4 +1,4 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Settings, Embeds, Utility, LogFilter } from '../ext/index';
+import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Settings, Embeds, Utility, LogFilter, CommandError } from '../ext/index';
 import * as expHandler from '../ext/experienceHandler';
 import * as destiny from '../ext/discordToBungie';
 
@@ -16,8 +16,10 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				}
 				return array;
 			};
-			if (!message.member) return reject(new Error('No Member'));
-			if (!message.author) return reject(new Error('No Author'));
+			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
+			if (!message.member) throw new CommandError('NO_MEMBER');	// If Member is Needed
+			if (!message.guild) throw new CommandError('NO_GUILD'); 		// If Guild is Needed
+			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
 			if (!message.guild) {
 				await message.reply('CAN ONLY BE USED IN LIGHTHOUSE DISCORD AT THIS MOMENT');
 				return resolve();

@@ -1,5 +1,8 @@
 import * as https from 'https';
 import * as xml from 'xml2js';
+import { IncomingMessage } from 'http';
+import { Url } from 'url';
+import { CommandError } from '.';
 
 class Cookie {
 	public cookieName?: string;
@@ -63,7 +66,23 @@ interface ExtendedRequestOptions extends https.RequestOptions {
 	responseType?: 'RAW' | 'JSON' | 'XML' | undefined;
 	doNotFollowRedirect?: boolean;
 }
-
+// tslint:disable-next-line: max-classes-per-file
+class RequestError extends Error {
+	public hostname?: string;
+	public statusCode: number;
+	public path?: string;
+	public redirectUrl?: Url;
+	constructor(public options: ExtendedRequestOptions, public response: IncomingMessage) {
+		super(`HTTP_STATUS_CODE_${response.statusCode}`);
+		this.statusCode = response.statusCode || 0;
+		this.hostname = options.hostname;
+		this.path = options.path;
+		this.redirectUrl = response.headers.location ? new URL(response.headers.location) : undefined;
+	}
+	public generateCommandError(): CommandError {
+		return new CommandError(`HTTP_STATUS_CODE_${this.statusCode}`);
+	}
+}
 // tslint:disable-next-line: max-classes-per-file
 class MyRequester {
 	public cookies: Map<string, Cookie[]>;
@@ -83,16 +102,16 @@ class MyRequester {
 				if (res.statusCode !== 200) { // Not Successful
 					switch (res.statusCode!.toString()[0]) { // handle accordingly
 						case '3':
-								if (!res.headers.location || overrideOptions.doNotFollowRedirect) return reject(new Error(`Bad Http Redirect Made:\nStatus Code: ${res.statusCode}\nHostname: ${overrideOptions.hostname}\nPath: ${overrideOptions.path}`));
+								if (!res.headers.location || overrideOptions.doNotFollowRedirect) return reject(new RequestError(overrideOptions, res));
 								const redirectUrl = new URL(res.headers.location);
 							try {
 								return resolve(this.request({ hostname: redirectUrl.hostname, path: redirectUrl.pathname /*, protocol: redirectUrl.protocol , port: redirectUrl.port || (redirectUrl.protocol === 'https:' ? 443 : 80)*/ }));
 							}
 							catch (e) {
-								return reject(new Error(`Failed to Redirect:\nHostname: ${overrideOptions.hostname} --> ${redirectUrl.hostname}\nPath: ${overrideOptions.path} --> ${redirectUrl.pathname}`));
+								return reject(new RequestError(overrideOptions, res));
 							}
 						default:
-							return reject(new Error(`Bad Http Request Made:\nStatus Code: ${res.statusCode}\nHostname: ${overrideOptions.hostname}\nPath: ${overrideOptions.path}`));
+							return reject(new RequestError(overrideOptions, res));
 					}
 				}
 				else {
@@ -168,4 +187,4 @@ async function test() {
 	console.log(await req.request());
 }
 
-export { MyRequester };
+export { MyRequester, RequestError };
