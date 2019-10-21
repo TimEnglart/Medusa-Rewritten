@@ -162,7 +162,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 
 const help: CommandHelp = {
 	description: 'Displays Guardian profiles including current Rank, XP, number of Resets and Medals.',
-	environments: ['text', 'dm'],
+	environments: ['text'],
 	example: 'guardian \'@Medusa#6621\'',
 	expectedArgs: [{ name: 'query', optional: true, example: '@User#12345 | reset | rank' }],
 	name: 'guardian',

@@ -30,11 +30,13 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				);
 				timePassed += 5;
 				const dbQuery = await discordBot.databaseClient.query(`SELECT * FROM U_Bungie_Account WHERE user_id = ${message.author.id}`);
-				if (dbQuery && new Date(dbQuery[0].time_added) > initialTimeStamp) {
+				if (dbQuery && dbQuery[0]) {
+					if (new Date(dbQuery[0].time_added) > initialTimeStamp) {
 					hasRegistered = true;
 					await registerMsg.delete();
 					await message.author.send(Embeds.successEmbed('Sign Up Successful', 'Nothing More For You To Do :)'));
 					return resolve();
+					}
 				}
 			}
 			throw new CommandError('REGISTRATION_TIMEOUT', 'Reuse the `register` Command to Attempt to Sign Up Again');
