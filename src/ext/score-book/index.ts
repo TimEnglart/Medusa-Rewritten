@@ -67,7 +67,7 @@ class ScoreBook {
 		const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 		const utcDate = new Date();
 		utcDate.setUTCHours(17, 0, 0, 0); // UTC Reset is at 5pm
-		utcDate.setDate(today.getDate() - today.getDay() + 2);
+		utcDate.setUTCDate(today.getDate() - today.getDay() + 2);
         return utcDate;
     }
     get minutesToNextReset(): number {
