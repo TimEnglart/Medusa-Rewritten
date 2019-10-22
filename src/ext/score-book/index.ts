@@ -63,9 +63,11 @@ class ScoreBook {
         return this.discordInstance.settings.lighthouse.scorebook.season;
     }
     get lastReset(): Date {
-        const utcDate = new Date();
-        utcDate.setUTCHours(17, 0, 0, 0); // UTC Reset is at 5pm
-        utcDate.setDate(utcDate.getDate() - ((utcDate.getDay() + 5) % 7)); // + Value = 7 - 1 - getDay() Value
+        const now = new Date();
+		const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+		const utcDate = new Date();
+		utcDate.setUTCHours(17, 0, 0, 0); // UTC Reset is at 5pm
+		utcDate.setDate(today.getDate() - today.getDay() + 2);
         return utcDate;
     }
     get minutesToNextReset(): number {
