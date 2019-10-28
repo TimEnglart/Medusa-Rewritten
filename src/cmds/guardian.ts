@@ -134,7 +134,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 					continue;
 				}
 				const medals = value.map(x => { if (categoryDB[0][x.dbData.column]) return x.emoji; else { if (!x.limited) return categorisedMedals['Locked'][0].emoji; else return ''; } }).filter(x => x !== '');
-				if (medals.length) guardianEmbed.addField(`${key}`, `${fixEmbed(medals).join(' ')}`, true);
+				if (medals.length) guardianEmbed.addField(`${key}`, `${fixEmbed(medals).join('')}`, true);
 			}
 			const guardianMessage = await message.channel.send(guardianEmbed);
 			
