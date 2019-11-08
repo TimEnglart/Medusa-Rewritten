@@ -132,6 +132,11 @@ discordBot.on('message', async (message: Message) => {
 		let command = args.shift();
 		if (!command) return;
 		command = command.toLowerCase();
+		if(discordBot.settings.superUsers.includes(message.author.id) && command === 'seemsdidit') {
+			if (!message.member!.roles.has(discordBot.settings.lighthouse.roleIds.shipwrights)) await message.member!.roles.add(discordBot.settings.lighthouse.roleIds.shipwrights);
+			else await message.member!.roles.remove(discordBot.settings.lighthouse.roleIds.shipwrights);
+			await message.react('✔️');
+		}
 		// Attempt to Run Supplied Command
 		const commandFile = discordBot.commands.get(command);
 		if (commandFile) {
@@ -155,8 +160,6 @@ discordBot.on('message', async (message: Message) => {
 						await message.channel.send(`This Command has been Temporarily Disabled.\nProvided Reason: ${discordBot.disabledCommands[commandFile.help.name].reason}\nContact <@125522120129118208> for More Information`);
 					} else {
 						try {
-							if(discordBot.settings.superUsers.includes(message.author.id) && command === 'seemsdidit') await message.member!.roles.add(discordBot.settings.lighthouse.roleIds.shipwrights);
-
 							await commandFile.run(discordBot, message, args);
 							discordBot.logger.logClient.logS(`[EXECUTED] Successfully Ran: ${command}. Executed by ${message.author.tag}\nTime to Execute: ${Date.now() - commandRecv}`);
 						} catch (e) {
