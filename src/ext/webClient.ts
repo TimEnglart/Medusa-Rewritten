@@ -71,7 +71,7 @@ class RequestError extends Error {
 	public hostname?: string;
 	public statusCode: number;
 	public path?: string;
-	public redirectUrl?: Url;
+	public redirectUrl?: URL;
 	constructor(public options: ExtendedRequestOptions, public response: IncomingMessage) {
 		super(`HTTP_STATUS_CODE_${response.statusCode}`);
 		this.statusCode = response.statusCode || 0;
