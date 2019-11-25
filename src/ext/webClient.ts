@@ -95,7 +95,7 @@ class MyRequester {
 		return new Promise(async (resolve, reject) => {
 			const overrideOptions = this.options;
 			Object.assign(overrideOptions, options);
-			overrideOptions.headers!.cookie = this.prepareCookies(overrideOptions.hostname!);
+			overrideOptions.headers!.cookie = this.prepareCookies(overrideOptions.hostname);
 			const req = https.request(overrideOptions, (res) => {
 				if (res.headers['set-cookie']) this.addCookies(overrideOptions.hostname, res.headers['set-cookie']);
 				const responseData: string[] = [];
@@ -140,7 +140,8 @@ class MyRequester {
 			req.end();
 		});
 	}
-	private prepareCookies(hostName: string) {
+	private prepareCookies(hostName?: string) {
+		if (!hostName) return;
 		const hostsCookies = this.cookies.get(hostName);
 		if (!hostsCookies) return '';
 		const cookies = [];
