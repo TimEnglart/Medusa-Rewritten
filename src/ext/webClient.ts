@@ -68,9 +68,9 @@ interface ExtendedRequestOptions extends https.RequestOptions {
 }
 // tslint:disable-next-line: max-classes-per-file
 class RequestError extends Error {
-	public hostname?: string;
+	public hostname?: string | null;
 	public statusCode: number;
-	public path?: string;
+	public path?: string | null;
 	public redirectUrl?: URL;
 	constructor(public options: ExtendedRequestOptions, public response: IncomingMessage) {
 		super(`HTTP_STATUS_CODE_${response.statusCode}`);
@@ -140,7 +140,7 @@ class MyRequester {
 			req.end();
 		});
 	}
-	private prepareCookies(hostName?: string) {
+	private prepareCookies(hostName?: string | null | undefined) {
 		if (!hostName) return;
 		const hostsCookies = this.cookies.get(hostName);
 		if (!hostsCookies) return '';
@@ -163,7 +163,7 @@ class MyRequester {
 		}
 		return `Cookie: ${cookies.join('; ')}`;
 	}
-	private addCookies(hostname: string | undefined, cookies: string[]) {
+	private addCookies(hostname: string | null | undefined, cookies: string[]) {
 		if (!hostname) return;
 		let currentHostCookies = this.cookies.get(hostname);
 		if (!currentHostCookies) currentHostCookies = [] as Cookie[];
