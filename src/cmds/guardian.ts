@@ -1,7 +1,8 @@
 import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Settings, Embeds, Utility, LogFilter, CommandError } from '../ext/index';
 import * as expHandler from '../ext/experienceHandler';
 import * as destiny from '../ext/discordToBungie';
-
+import * as exp from '../ext/experienceHandler';
+import { Message } from 'discord.js';
 // Only Reject Promise if a Real Error Occurs
 // run Function is pretty convoluted
 
@@ -97,7 +98,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			}
 
 			const userExperience = await discordBot.databaseClient.query(`SELECT * FROM U_Experience WHERE user_id = ${user.id}`);
-			if (!userExperience) return resolve();
+			if (!userExperience) throw new CommandError('DATABASE_ENTRY_NOT_FOUND', 'There is No Experience Entry For This User');
 			const currentLevel = +userExperience[0].level;
 			const currentLevelArray = currentLevel - 1;
 			const currentExperience = +userExperience[0].xp;
@@ -122,6 +123,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				.addField(`Triumph Score`, `${score}\n**_**`) // Triumph Score
 				.addField(`${currentExperience} / ${experienceRequiredForNextLevel} XP`, `${xpBar}\n**_**`, true) // Xp Bar
 				.addField(`${currentRank.name} ${romanReset.length > 5 ? currentReset : romanReset}`, `${rankBar}\n**_**`, true) // Level Bar
+				.addBlankField(true) // Fix for Discord Embed Update
 				;
 			// For Loop for medals
 			const categorisedMedals = expHandler.categoriseMedals();
@@ -136,9 +138,17 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				const medals = value.map(x => { if (categoryDB[0][x.dbData.column]) return x.emoji; else { if (!x.limited) return categorisedMedals['Locked'][0].emoji; else return ''; } }).filter(x => x !== '');
 				if (medals.length) guardianEmbed.addField(`${key}`, `${fixEmbed(medals).join('')}`, true);
 			}
-			const guardianMessage = await message.channel.send(guardianEmbed);
-			
+			let guardianMessage: Message | undefined;
+			const dailyUpdate = Math.ceil(Math.abs(Date.parse(userExperience[0].last_checked_medals) - Date.now()) / (1000 * 60 * 60 * 24));
+			if (dailyUpdate > 1) {
+				guardianMessage = await message.channel.send('Updating Your Medals...');
+				const awardedMedals = await exp.checkAllMedals(user, discordBot.databaseClient, true);
+				await exp.giveMedal(user.id, awardedMedals, discordBot.databaseClient);
+				await discordBot.databaseClient.query(`SELECT * FROM U_Experience WHERE user_id = ${user.id}`);
+			}
+			guardianMessage = await (guardianMessage ? guardianMessage.edit('', guardianEmbed) : message.channel.send(guardianEmbed));
 			return resolve();
+			/*
 			for (const membershipType in destinyProfiles) {
 				if (!membershipType) continue;
 				await discordBot.logger.logClient.log(JSON.stringify(membershipType), 1);
@@ -152,7 +162,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				}
 				return false;
 			}, {time: 300000});
-
+			*/
 			return resolve();
 		} catch (e) {
 			return reject(e);

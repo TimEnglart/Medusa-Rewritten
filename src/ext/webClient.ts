@@ -90,7 +90,7 @@ class MyRequester {
 		this.cookies = new Map<string, Cookie[]>();
 		// options.protocol = 'https:';
 	}
-	public request(options?: ExtendedRequestOptions, postData = null): Promise<any | Error> {
+	public request(options?: ExtendedRequestOptions, postData: any = null): Promise<any | Error> {
 		if (!this.options && !options) throw new Error('No Options');
 		return new Promise(async (resolve, reject) => {
 			const overrideOptions = this.options;
