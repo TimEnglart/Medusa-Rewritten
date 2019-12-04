@@ -11,6 +11,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
 
 			if (discordBot.settings.superUsers.includes(message.author.id)) {
+				await message.channel.send('Restarting :)');
 				process.exit(+args[0] || 0);
 			}
 			return resolve();
