@@ -149,9 +149,9 @@ discordBot.on('message', async (message: Message) => {
 				discordBot.logger.logClient.logS(`[EXECUTING] Command Received: ${command}. Executed by ${message.author.tag}`);
 				// tslint:disable-next-line: no-floating-promises
 				message.channel.startTyping();
-				if (args[0] === 'help') { // args.includes('help')
-					await message.channel.send(Embeds.helpEmbed(commandFile, prefix));
-				} else {
+				//if (args[0] === 'help') { // args.includes('help')
+				//	await message.channel.send(Embeds.helpEmbed(commandFile, prefix));
+				//} else {
 					if (commandFile.help.environments && !commandFile.help.environments.includes(message.channel.type)) {
 						// Command Cant be used in this Channel
 						discordBot.logger.logClient.logS(`[COMMAND IN WRONG CHANNEL] Command: ${command}. Executed by ${message.author.tag}`);
@@ -174,7 +174,7 @@ discordBot.on('message', async (message: Message) => {
 							else await message.channel.send(`A Generic Error Occurred While Running That Command.`);
 						}
 					}
-				}
+				//}
 			}
 			else {
 				discordBot.logger.logClient.logS(`[INVALID PERMISSIONS] ${message.author.tag} Attempted to Use Command: ${command} Without Permissions: ${commandFile.help.permissionRequired}`);

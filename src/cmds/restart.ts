@@ -25,6 +25,7 @@ const help: CommandHelp = {
 	environments: ['text', 'dm'],
 	example: '',
 	expectedArgs: [{ name: 'Error Code', optional: true, example: '1' }],
+	hidden: true,
 	name: 'restart',
 	permissionRequired: 'ADMINISTRATOR', // Change nulls to 'SEND_MESSAGES'
 };

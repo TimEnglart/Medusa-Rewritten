@@ -21,6 +21,7 @@ interface CommandHelp {
 		optional: boolean,
 		example: string
 	}>;
+	hidden?: boolean;
 }
 
 

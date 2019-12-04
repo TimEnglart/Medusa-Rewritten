@@ -12,7 +12,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
 			if (args.length > 0) {
 				const commandModule = discordBot.commands.get(args[0]);
-				if (commandModule) {
+				if (commandModule && !commandModule.help.hidden) {
 					let prefix = discordBot.settings.defaultPrefix;
 					if (message.guild) {
 						const resp = await discordBot.databaseClient.query(`SELECT * FROM G_Prefix WHERE guild_id = ${message.guild.id};`);

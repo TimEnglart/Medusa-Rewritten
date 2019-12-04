@@ -1,11 +1,12 @@
 'use strict';
 import * as fs from 'fs';
 import { RateLimiter } from './rate-limiter';
+import * as path from 'path';
 const writeLine = console.log;
 export class Logger {
 	public logFile: string;
 	private rateLimiter: RateLimiter;
-	constructor(logFileLocation = './logs', public filters: LogFilter[] | null = [LogFilter.Info], public json?: boolean) {
+	constructor(private logFileLocation = './logs', public filters: LogFilter[] | null = [LogFilter.Info], public json?: boolean) {
 		this.rateLimiter = new RateLimiter({
 			operations: 1,
 			returnTokenOnCompletion: true,
@@ -61,9 +62,12 @@ export class Logger {
 		});
 	}
 	public logS(message: string, filter: LogFilter = LogFilter.Info): void {
+		// tslint:disable-next-line: no-floating-promises
 		this.log(message, filter);
 	}
-
+	public logDirectory() {
+		return path.relative(process.cwd(), this.logFileLocation);
+	}
 	public returnLogFile() {
 		return new Promise((resolve: (logFile: string) => void, reject: (err: Error) => void) => {
 			const logFileContent: string[] = [];
