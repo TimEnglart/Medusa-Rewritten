@@ -109,7 +109,10 @@ function checkAllMedals(member: discord.GuildMember | null, databaseClient: Data
 			for (const medalKey in Settings.lighthouse.medals) {
 				if (!medalKey) continue;
 				const medal: IMedalData = (Settings.lighthouse.medals as any)[medalKey];
-				if (medal.available && await checkMedal(member, medal, databaseClient, records)) { console.log(`SUCCESS TO UNLOCK: Medal - ${medal.name}`); unlockedMedals.push(medal);}
+				if (medal.available && await checkMedal(member, medal, databaseClient, records)) { 
+					console.log(`SUCCESS TO UNLOCK: Medal - ${medal.name}`); 
+					unlockedMedals.push(medal);
+				}
 				else console.log(`FAILED TO UNLOCK: Medal - ${medal.name}`);
 			}
 			return resolve(unlockedMedals);
@@ -153,10 +156,11 @@ function checkMedal(member: discord.GuildMember, medal: IMedalData, databaseClie
 	});
 }
 function medalRoles(member: discord.GuildMember, medal: IMedalData): boolean {
-	if(medal.acquisitionMethod.data.roleIds)
-		for(const roleId of medal.acquisitionMethod.data.roleIds) {
+	if (medal.acquisitionMethod.data.roleIds) {
+		for (const roleId of medal.acquisitionMethod.data.roleIds) {
 			if (member.roles.get(roleId)) return true; // Using Id
 		}
+	}
 	if (medal.acquisitionMethod.data.roleName && member.roles.find(role => role.name.toLowerCase() === medal.acquisitionMethod.data.roleName)) return true; // Using Name. Probs Better
 	return false;
 }
