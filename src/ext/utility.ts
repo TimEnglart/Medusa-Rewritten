@@ -129,11 +129,9 @@ class Utility {
 		if (userId) return guild.member(userId); // Was a Mention
 		if (!isNaN(+userData) && isFinite(+userData)) return guild.member(userData); // Was a Direct Id
 		userData = this.quotedWords(userData)[0];
-		console.log("Lookup Member [UserData]: " + userData);
 		let nameLookup;
 		if (destinyInGameName) nameLookup = guild.members.find(member => (!!member.displayName && member.displayName.split('#')[0].toLowerCase() === userData.toLowerCase()) || (!!member.nickname && member.nickname.split('#')[0].toLowerCase() === userData.toLowerCase()));
 		else nameLookup = guild.members.find(member => (!!member.displayName && member.displayName.toLowerCase() === userData.toLowerCase()) || (!!member.nickname && member.nickname.toLowerCase() === userData.toLowerCase()));
-		console.log("Lookup Member [nameLookup]: " + nameLookup);
 		if (nameLookup) return nameLookup; // was plain text Name
 		return null;
 	}
