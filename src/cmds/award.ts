@@ -21,8 +21,8 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 						`Did You Mean ${matchMedal.name}?`
 					);
 					await correctionMessage.react(`✅`);
-					const filter = (reaction: discord.MessageReaction, user: discord.User) =>
-						reaction.emoji.name === `✅` && user.id === message.author!.id;
+					const filter = (reaction: discord.MessageReaction, reactionUser: discord.User) =>
+						reaction.emoji.name === `✅` && reactionUser.id === message.author.id;
 					const collectedReactions = await correctionMessage.awaitReactions(
 						filter, {
 							max: 1,

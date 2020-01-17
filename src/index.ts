@@ -23,7 +23,7 @@ import { WebServer } from './ext/web-server';
 import { ScoreBook } from './ext/score-book';
 import { RequestError } from './ext/webClient';
 import { inspect } from 'util'
-
+import { AntiRepost } from './ext/antiRepostInitiative';
 const discordBot: ExtendedClient = new Client({
 	disableEveryone: true,
 }) as ExtendedClient;
@@ -63,6 +63,7 @@ discordBot.usersEarningXp = {
 	'userId': 'voiceChannelId'
 };
 discordBot.commands = new Collection();
+const memeChecker = new AntiRepost('410369296217407491');
 // tslint:disable-next-line: no-string-literal
 discordBot.disabledCommands = discordBot.settings.disabledCommands || {};
 fs.readdir('./cmds/', (err, files) => {
@@ -108,6 +109,7 @@ discordBot.on('message', async (message: Message) => {
 			// handle Role Assignment
 
 		}
+		await memeChecker.run(message);
 		// Determine The Guild/Channel Prefix for Commands
 		const guildPrefix = await discordBot.databaseClient.query(
 			`SELECT prefix FROM G_Prefix WHERE guild_id = ${message.guild ? message.guild.id : message.author.id}`,

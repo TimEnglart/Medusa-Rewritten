@@ -69,7 +69,7 @@ class Registeree
     function __construct($response, $state)
     {
         //Set Public Variables
-        $this->db = $this->initiateDatabaseConnection("127.0.0.1"/*"db.medusabot.tk"*/, "3306", "medusa", "medusa", "root");
+        $this->db = $this->initiateDatabaseConnection("10.0.0.145"/*"db.medusabot.tk"*/, "3306", "medusa", "medusa", "root");
         if($this->db->connect_errno > 0){
     		die('Database Connection Error');
 		}
