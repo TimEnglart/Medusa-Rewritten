@@ -97,6 +97,75 @@ interface DestinyCharacterResponse {
 	currencyLookups?: any;
 }
 
+
+interface IActivityDefinition {
+	displayProperties: {
+		description: string; //The Fanatic has returned. Take him down and finish the job you started.;
+		name: string; //Nightfall: The Hollowed Lair;
+		icon: string; ///common/destiny2_content/icons/f2154b781b36b19760efcb23695c66fe.png;
+		hasIcon: boolean
+	};
+	originalDisplayProperties: {
+		description: string; //The Fanatic has returned. Take him down and finish the job you started.;
+		name: string; //Nightfall;
+		icon: string; ///img/misc/missing_icon_d2.png;
+		hasIcon: boolean
+	};
+	selectionScreenDisplayProperties: {
+		description: string; //The Fanatic has returned. Take him down and finish the job you started.;
+		name: string; //The Hollowed Lair;
+		hasIcon: boolean
+	};
+	releaseIcon: string; ///img/misc/missing_icon_d2.png;
+	releaseTime: number;
+	activityLevel: number;
+	completionUnlockHash: number;
+	activityLightLevel: number;
+	destinationHash: number;
+	placeHash: number;
+	activityTypeHash: number;
+	tier: number;
+	pgcrImage: string; ///img/destiny_content/pgcr/strike_taurus.jpg;
+	rewards: any[];
+	modifiers: Array<{
+		activityModifierHash: number
+	}>;
+	isPlaylist: boolean;
+	challenges: Array<{
+		rewardSiteHash: number;
+		inhibitRewardsUnlockHash: number;
+		objectiveHash: number;
+		dummyRewards: [
+			{
+				itemHash: number;
+				quantity: number;
+			}
+		]
+	}>;
+	optionalUnlockStrings: [];
+	inheritFromFreeRoam: boolean;
+	suppressOtherRewards: boolean;
+	playlistItems: [];
+	matchmaking: {
+		isMatchmade: boolean;
+		minParty: number;
+		maxParty: number;
+		maxPlayers: number;
+		requiresGuardianOath: boolean
+	};
+	directActivityModeHash: number;
+	directActivityModeType: number;
+	activityModeHashes: number[];
+	activityModeTypes: number[];
+	isPvP: boolean;
+	insertionPoints: [];
+	activityLocationMappings: [];
+	hash: number;
+	index: number;
+	redacted: boolean;
+	blacklisted: boolean;
+}
+
 // tslint:disable-next-line: max-classes-per-file
 class DestinyPlayer {
 	public static lookup(data: DestinyPlayerLookup, components?: string[]): Promise<DestinyPlayer[]> {
@@ -229,5 +298,76 @@ interface DestinyPlayerLookup {
 	displayName?: string;
 	membershipId?: string | number;
 }
+interface INightfallSubmission {
+	nightfallData: { activityDetails: IActivityDetails } & IActivityValues;
+	completed: Date;
+}
+interface IActivityValues {
+	values: {
+		[key: string]: {
+			statId: string;
+			basic: {
+				value: number;
+				displayValue: string;
+			}
+		}
+	};
+}
+export interface IPostGameCarnageReport {
+	period: string;
+	startingPhaseIndex: number;
+	activityDetails: IActivityDetails;
+	entries: IActivityEntry[];
+	teams: IActivityTeam[];
+}
+export interface IActivityDetails {
+	referenceId: number;
+	directorActivityHash: number;
+	instanceId: string;
+	mode: number[];
+	isPrivate: boolean;
+	membershipType: number;
+}
+interface IActivityTeam { }
+interface IActivityEntry {
+	standing: number;
+	score: {
+		basic: {
+			value: number;
+			displayValue: string;
+		};
+	};
+	player: IActivityPlayer;
+	characterId: string;
+	values: {
+		[key: string]: {
+			basic: {
+				value: number;
+				displayValue: string;
+			};
+		};
+	};
+}
+interface IActivityPlayer {
+	destinyUserInfo: {
+		iconPath: string;
+		membershipType: number;
+		membershipId: number;
+		displayName: string;
+	};
+	characterClass: string;
+	classHash: number;
+	raceHash: number;
+	genderHash: number;
+	characterLevel: number;
+	lightLevel: number;
+	bungieNetUserInfo?: {
+		iconPath: string;
+		membershipType: number;
+		membershipId: string;
+		displayName: string;
+	};
+	emblemHash: number;
+}
 
-export { DestinyCharacter, DestinyPlayer, DiscordDestinyPlayer, BungieResponse };
+export { DestinyCharacter, DestinyPlayer, DiscordDestinyPlayer, BungieResponse, IActivityDefinition, INightfallSubmission, IActivityValues, IActivityPlayer, IActivityEntry };

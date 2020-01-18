@@ -1,6 +1,5 @@
 import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, CommandError, Utility } from '../ext/index';
 import * as exp from '../ext/experienceHandler';
-import e = require('express');
 // Only Reject Promise if a Real Error Occurs
 // run Function is pretty convoluted
 

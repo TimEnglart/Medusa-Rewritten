@@ -17,7 +17,7 @@ class AntiRepost {
 		this.hashType = 'sha512';
 		this.outputText = 'hex';
 	}
-	
+
 	public async checkMessage(message: discord.Message): Promise<Hash[]> {
 		const hashes: Hash[] = [];
 		// Check Attachments

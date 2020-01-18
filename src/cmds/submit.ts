@@ -1,6 +1,6 @@
 import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, LogFilter, MyRequester, Embeds, CommandError } from '../ext/index';
-import * as d2b from '../ext/discordToBungie';
-import { ScoreBook, IActivityDetails, IPostGameCarnageReport } from '../ext/score-book';
+import {BungieResponse, IActivityDefinition, DestinyPlayer, INightfallSubmission, IActivityDetails, IPostGameCarnageReport } from '../ext/discordToBungie';
+import { ScoreBook } from '../ext/score-book';
 // Only Reject Promise if a Real Error Occurs
 // run Function is pretty convoluted
 
@@ -35,7 +35,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			else {
 				const destinyData = await discordBot.databaseClient.query(`SELECT b.user_id, d.bungie_id, d.destiny_id, d.membership_id FROM U_Bungie_Account as b JOIN U_Destiny_Profile as d ON d.bungie_id = b.bungie_id WHERE user_id = ${message.author.id}`);
 				if (!destinyData.length) throw new CommandError('DATABASE_ENTRY_NOT_FOUND', 'You Can use The `register` to enable usage of this command\nYou Can Manually Input Your Nightfall Using a Bungie.Net Link:\nExample:https://www.bungie.net/en/PGCR/<activityId>/\n<activityId>');
-				const destinyProfiles = await d2b.DestinyPlayer.lookup({
+				const destinyProfiles = await DestinyPlayer.lookup({
 					membershipId: destinyData[0].destiny_id,
 					membershipType: destinyData[0].membership_id
 				});
@@ -95,7 +95,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 					));
 				return resolve();
 			}
-			const entityDef: d2b.BungieResponse<IActivityDefinition> = await requester.request({ path: `/Platform/Destiny2/Manifest/${'DestinyActivityDefinition'}/${pgcr.Response.activityDetails.referenceId}/` })
+			const entityDef: BungieResponse<IActivityDefinition> = await requester.request({ path: `/Platform/Destiny2/Manifest/${'DestinyActivityDefinition'}/${pgcr.Response.activityDetails.referenceId}/` })
 			if (!entityDef) throw new CommandError('B_API_NO_ENTITY');
 			let embed = new discord.MessageEmbed()
 				.setTitle(`Nightfall to Submit`)
@@ -196,86 +196,5 @@ module.exports = {
 } as CommandFile;
 
 
-interface INightfallSubmission {
-	nightfallData: { activityDetails: IActivityDetails } & IActivityValues;
-	completed: Date;
-}
-interface IActivityValues {
-	values: {
-		[key: string]: {
-			statId: string;
-			basic: {
-				value: number;
-				displayValue: string;
-			}
-		}
-	};
-}
 
-interface IActivityDefinition {
-	displayProperties: {
-		description: string; //The Fanatic has returned. Take him down and finish the job you started.;
-		name: string; //Nightfall: The Hollowed Lair;
-		icon: string; ///common/destiny2_content/icons/f2154b781b36b19760efcb23695c66fe.png;
-		hasIcon: boolean
-	};
-	originalDisplayProperties: {
-		description: string; //The Fanatic has returned. Take him down and finish the job you started.;
-		name: string; //Nightfall;
-		icon: string; ///img/misc/missing_icon_d2.png;
-		hasIcon: boolean
-	};
-	selectionScreenDisplayProperties: {
-		description: string; //The Fanatic has returned. Take him down and finish the job you started.;
-		name: string; //The Hollowed Lair;
-		hasIcon: boolean
-	};
-	releaseIcon: string; ///img/misc/missing_icon_d2.png;
-	releaseTime: number;
-	activityLevel: number;
-	completionUnlockHash: number;
-	activityLightLevel: number;
-	destinationHash: number;
-	placeHash: number;
-	activityTypeHash: number;
-	tier: number;
-	pgcrImage: string; ///img/destiny_content/pgcr/strike_taurus.jpg;
-	rewards: any[];
-	modifiers: Array<{
-		activityModifierHash: number
-	}>;
-	isPlaylist: boolean;
-	challenges: Array<{
-		rewardSiteHash: number;
-		inhibitRewardsUnlockHash: number;
-		objectiveHash: number;
-		dummyRewards: [
-			{
-				itemHash: number;
-				quantity: number;
-			}
-		]
-	}>;
-	optionalUnlockStrings: [];
-	inheritFromFreeRoam: boolean;
-	suppressOtherRewards: boolean;
-	playlistItems: [];
-	matchmaking: {
-		isMatchmade: boolean;
-		minParty: number;
-		maxParty: number;
-		maxPlayers: number;
-		requiresGuardianOath: boolean
-	};
-	directActivityModeHash: number;
-	directActivityModeType: number;
-	activityModeHashes: number[];
-	activityModeTypes: number[];
-	isPvP: boolean;
-	insertionPoints: [];
-	activityLocationMappings: [];
-	hash: number;
-	index: number;
-	redacted: boolean;
-	blacklisted: boolean;
-}
+
