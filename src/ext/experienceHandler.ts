@@ -109,11 +109,7 @@ function checkAllMedals(member: discord.GuildMember | null, databaseClient: Data
 			for (const medalKey in Settings.lighthouse.medals) {
 				if (!medalKey) continue;
 				const medal: IMedalData = (Settings.lighthouse.medals as any)[medalKey];
-				if (medal.available && await checkMedal(member, medal, databaseClient, records)) { 
-					console.log(`SUCCESS TO UNLOCK: Medal - ${medal.name}`); 
-					unlockedMedals.push(medal);
-				}
-				else console.log(`FAILED TO UNLOCK: Medal - ${medal.name}`);
+				if (medal.available && await checkMedal(member, medal, databaseClient, records)) unlockedMedals.push(medal);
 			}
 			return resolve(unlockedMedals);
 		}
@@ -200,6 +196,44 @@ function getUserRecords(member: discord.GuildMember, databaseClient: Database, f
 		return resolve(records);
 	});
 }
+
+function getUserCollectables(member: discord.GuildMember, databaseClient: Database, fails: number = 0): Promise<ICollectableResponse[]> {
+	return new Promise(async (resolve, reject) => {
+		const collectables: ICollectableResponse[] = [];
+		try {
+			const requester = new MyRequester({
+				hostname: 'www.bungie.net',
+				port: 443,
+				method: 'GET',
+				headers: {
+					'X-API-Key': Settings.bungie.apikey
+				},
+				doNotFollowRedirect: false,
+				responseType: 'JSON'
+			});
+			// Get User Bungie/Destiny Data
+			const bungieAccounts = await databaseClient.query(`SELECT * FROM U_Bungie_Account WHERE user_id = ${member.id}`);
+			if (!bungieAccounts.length) return reject('User Bungie Account Not Registered');
+			const destinyAccounts = await databaseClient.query(`SELECT * FROM U_Destiny_Profile WHERE bungie_id = ${bungieAccounts[0].bungie_id}`);
+			if (!destinyAccounts.length) return reject('User Has No Destiny Profiles [Xbox, Playstation, PC]');
+			for (const dProfile of destinyAccounts) {
+				try {
+				const pCollectables: BungieResponse<ICollectableResponse> = await requester.request({ path: `/Platform/Destiny2/${dProfile.membership_id}/Profile/${dProfile.destiny_id}/?components=800` });
+				if (pCollectables) collectables.push(pCollectables.Response);
+				}
+				catch (e) {
+					// EndPoint Not Available
+				}
+			}
+		}
+		catch (e) {
+			if (fails > 2) return reject('Failed to Get API Data:\n' + e);
+			return resolve(await getUserCollectables(member, databaseClient, ++fails));
+		}
+		return resolve(collectables);
+	});
+}
+
 function checkTriumph(medal: IMedalData, response: IRecordResponse): boolean {
 	if (isNaN(Number(medal.acquisitionMethod.data.recordId))) {
 		if (response.profileRecords.data.score >= 50000) return true;
@@ -266,8 +300,15 @@ function medalFunction(member: discord.GuildMember, medal: IMedalData, databaseC
 				}
 				return false;
 			},
-			objectDefinition: async (args: string[]) => {
-
+			collectable: async (args: string[]) => { // idk what im doing lol
+				if (databaseClient) {
+					const userCollectables = await getUserCollectables(member, databaseClient);
+					for (const collectable of userCollectables) {
+						for (const itemHash of args) {
+							if (collectable.profileCollectibles.data.collectibles[itemHash].state === 0) return true;
+						}
+					}
+				}
 				return false;
 			},
 			nitroBooster: async (args: string[]) => {
@@ -415,6 +456,20 @@ interface IRecordResponse {
 			}
 		}
 	};
+}
+interface ICollectableResponse {
+	profileCollectibles: {
+		data: {
+			recentCollectibleHashes: number[];
+			newnessFlaggedCollectibleHashes: number[];
+			collectibles: {
+				[id: string]: ICollectable
+			}
+		}
+	};
+}
+interface ICollectable {
+	state: number;
 }
 interface IRecord {
 	state: number;
