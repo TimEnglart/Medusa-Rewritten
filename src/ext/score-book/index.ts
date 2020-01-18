@@ -44,7 +44,7 @@ class ScoreBook {
 		} else setTimeout(() => this.start(), 480000/*600000*/); // check every 10 mins -> now 8
 	}
 	public async totalWinners(): Promise<number> {
-		const allWinners = await this.databaseClient.query(`SELECT COUNT(*) FROM SBWinners`);
+		const allWinners = await this.databaseClient.query(`SELECT COUNT(*) FROM SB_Winners`);
 		return allWinners[0].COUNT;
 	}
 	public async totalWeeks(): Promise<number> {
