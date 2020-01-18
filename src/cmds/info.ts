@@ -11,16 +11,18 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
 			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
 			const user = Utility.LookupMember(message.guild, args.join(' ') || message.author.id);
-			if (!user) return;
+			const userId = user ? user.id : args.join(' ');
 			const embed = new discord.MessageEmbed()
-			.setTitle(`Info For: ${user.displayName}`)
-			.setColor(user.displayHexColor)
-			.addField(`User Id`, user.id, true)
-			.addField('Last Message', user.lastMessage?.createdAt?.toDateString() || '-', true)
-			.addField('Joined', user.joinedAt?.toDateString() || '-', true)
-			.addField(`Created`, user.user.createdAt.toDateString(), true);
+			.setTitle(`Info For: ${user ? user.displayName : userId}`);
+			if (user) {
+				embed.setColor(user.displayHexColor)
+				.addField(`User Id`, user.id, true)
+				.addField('Last Message', user.lastMessage?.createdAt?.toDateString() || '-', true)
+				.addField('Joined', user.joinedAt?.toDateString() || '-', true)
+				.addField(`Created`, user.user.createdAt.toDateString(), true);
+			}
 			embed.addBlankField();
-			const query = await discordBot.databaseClient.query(`SELECT * FROM U_Bungie_Account uba JOIN U_Destiny_Profile udf ON uba.bungie_id = udf.bungie_id JOIN U_Experience ue ON uba.user_id = ue.user_id WHERE uba.user_id = ${user.id}`);
+			const query = await discordBot.databaseClient.query(`SELECT * FROM U_Bungie_Account uba JOIN U_Destiny_Profile udf ON uba.bungie_id = udf.bungie_id JOIN U_Experience ue ON uba.user_id = ue.user_id WHERE uba.user_id = ${userId}`);
 			embed.addField(`Registered Bungie ID`, query[0].bungie_id, true);
 			for (let i = 0; i < query.length; i++) { // handle cross platform
 				if (i > 0) embed.addBlankField();
@@ -39,9 +41,9 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			for (const [key, value] of Object.entries(categorisedMedals)) {
 				const firstEntry = value[0];
 				if (key === 'Locked' || !firstEntry) continue;
-				const categoryDB = await discordBot.databaseClient.query(`SELECT * FROM ${firstEntry.dbData.table} WHERE user_id = ${user.id}`);
+				const categoryDB = await discordBot.databaseClient.query(`SELECT * FROM ${firstEntry.dbData.table} WHERE user_id = ${userId}`);
 				if (!categoryDB.length) {
-					await discordBot.databaseClient.query(`INSERT INTO ${firstEntry.dbData.table} (user_id) VALUES (${user.id})`);
+					await discordBot.databaseClient.query(`INSERT INTO ${firstEntry.dbData.table} (user_id) VALUES (${userId})`);
 					continue;
 				}
 				const medals = value.map(x =>  `${x.name}: ` + ((categoryDB[0][x.dbData.column]) ? '✅' : '❌'));
