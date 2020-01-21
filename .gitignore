@@ -2,8 +2,8 @@
 /.vscode/
 node_modules/
 /src/config/settings.json
-webdata/connection-settings.ini
 *.log
 logs/
 /lib/
 /public/
+/etc/registration/settings.php

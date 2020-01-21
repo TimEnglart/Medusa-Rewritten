@@ -4,8 +4,12 @@
 
 This Directory Holds:
 
-- Regsitration script
+- Registration script
 
-- Bungie API data retreival script
+- Bungie API data retrieval script
+
+- Settings PHP File -> Rename from `settings-template.php` to `settings.php`
 
 > Modification may be required to change where data is stored
+
+> [Register a Bungie.net Application](https://www.bungie.net/en/Application/) to Use The Registration Functionality

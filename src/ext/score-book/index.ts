@@ -148,19 +148,20 @@ class ScoreBook {
 			const currentStatistics = await this.databaseClient.query(
 				`SELECT * FROM U_SB_Statistics WHERE user_id = ${winner.userId}`,
 			);
-			if (!currentStatistics.length)
+			if (!currentStatistics.length) {
 				await this.databaseClient.query(
 					`INSERT INTO U_SB_Statistics (user_id, pointbreaker_wins, speedbreaker_wins) VALUES (${
 					winner.userId
 					}, ${winner.type === 'POINT' ? 1 : 0}, ${winner.type === 'SPEED' ? 1 : 0});`,
 				);
-			else
+			}
+			else {
 				await this.databaseClient.query(
 					`UPDATE U_SB_Statistics SET ${column} = ${currentStatistics[0][column] + 1} WHERE user_id = ${
 					winner.userId
 					}`,
 				);
-
+			}
 			// Give Medal / XP
 			if (medal) await giveMedal(winner.userId, [medal], this.databaseClient);
 		}

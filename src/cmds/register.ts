@@ -13,11 +13,11 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			
 			const initialTimeStamp = new Date();
 			const registerEmbed = new discord.MessageEmbed()
-				.setURL(`https://${"101.167.14.158"/*medusabot.tk*/}/initialize.php?did=${message.author.id}`)
+				.setURL(`${discordBot.settings.webData.url}initialize.php?did=${message.author.id}`)
 				.setTitle('Link Your Destiny Account to Your Lighthouse Progression')
 				.setColor('#1E90FF')
 				.setFooter('Medusa', discordBot.user.displayAvatarURL())
-				.addField('Enhance Your Guardian Progression', `Completing this Registration Will Add Additional Features and Integrations Between Destiny and The Lighthouse Discord Server\n\n[Click Here To Register](https://${"101.167.14.158"/*medusabot.tk*/}/initialize.php?did=${message.author.id})`);
+				.addField('Enhance Your Guardian Progression', `Completing this Registration Will Add Additional Features and Integrations Between Destiny and The Lighthouse Discord Server\n\n[Click Here To Register](${discordBot.settings.webData.url}initialize.php?did=${message.author.id})`);
 			const registerMsg = await message.author.send(registerEmbed);
 			registerMsg.channel.startTyping();
 			let hasRegistered = false;

@@ -1,5 +1,8 @@
 <?php
-define('AES_KEY', 'kH&3$sjj3D6?fV*UXc@Y6M5vQh63vY2yKs&h6+w-HJ');
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+$settings = include('settings.php');
 session_start();
 function redirect($url, $statusCode = 303)
 {
@@ -14,9 +17,12 @@ function base64UrlEncode($inputStr)
 
 $vars = array();
 foreach ($_GET as $key => $value) {
-    array_push($vars, "$key=$value");
+    $vars[$key] = $value;
 }
-$encryptedString = openssl_encrypt(implode($vars, '&'), 'AES256', AES_KEY);
-$bungieOAuth = "https://www.bungie.net/en/oauth/authorize?response_type=code&client_id=27364&state=" . base64UrlEncode($encryptedString/*implode($vars, '&')*/ );
+$vars["hash"] = hash('sha256', serialize($vars));
+
+$bungieOAuth = "https://www.bungie.net/en/oauth/authorize?response_type=code&client_id=" . $settings['bungie-api']['client-id'] . "&state=" . base64UrlEncode(
+    openssl_encrypt(serialize($vars), $settings['encryption']['algorithm'], $settings['encryption']['key'], 0, $settings['encryption']['iv'])
+);
 redirect($bungieOAuth);
 ?>
