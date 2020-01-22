@@ -20,9 +20,8 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				.addField('Enhance Your Guardian Progression', `Completing this Registration Will Add Additional Features and Integrations Between Destiny and The Lighthouse Discord Server\n\n[Click Here To Register](${discordBot.settings.webData.url}initialize.php?did=${message.author.id})`);
 			const registerMsg = await message.author.send(registerEmbed);
 			registerMsg.channel.startTyping();
-			let hasRegistered = false;
 			let timePassed = 0;
-			while (!hasRegistered && timePassed < 1200) {
+			while (timePassed < 1200) {
 				await new Promise(completeTimeout =>
 					setTimeout(() => {
 						return completeTimeout();
@@ -30,12 +29,12 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				);
 				timePassed += 5;
 				const dbQuery = await discordBot.databaseClient.query(`SELECT * FROM U_Bungie_Account WHERE user_id = ${message.author.id}`);
-				if (dbQuery && dbQuery[0]) {
+				if (dbQuery.length) {
 					if (new Date(dbQuery[0].time_added) > initialTimeStamp) {
-					hasRegistered = true;
-					await registerMsg.delete();
-					await message.author.send(Embeds.successEmbed('Sign Up Successful', 'Nothing More For You To Do :)'));
-					return resolve();
+						timePassed = 1200;
+						await registerMsg.delete();
+						await message.author.send(Embeds.successEmbed('Sign Up Successful', 'Nothing More For You To Do :)'));
+						return resolve();
 					}
 				}
 			}

@@ -24,7 +24,7 @@ class AntiRepost {
 		fs.appendFileSync('message content', message.content);
 		if (message.attachments.size > 0) {
 			// go through attachments
-			for(const [snowflake, attachment] of message.attachments) {
+			for (const [snowflake, attachment] of message.attachments) {
 				const hash = createHash(this.hashType);
 				hash.setEncoding('hex');
 				if (typeof attachment.attachment === 'string') { // returns cdn link
@@ -47,7 +47,7 @@ class AntiRepost {
 		}
 		for (const link of message.content.split(/ +/g)) {
 			const hashedLink = await this.HashLink(link);
-			if (hashedLink) hashes.push(hashedLink);
+			if (hashedLink && hashedLink) hashes.push(hashedLink);
 		}
 		return hashes;
 	}
@@ -59,6 +59,7 @@ class AntiRepost {
 		const memeHashes = await this.checkMessage(message);
 		const client = message.client as ExtendedClient;
 		for (const hash of memeHashes) {
+
 			const hex = hash.read();
 			const query = await client.databaseClient.query(`SELECT * FROM C_Meme_Lookup WHERE hash = '${hex}';`);
 			if (query.length > 0) {
@@ -104,6 +105,8 @@ class AntiRepost {
 				}
 			});
 			hash.end();
+			const returnHash = hash.read();
+			fs.appendFileSync('linkdata', `Appended Link: ${link}\nHash: ${hash.read()}`);
 			return hash;
 		}
 	}

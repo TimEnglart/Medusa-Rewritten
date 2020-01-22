@@ -109,7 +109,7 @@ discordBot.on('message', async (message: Message) => {
 			// handle Role Assignment
 
 		}
-		await memeChecker.run(message);
+		// await memeChecker.run(message);
 		// Determine The Guild/Channel Prefix for Commands
 		const guildPrefix = await discordBot.databaseClient.query(
 			`SELECT prefix FROM G_Prefix WHERE guild_id = ${message.guild ? message.guild.id : message.author.id}`,
