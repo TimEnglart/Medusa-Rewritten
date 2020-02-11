@@ -24,6 +24,7 @@ import { ScoreBook } from './ext/score-book';
 import { RequestError } from './ext/webClient';
 import { inspect } from 'util'
 import { AntiRepost } from './ext/antiRepostInitiative';
+import { ClanSync } from './ext/clanCheck';
 const discordBot: ExtendedClient = new Client({
 	disableEveryone: true,
 }) as ExtendedClient;
@@ -63,7 +64,8 @@ discordBot.usersEarningXp = {
 	'userId': 'voiceChannelId'
 };
 discordBot.commands = new Collection();
-const memeChecker = new AntiRepost('410369296217407491');
+const memeChecker = new AntiRepost('473802737247846411');
+const clanSync = new ClanSync(discordBot);
 // tslint:disable-next-line: no-string-literal
 discordBot.disabledCommands = discordBot.settings.disabledCommands || {};
 fs.readdir('./cmds/', (err, files) => {
@@ -109,7 +111,7 @@ discordBot.on('message', async (message: Message) => {
 			// handle Role Assignment
 
 		}
-		// await memeChecker.run(message);
+		await memeChecker.run(message);
 		// Determine The Guild/Channel Prefix for Commands
 		const guildPrefix = await discordBot.databaseClient.query(
 			`SELECT prefix FROM G_Prefix WHERE guild_id = ${message.guild ? message.guild.id : message.author.id}`,
@@ -135,17 +137,19 @@ discordBot.on('message', async (message: Message) => {
 		if (!command) return;
 		command = command.toLowerCase();
 		if(discordBot.settings.superUsers.includes(message.author.id) && command === 'seemsdidit') {
-			if (!message.member!.roles.has(discordBot.settings.lighthouse.roleIds.shipwrights)) await message.member!.roles.add(discordBot.settings.lighthouse.roleIds.shipwrights);
-			else await message.member!.roles.remove(discordBot.settings.lighthouse.roleIds.shipwrights);
-			await message.react('✔️');
+			//if (!message.member!.roles.has(discordBot.settings.lighthouse.roleIds.shipwrights)) await message.member!.roles.add(discordBot.settings.lighthouse.roleIds.shipwrights);
+			//else await message.member!.roles.remove(discordBot.settings.lighthouse.roleIds.shipwrights);
+			//await message.react('✔️');
+			await clanSync.fullUpdate();
 		}
 		// Attempt to Run Supplied Command
 		const commandFile = discordBot.commands.get(command);
 		if (commandFile) {
 			if (
-				(commandFile.help.permissionRequired === 'SEND_MESSAGES' ||
-					(message.member && message.member.hasPermission(commandFile.help.permissionRequired)) ||
-					discordBot.settings.superUsers.includes(message.author.id))
+				(discordBot.settings.superUsers.includes(message.author.id) || // Put Super User Check First bc the bitfield modification will probs cause errors
+				commandFile.help.permissionRequired === 'SEND_MESSAGES' ||
+				(message.member && message.member.hasPermission(commandFile.help.permissionRequired))
+				)
 
 			) {
 				discordBot.logger.logClient.logS(`[EXECUTING] Command Received: ${command}. Executed by ${message.author.tag}`);

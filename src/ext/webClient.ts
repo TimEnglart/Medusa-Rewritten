@@ -174,18 +174,4 @@ class MyRequester {
 	}
 
 }
-
-async function test() {
-	const req = new MyRequester({
-		hostname: 'www.bungie.net',
-		port: 443,
-		path: '/Platform/GroupV2/2135581/',
-		method: 'GET',
-		headers: {
-			'X-API-Key': '9a171d9e3be74e60884fa77b2c0f4965'
-		}
-	});
-	console.log(await req.request());
-}
-
 export { MyRequester, RequestError };

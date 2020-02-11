@@ -9,12 +9,12 @@ import { WebServer } from './web-server/index.js';
 import { ScoreBook } from './score-book/index.js';
 import { CommandError } from './errorParser';
 type CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => Promise<void>;
-
+type CustomPermissionString = discord.PermissionString;
 interface CommandHelp {
 	name: string;
 	description: string;
 	example?: string;
-	permissionRequired: discord.BitFieldResolvable<discord.PermissionString>; // Change nulls to 'SEND_MESSAGES'
+	permissionRequired: discord.BitFieldResolvable<CustomPermissionString>; // Change nulls to 'SEND_MESSAGES'
 	environments: string[];
 	expectedArgs: Array<{
 		name: string,
