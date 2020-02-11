@@ -64,7 +64,7 @@ discordBot.usersEarningXp = {
 	'userId': 'voiceChannelId'
 };
 discordBot.commands = new Collection();
-const memeChecker = new AntiRepost('473802737247846411');
+const memeChecker = new AntiRepost('410369296217407491');
 const clanSync = new ClanSync(discordBot);
 // tslint:disable-next-line: no-string-literal
 discordBot.disabledCommands = discordBot.settings.disabledCommands || {};
