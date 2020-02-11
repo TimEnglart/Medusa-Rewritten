@@ -4,7 +4,6 @@ import { createHash, Hash } from 'crypto';
 import { Stream } from 'stream';
 import { get } from 'https';
 import { ExtendedClient } from '.';
-import * as fs from 'fs';
 
 type HashData = {
 	hash: Hash;
@@ -21,18 +20,17 @@ class AntiRepost {
 	public async checkMessage(message: discord.Message): Promise<Hash[]> {
 		const hashes: Hash[] = [];
 		// Check Attachments
-		fs.appendFileSync('message content', message.content);
 		if (message.attachments.size > 0) {
 			// go through attachments
 			for (const [snowflake, attachment] of message.attachments) {
-				const hash = createHash(this.hashType);
+				let hash = createHash(this.hashType);
 				hash.setEncoding('hex');
 				if (typeof attachment.attachment === 'string') { // returns cdn link
 					const hashedLink = await this.HashLink(attachment.attachment);
-					if (hashedLink) hashes.push(hashedLink);
+					if (hashedLink) hash = hashedLink;
 				}
 				else if (attachment.attachment instanceof Buffer) {
-					hash.write(attachment.attachment);
+					if (attachment.attachment) hash.write(attachment.attachment);
 				}
 				else if (attachment.attachment instanceof Stream) {
 					await new Promise((res, rej) => {
@@ -46,8 +44,9 @@ class AntiRepost {
 			}
 		}
 		for (const link of message.content.split(/ +/g)) {
+			if (!link) continue;
 			const hashedLink = await this.HashLink(link);
-			if (hashedLink && hashedLink) hashes.push(hashedLink);
+			if (hashedLink) hashes.push(hashedLink);
 		}
 		return hashes;
 	}
@@ -59,14 +58,15 @@ class AntiRepost {
 		const memeHashes = await this.checkMessage(message);
 		const client = message.client as ExtendedClient;
 		for (const hash of memeHashes) {
-
 			const hex = hash.read();
+			client.logger.logClient.logS(`Content: ${message.content}\nAttachments: ${JSON.stringify(message.attachments)}\nHash: ${hex}`);
 			const query = await client.databaseClient.query(`SELECT * FROM C_Meme_Lookup WHERE hash = '${hex}';`);
-			if (query.length > 0) {
-				await message.reply('That was a Possible Repost');
-				return;
+			if (!query.length) {
+				await client.databaseClient.query(`INSERT INTO C_Meme_Lookup (hash, data) VALUES ('${hex}', NULL);`);
 			}
-			await client.databaseClient.query(`INSERT INTO C_Meme_Lookup (hash, data) VALUES ('${hex}', NULL);`);
+			else {
+				await message.reply('That was a Possible Repost');
+			}
 		}
 	}
 
@@ -78,7 +78,6 @@ class AntiRepost {
 					get(link, (resp) => {
 						// A chunk of data has been recieved.
 						resp.on('data', (chunk) => {
-							fs.appendFileSync('linkdata', chunk);
 							hash.write(chunk);
 						});
 						// The whole response has been received. Print out the result.
@@ -105,8 +104,6 @@ class AntiRepost {
 				}
 			});
 			hash.end();
-			const returnHash = hash.read();
-			fs.appendFileSync('linkdata', `Appended Link: ${link}\nHash: ${hash.read()}`);
 			return hash;
 		}
 	}
