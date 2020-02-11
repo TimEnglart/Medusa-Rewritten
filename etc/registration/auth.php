@@ -31,7 +31,8 @@ catch(Exception $e)
 
 if (isset($_GET['code'])) {
     $post = http_build_query(array(
-        'client_id' => $settings['bungie-api']['client-id'],
+		'client_id' => $settings['bungie-api']['client-id'],
+		'client_secret' => $settings['bungie-api']['client-secret'],
         'grant_type' => 'authorization_code',
         'code' => htmlspecialchars($_GET['code'])
     ));
@@ -48,11 +49,12 @@ if (isset($_GET['code'])) {
     echo "<h2>Bungie OAuth Response</h2><hr><br>";
     $data = json_decode($response);
     if (isset($data->error)) {
-        echo "<h3 style=\"color: red\">Failure</h3><br>";
+		echo "<h3 style=\"color: red\">Failure</h3><br>";
+		var_dump($data);
     } else {
         echo "<h3 style=\"color: green\">Success</h3>";
         if (isset($state)) {
-            $person = new Registeree($data, $state, $settings);
+            $person = new Registeree($data, unserialize($state), $settings);
             if ($person) {
                 echo "<h4 style=\"color: orange\">Account Successfully Linked to The Lighthouse Discord</h4>";
             }
@@ -80,6 +82,7 @@ class Registeree
         if($this->db->connect_errno > 0){
     		die('Database Connection Error');
 		}
+		echo $this->state_data;
 		$this->state_data = $state_data;
         $this->response_data = $response;
         $this->bungie_id = $this->response_data->membership_id;
