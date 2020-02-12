@@ -55,7 +55,7 @@ class ClanSync {
 					else {
 						// Lookup Via Database
 						const discordId = await this.discordInstance.databaseClient.query(`SELECT user_id FROM U_Bungie_Account WHERE bungie_id = ${player.bungieNetUserInfo.membershipId}`);
-						if (discordId.length) {
+						if (discordId && discordId.length) {
 							const possibleUser = guild.member(discordId[0].user_id);
 							if (possibleUser) {
 								playerRoles[possibleUser.id] = (this.discordInstance.settings.lighthouse.roleIds as any)[clan];
@@ -77,7 +77,7 @@ class ClanSync {
 		for (const [snowflake, member] of guild.members) {
 			await member.roles.remove(this.getRolesToRemove());
 			const roleToAssign = playersInClan[snowflake];
-			if (roleToAssign.length) {
+			if (roleToAssign) {
 				await member.roles.add(roleToAssign);
 			}
 		}
