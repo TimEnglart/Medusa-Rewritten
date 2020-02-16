@@ -1,4 +1,4 @@
-import { discord, ExtendedClient } from '.';
+import { discord, ExtendedClient, Settings } from '.';
 
 class Utility {
 	/**
@@ -162,6 +162,12 @@ class Utility {
 			if (match) matches.push(match[0]);
 		} while (match);
 		return matches;
+	}
+
+	public static isSuperUser(user: discord.User | discord.GuildMember | string | undefined): boolean {
+		if (user instanceof discord.User || user instanceof discord.GuildMember) return Settings.superUsers.includes(user.id);
+		else if (typeof(user) === 'string') return Settings.superUsers.includes(user);
+		return false;
 	}
 }
 
