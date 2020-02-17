@@ -9,9 +9,10 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 		try {
 			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
 			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
+			if (!message.guild) throw new CommandError('NO_GUILD'); 		// If Guild is Needed
 			let stuff = 1;
 			let botEmbed = new discord.MessageEmbed().setTitle(`Emojis ;) Pt.${stuff}`);
-			for (const [snowflake, emoji] of message.guild!.emojis.entries()) {
+			for (const [snowflake, emoji] of message.guild.emojis.cache.entries()) {
 				if (botEmbed.fields.length === 25) {
 					await message.author.send(botEmbed);
 					botEmbed = new discord.MessageEmbed().setTitle(`Emojis ;) Pt.${++stuff}`);

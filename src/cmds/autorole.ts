@@ -10,7 +10,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			if (args.length === 0) throw new CommandError('NO_ARGUMENTS');
 			const roleId = Utility.parseRoleMentionToId(args.join(' '));
 			if (!roleId) throw new CommandError('FAILED_ROLE_PARSE');
-			const role = message.guild.roles.get(roleId);
+			const role = message.guild.roles.resolve(roleId);
 			if (!role) throw new CommandError('NO_ROLE_FOUND');
 			const guildAutoRole = await discordBot.databaseClient.query(
 				`SELECT * FROM G_Auto_Role WHERE guild_id = ${message.guild.id}`,
@@ -24,7 +24,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 					`INSERT INTO G_Auto_Role(guild_id, role_id) VALUES(${message.guild.id}, ${roleId})`,
 				);
 			}
-			message.channel.send(`Success!`); // Update For Embed
+			await message.channel.send(`Success!`); // Update For Embed
 			return resolve();
 		} catch (e) {
 			return reject(e);
@@ -45,18 +45,3 @@ module.exports = {
 	help,
 	run,
 } as CommandFile;
-
-function determineRole(message: discord.Message, args: string[]) {
-	// See if it is Raw Name of Role
-	if (args.length > help.expectedArgs.length) {
-		// its a raw name
-		const lookupRole = message.guild!.roles.find(role => role.name.toLowerCase() === args.join(' '));
-		if (!lookupRole && isNaN(Number(args[0]))) {
-			return args[0];
-		} else {
-			return lookupRole!.id;
-		}
-	} else {
-		return Utility.parseRoleMentionToId(args[0]);
-	}
-}

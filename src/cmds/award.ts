@@ -25,9 +25,9 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 						reaction.emoji.name === `✅` && reactionUser.id === message.author.id;
 					const collectedReactions = await correctionMessage.awaitReactions(
 						filter, {
-							max: 1,
-							time: 40000
-						}
+						max: 1,
+						time: 40000
+					}
 					);
 					await correctionMessage.delete();
 					if (collectedReactions.size > 0) {
@@ -58,21 +58,6 @@ module.exports = {
 	help,
 	run
 } as CommandFile;
-
-function determineUser(message: discord.Message, args: string[]) {
-	// See if it is Raw Name of Role
-	if (args.length > help.expectedArgs.length) { // its a raw name
-		const lookupRole = message.guild!.roles.find(role => role.name.toLowerCase() === args.slice(2).join(' '));
-		if (!lookupRole && isNaN(Number(args[2]))) {
-			return args[2];
-		} else {
-			return lookupRole!.id;
-		}
-	}
-	else {
-		return Utility.parseUserMentionToId(args[2]);
-	}
-}
 
 function yobboCorrector(medalString: string) {
 	const medalCheck: {

@@ -14,11 +14,11 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			if (!emojiInfo) throw new CommandError('FAILED_EMOJI_PARSE');
 			const roleId = Utility.parseRoleMentionToId(args.slice(2).join(' '));
 			if (!roleId) throw new CommandError('FAILED_ROLE_PARSE');
-			const role = message.guild.roles.get(roleId);
+			const role = message.guild.roles.resolve(roleId);
 			if (!role) throw new CommandError('NO_ROLE_FOUND');
 			if ((role.position >= message.member.roles.highest.position || role.position >= message.guild.me!.roles.highest.position) && !message.guild.me!.hasPermission('ADMINISTRATOR')) throw new CommandError('INSUFFICIENT_PRIVILEGES');
 			const statusMessage = await message.channel.send('Attempting To Find Message....');
-			const textChannels = message.guild.channels.filter(guildChannel => guildChannel.type === 'text') as discord.Collection<string, discord.TextChannel>;
+			const textChannels = message.guild.channels.cache.filter(guildChannel => guildChannel.type === 'text') as discord.Collection<string, discord.TextChannel>;
 			let foundMessageChannel: discord.TextChannel | undefined;
 			let foundMessage: discord.Message | undefined;
 			for (const [channelId, channel] of textChannels) {
@@ -72,18 +72,3 @@ module.exports = {
 	help,
 	run
 } as CommandFile;
-
-function determineRole(message: discord.Message, args: string[]) {
-	// See if it is Raw Name of Role
-	if (args.length > help.expectedArgs.length) { // its a raw name
-		const lookupRole = message.guild!.roles.find(role => role.name.toLowerCase() === args.slice(2).join(' '));
-		if (!lookupRole && isNaN(Number(args[2]))) {
-			return args[2];
-		} else {
-			return lookupRole!.id;
-		}
-	}
-	else {
-		return Utility.parseRoleMentionToId(args[2]);
-	}
-}

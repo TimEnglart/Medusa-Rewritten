@@ -19,7 +19,8 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			const tempChannelMaster = await discordBot.databaseClient.query(`SELECT * FROM G_Master_Temp_Channels WHERE guild_id = ${message.guild.id} AND voice_channel_id = ${voiceChannelId}`);
 			if (tempChannelMaster.length) {
 				await discordBot.databaseClient.query(`DELETE FROM G_Master_Temp_Channels WHERE guild_id = ${message.guild.id} AND voice_channel_id = ${voiceChannelId}`);
-				await message.channel.send(Embeds.successEmbed('Successfully Removed Temporary Channel Master', `**Channel Name:** ${message.guild.channels.get(voiceChannelId)!.name}\n**ID:** ${voiceChannelId}`));
+				const resolvedChannel = message.guild.channels.resolve(voiceChannelId);
+				await message.channel.send(Embeds.successEmbed('Successfully Removed Temporary Channel Master', `**Channel Name:** ${resolvedChannel ? resolvedChannel.name : voiceChannelId}\n**ID:** ${voiceChannelId}`));
 			}
 			else throw new CommandError('DATABASE_ENTRY_NOT_FOUND');
 			// else await message.channel.send(Embeds.errorEmbed('Selected Channel is Currently **NOT** a Temporary Channel Master', `**Channel Name:** ${message.guild.channels.get(voiceChannelId)!.name}\n**ID:** ${voiceChannelId}`));

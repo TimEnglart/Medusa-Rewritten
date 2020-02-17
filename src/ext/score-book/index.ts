@@ -175,9 +175,9 @@ class ScoreBook {
 			}, ${this.currentSeason});`,
 		);
 
-		const guild = this.discordInstance.guilds.get(this.discordInstance.settings.lighthouse.discordId);
+		const guild = this.discordInstance.guilds.resolve(this.discordInstance.settings.lighthouse.discordId);
 		if (!guild) return;
-		const channel = guild.channels.get(
+		const channel = guild.channels.resolve(
 			this.discordInstance.settings.lighthouse.scorebook.channelId,
 		) as discord.TextChannel;
 		if (!channel) return;
@@ -194,21 +194,21 @@ class ScoreBook {
 		const allPointBreakers: IScorebookWinnerResponse[] = await this.databaseClient.query(
 			`SELECT * FROM U_SB_Statistics WHERE pointbreaker_wins IS NOT NULL AND pointbreaker_wins > 0 ORDER BY pointbreaker_wins DESC`,
 		);
-		const guild = this.discordInstance.guilds.get(this.discordInstance.settings.lighthouse.discordId);
+		const guild = this.discordInstance.guilds.resolve(this.discordInstance.settings.lighthouse.discordId);
 		if (!guild) return;
 		const speedLayout = allSpeedBreakers
-		.filter(player => player.season === this.currentSeason)
-		.sort((player1, player2) => player2.speedbreaker_wins - player1.speedbreaker_wins)
-		.map(player => `${guild.members.get(player.user_id)?.displayName}: ${player.speedbreaker_wins}`);
+			.filter(player => player.season === this.currentSeason)
+			.sort((player1, player2) => player2.speedbreaker_wins - player1.speedbreaker_wins)
+			.map(player => `${guild.members.resolve(player.user_id)?.displayName}: ${player.speedbreaker_wins}`);
 		const pointLayout = allPointBreakers
-		.filter(player => player.season === this.currentSeason)
-		.sort((player1, player2) => player2.pointbreaker_wins - player1.pointbreaker_wins)
-		.map(player => `${guild.members.get(player.user_id)?.displayName}: ${player.speedbreaker_wins}`);
+			.filter(player => player.season === this.currentSeason)
+			.sort((player1, player2) => player2.pointbreaker_wins - player1.pointbreaker_wins)
+			.map(player => `${guild.members.resolve(player.user_id)?.displayName}: ${player.speedbreaker_wins}`);
 
 		return new discord.MessageEmbed()
-		.setTitle(`Scorebook History - Season: ${this.currentSeason}`)
-		.addField('Pointbreakers:', pointLayout)
-		.addField('Speedbreakers:', speedLayout);
+			.setTitle(`Scorebook History - Season: ${this.currentSeason}`)
+			.addField('Pointbreakers:', pointLayout)
+			.addField('Speedbreakers:', speedLayout);
 
 	}
 	private async generateWinnersEmbed(winners: IWeekWinners) {
@@ -223,31 +223,31 @@ class ScoreBook {
 			.setTitle(`Week ${currentWeek} Winners`)
 			.setColor('#FFD662')
 			.setDescription(`**${lastReset} - ${thisReset}**`); // because the last reset should** be a few seconds ago as it has registered that it has reset
-			winnerEmbed.addField(
-				`Speedbreakers Winners - ${speedEntDef.Response.displayProperties.name}\nRun Time - ${winners.speedBreakers.activity.Response.entries[0].values.activityDurationSeconds.basic.displayValue}`,
-				`${winners.speedBreakers.activity.Response.entries.map(entry => `${entry.player.characterClass} ${entry.player.destinyUserInfo.displayName}: ${entry.player.lightLevel}`).join('\n')}`
-			)
+		winnerEmbed.addField(
+			`Speedbreakers Winners - ${speedEntDef.Response.displayProperties.name}\nRun Time - ${winners.speedBreakers.activity.Response.entries[0].values.activityDurationSeconds.basic.displayValue}`,
+			`${winners.speedBreakers.activity.Response.entries.map(entry => `${entry.player.characterClass} ${entry.player.destinyUserInfo.displayName}: ${entry.player.lightLevel}`).join('\n')}`
+		)
 			.addField(
 				`Pointbreaker Winners - ${pointEntDef.Response.displayProperties.name}\nRun Score - ${winners.pointBreakers.activity.Response.entries[0].values.activityDurationSeconds.basic.displayValue}`,
 				`${winners.pointBreakers.activity.Response.entries.map(entry => `${entry.player.characterClass} ${entry.player.destinyUserInfo.displayName}: ${entry.player.lightLevel}`).join('\n')}`
 			);
-			/*
-			Speed Winners - {Strike Name}
-			Run Time - {Time}
-			--------------------------------
-			{Player 1 Class} {Player 1 Name}: {Player 1 Light} {Light Emoji}
-			{Player 2 Class} {Player 2 Name}: {Player 2 Light} {Light Emoji}
-			{Player 3 Class} {Player 3 Name}: {Player 3 Light} {Light Emoji}
-			*/
-			/*
-			Point Winners - {Strike Name}
-			Score - {Time}
-			--------------------------------
-			{Player 1 Class} {Player 1 Name}: {Player 1 Light} {Light Emoji}
-			{Player 2 Class} {Player 2 Name}: {Player 2 Light} {Light Emoji}
-			{Player 3 Class} {Player 3 Name}: {Player 3 Light} {Light Emoji}
-			*/
-			return winnerEmbed;
+		/*
+		Speed Winners - {Strike Name}
+		Run Time - {Time}
+		--------------------------------
+		{Player 1 Class} {Player 1 Name}: {Player 1 Light} {Light Emoji}
+		{Player 2 Class} {Player 2 Name}: {Player 2 Light} {Light Emoji}
+		{Player 3 Class} {Player 3 Name}: {Player 3 Light} {Light Emoji}
+		*/
+		/*
+		Point Winners - {Strike Name}
+		Score - {Time}
+		--------------------------------
+		{Player 1 Class} {Player 1 Name}: {Player 1 Light} {Light Emoji}
+		{Player 2 Class} {Player 2 Name}: {Player 2 Light} {Light Emoji}
+		{Player 3 Class} {Player 3 Name}: {Player 3 Light} {Light Emoji}
+		*/
+		return winnerEmbed;
 	}
 }
 

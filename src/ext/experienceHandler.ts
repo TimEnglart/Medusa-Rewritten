@@ -155,10 +155,10 @@ function checkMedal(member: discord.GuildMember, medal: IMedalData, databaseClie
 function medalRoles(member: discord.GuildMember, medal: IMedalData): boolean {
 	if (medal.acquisitionMethod.data.roleIds) {
 		for (const roleId of medal.acquisitionMethod.data.roleIds) {
-			if (member.roles.get(roleId)) return true; // Using Id
+			if (member.roles.resolve(roleId)) return true; // Using Id
 		}
 	}
-	if (medal.acquisitionMethod.data.roleName && member.roles.find(role => role.name.toLowerCase() === medal.acquisitionMethod.data.roleName)) return true; // Using Name. Probs Better
+	if (medal.acquisitionMethod.data.roleName && member.roles.cache.find(role => role.name.toLowerCase() === medal.acquisitionMethod.data.roleName)) return true; // Using Name. Probs Better
 	return false;
 }
 function getUserRecords(member: discord.GuildMember, databaseClient: Database, fails: number = 0): Promise<IRecordResponse[]> {
@@ -482,7 +482,7 @@ function voiceChannelXp(member: discord.GuildMember | undefined, xpPerTick: numb
 					if (discordBot.usersEarningXp[member.id]) {
 						if (!bannedVoiceChannelIds.includes(voiceState.channelID)) {
 							if (voiceState.channelID === discordBot.usersEarningXp[member.id] && discordBot.usersEarningXp[member.id]) {
-								if ((member.guild.channels.get(voiceState.channelID) as discord.VoiceChannel).members.size > 1) {
+								if ((member.guild.channels.resolve(voiceState.channelID) as discord.VoiceChannel).members.size > 1) {
 									if (member) await giveExperience(member.id, xpPerTick, discordBot.databaseClient);
 								}
 							} else if (discordBot.usersEarningXp[member.id] !== voiceState.channelID && voiceState.channelID) {
@@ -503,12 +503,7 @@ function voiceChannelXp(member: discord.GuildMember | undefined, xpPerTick: numb
 	});
 }
 
-function handleRoles() {
-
-
-}
-
-
+// tslint:disable-next-line: max-classes-per-file
 class RecordState {
 	public none: boolean; // If there are no flags set, the record is in a state where it *could* be redeemed, but it has not been yet.
 	public recordRedeemed: boolean; // If this is set, the completed record has been redeemed.

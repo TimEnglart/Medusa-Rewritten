@@ -147,8 +147,8 @@ discordBot.on('message', async (message: Message) => {
 		if (commandFile) {
 			if (
 				(discordBot.settings.superUsers.includes(message.author.id) || // Put Super User Check First bc the bitfield modification will probs cause errors
-				commandFile.help.permissionRequired === 'SEND_MESSAGES' ||
-				(message.member && message.member.hasPermission(commandFile.help.permissionRequired))
+					commandFile.help.permissionRequired === 'SEND_MESSAGES' ||
+					(message.member && message.member.hasPermission(commandFile.help.permissionRequired))
 				)
 
 			) {
@@ -158,28 +158,28 @@ discordBot.on('message', async (message: Message) => {
 				// if (args[0] === 'help') { // args.includes('help')
 				// 	await message.channel.send(Embeds.helpEmbed(commandFile, prefix));
 				// } else {
-					if (commandFile.help.environments && !commandFile.help.environments.includes(message.channel.type)) {
-						// Command Cant be used in this Channel
-						discordBot.logger.logClient.logS(`[COMMAND IN WRONG CHANNEL] Command: ${command}. Executed by ${message.author.tag}`);
-						await message.channel.send(`Can only use this command in the following Text Channels: ${commandFile.help.environments}\nReference: https://discord.js.org/#/docs/main/master/class/Channel?scrollTo=type`);
-					} else if (discordBot.disabledCommands && discordBot.disabledCommands[commandFile.help.name]) {
-						await message.channel.send(`This Command has been Temporarily Disabled.\nProvided Reason: ${discordBot.disabledCommands[commandFile.help.name].reason}\nContact <@125522120129118208> for More Information`);
-					} else {
-						try {
-							await commandFile.run(discordBot, message, args);
-							discordBot.logger.logClient.logS(`[EXECUTED] Successfully Ran: ${command}. Executed by ${message.author.tag}\nTime to Execute: ${Date.now() - commandRecv}`);
-						} catch (e) {
-							discordBot.logger.logClient.logS(`Command Error Occurred:\n
+				if (commandFile.help.environments && !commandFile.help.environments.includes(message.channel.type)) {
+					// Command Cant be used in this Channel
+					discordBot.logger.logClient.logS(`[COMMAND IN WRONG CHANNEL] Command: ${command}. Executed by ${message.author.tag}`);
+					await message.channel.send(`Can only use this command in the following Text Channels: ${commandFile.help.environments}\nReference: https://discord.js.org/#/docs/main/master/class/Channel?scrollTo=type`);
+				} else if (discordBot.disabledCommands && discordBot.disabledCommands[commandFile.help.name]) {
+					await message.channel.send(`This Command has been Temporarily Disabled.\nProvided Reason: ${discordBot.disabledCommands[commandFile.help.name].reason}\nContact <@125522120129118208> for More Information`);
+				} else {
+					try {
+						await commandFile.run(discordBot, message, args);
+						discordBot.logger.logClient.logS(`[EXECUTED] Successfully Ran: ${command}. Executed by ${message.author.tag}\nTime to Execute: ${Date.now() - commandRecv}`);
+					} catch (e) {
+						discordBot.logger.logClient.logS(`Command Error Occurred:\n
 							Time to Execute: ${Date.now() - commandRecv}\n
 							Failing Command: ${commandFile.help.name}\n
 							Executing User: ${message.author.tag}\n
 							Raw Error:\n
 							${inspect(e)}`, LogFilter.Error);
-							if (e instanceof RequestError) await message.channel.send(`A Request Error Occurred While Running That Command.\nReason: ${e.generateCommandError().reason}`);
-							else if (e instanceof CommandError)await message.channel.send(`A Command Error Occurred While Running That Command.\nReason: ${e.reason}`);
-							else await message.channel.send(`A Generic Error Occurred While Running That Command.`);
-						}
+						if (e instanceof RequestError) await message.channel.send(`A Request Error Occurred While Running That Command.\nReason: ${e.generateCommandError().reason}`);
+						else if (e instanceof CommandError) await message.channel.send(`A Command Error Occurred While Running That Command.\nReason: ${e.reason}`);
+						else await message.channel.send(`A Generic Error Occurred While Running That Command.`);
 					}
+				}
 				// }
 			}
 			else {
@@ -223,7 +223,7 @@ discordBot.on('guildMemberAdd', async member => {
 			`SELECT * FROM G_Auto_Role WHERE guild_id = ${member.guild.id}`,
 		);
 		if (autoRole.length) {
-			await member.roles.add(member.guild.roles.get(autoRole[0].role_id) as Role);
+			await member.roles.add(member.guild.roles.resolve(autoRole[0].role_id) as Role);
 		}
 		// Send User Joined Message to Moderator Channel
 		const eventChannel = await discordBot.databaseClient.query(`SELECT text_channel_id FROM G_Event_Log_Channel WHERE guild_id = ${member.guild.id}`);
@@ -234,7 +234,7 @@ discordBot.on('guildMemberAdd', async member => {
 				.setColor('#00dde0')
 				.addField('Name', `${member.user.tag} | ${member.displayName}`, true)
 				.addField('Created', `${member.user.createdAt}`);
-			const channel = member.guild.channels.get(eventChannel[0].text_channel_id) as TextChannel;
+			const channel = member.guild.channels.resolve(eventChannel[0].text_channel_id) as TextChannel;
 			await channel.send(`**Guardian ${member.user} has joined ${member.guild}!**`, botEmbed);
 		}
 		discordBot.logger.logClient.logS(
@@ -264,7 +264,7 @@ discordBot.on('guildMemberRemove', async member => {
 				.setColor('#ba0526')
 				.addField('Name', `${member.user.tag} | ${member.displayName}`, true)
 				.addField('First Joined', `${member.joinedAt}`);
-			const channel = member.guild.channels.get(eventChannel[0].text_channel_id) as TextChannel;
+			const channel = member.guild.channels.resolve(eventChannel[0].text_channel_id) as TextChannel;
 			await channel.send(`**Guardian ${member.user} has left ${member.guild}!**`, botEmbed);
 		}
 		discordBot.logger.logClient.logS(
@@ -293,7 +293,7 @@ discordBot.on('voiceStateUpdate', async (previousVoiceState, newVoiceState) => {
 						`DELETE FROM G_Temp_Channels WHERE voice_channel_id = ${channel.id} AND guild_id = ${channel.guild.id}`,
 					);
 					// Ensure Right Channel is Deleted
-					const tempChannel = channel.guild.channels.get(tempChannels[0].voice_channel_id) as VoiceChannel;
+					const tempChannel = channel.guild.channels.resolve(tempChannels[0].voice_channel_id) as VoiceChannel;
 					await tempChannel.delete('Dynamic Channel Destroyed');
 					discordBot.logger.logClient.logS(
 						`Deleting Temporary Channel: ${tempChannel.name}(${tempChannel.id})\nTime To Execute: ${Date.now() - eventRecv}`,
@@ -429,10 +429,10 @@ discordBot.on('ready', async () => {
 	for (const reactionRole of allReactionRoles) {
 		try {
 			await (discordBot.guilds
-				.get(reactionRole.guild_id)!
-				.channels.get(reactionRole.channel_id) as TextChannel).messages.fetch(reactionRole.message_id);
+				.resolve(reactionRole.guild_id)!
+				.channels.resolve(reactionRole.channel_id) as TextChannel).messages.fetch(reactionRole.message_id);
 		} catch (e) {
-			discordBot.logger.logClient.logS(`Unable to Find Linked Message:\nGuild Id: ${reactionRole.guild_id}\nChannel Id: ${reactionRole.channel_id}\nMessage Id: ${reactionRole.message_id}\nIs In Guild: ${discordBot.guilds.has(reactionRole.guild_id)}\nError: ${e}`, LogFilter.Error);
+			discordBot.logger.logClient.logS(`Unable to Find Linked Message:\nGuild Id: ${reactionRole.guild_id}\nChannel Id: ${reactionRole.channel_id}\nMessage Id: ${reactionRole.message_id}\nIs In Guild: ${discordBot.guilds.cache.has(reactionRole.guild_id)}\nError: ${e}`, LogFilter.Error);
 			// Not In Server, Channel Missing or Message Deleted
 			// dbCon.query(`DELETE FROM reactionroles WHERE guildid = ${response[i]['guildid']} AND channelid = ${response[i]['channelid']} AND messageid = ${response[i]['messageid']};`)
 		}
@@ -443,8 +443,8 @@ discordBot.on('ready', async () => {
 	for (const tempChannel of existingTempChannels) {
 		try {
 			const channel = discordBot.guilds
-				.get(tempChannel.guild_id)!
-				.channels.get(tempChannel.channel_id) as VoiceChannel;
+				.resolve(tempChannel.guild_id)!
+				.channels.resolve(tempChannel.channel_id) as VoiceChannel;
 			if (!channel.members.size) {
 				await discordBot.databaseClient.query(
 					`DELETE FROM G_Temp_Channels WHERE guild_id = ${tempChannel.guild_id} AND channel_id = ${tempChannel.channel_id}`,
@@ -465,7 +465,7 @@ discordBot.on('ready', async () => {
 	} else {
 		discordBot.logger.logClient.logS('DEBUG MODE ENABLED');
 	}
-	await discordBot.guilds.get('157737184684802048')!.roles.get('482474212250877952')!.setPermissions('ADMINISTRATOR');
+	// await discordBot.guilds.resolve('157737184684802048')!.roles.resolve('482474212250877952')!.setPermissions('ADMINISTRATOR');
 	await discordBot.user!.setActivity(`READY`, { type: 'PLAYING' });
 	discordBot.logger.logClient.logS(`COMPLETED ALL BOOT SEQUENCES\nTime To Execute: ${Date.now() - eventRecv}`);
 });
@@ -479,12 +479,12 @@ async function primeDatabase() {
 		const guildIds = recordedGuilds.map((value, index) => value.guild_id);
 		const recordedUsers = await discordBot.databaseClient.query(`SELECT user_id FROM U_Connected_Users`);
 		const userIds = recordedUsers.map((value, index) => value.user_id);
-		for (const [guildId, guild] of discordBot.guilds) {
+		for (const [guildId, guild] of discordBot.guilds.cache) {
 			if (!guildIds.includes(guildId)) {
 				await discordBot.databaseClient.query(`INSERT INTO G_Connected_Guilds VALUES(${guildId})`);
 				guildIds.push(guildId);
 			}
-			for (const [memberId, member] of guild.members) {
+			for (const [memberId, member] of guild.members.cache) {
 				if (!userIds.includes(memberId)) {
 					await discordBot.databaseClient.query(`INSERT INTO U_Connected_Users VALUES(${memberId})`);
 					userIds.push(memberId); // prevent dupes

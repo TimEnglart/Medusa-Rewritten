@@ -34,7 +34,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 					.setThumbnail(message.guild.iconURL() || '')
 					.setColor('#ff8827');
 				for (const leaderBoardEntry of leaderBoard) {
-					const guildMember = message.guild.members.get(leaderBoardEntry.user_id);
+					const guildMember = message.guild.members.resolve(leaderBoardEntry.user_id);
 					const _currentRank = ranks[leaderBoardEntry.level >= amountOfLevels ? amountOfLevels - 1 : leaderBoardEntry.level];
 					leaderBoardEmbed.addField(`${leaderBoardEntry.position}. ${guildMember ? guildMember.displayName : 'REDACTED'} ${_currentRank.emoji.text} ${leaderBoardEntry.user_id === message.member.id ? ' \\◀' : ''}`,
 						`${_currentRank.name} - Reset: ${leaderBoardEntry.reset} - XP: ${leaderBoardEntry.xp}`);

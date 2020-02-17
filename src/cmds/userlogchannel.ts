@@ -13,12 +13,12 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
 			const userLogChannel = Utility.LookupChannel(message, args[0]);
 			if (!userLogChannel) throw new CommandError('NO_CHANNEL_FOUND');
-			const actualChannel = message.guild.channels.get(userLogChannel.id);
+			const actualChannel = message.guild.channels.resolve(userLogChannel.id);
 			if (actualChannel) {
 				const select = await discordBot.databaseClient.query(`SELECT * FROM G_Event_Log_Channel WHERE guild_id = ${message.guild.id} AND text_channel_id = ${userLogChannel.id}`);
 				if (select.length) await discordBot.databaseClient.query(`UPDATE G_Event_Log_Channel SET text_channel_id = ${userLogChannel.id} WHERE guild_id = ${message.guild.id}`);
 				else await discordBot.databaseClient.query(`INSERT INTO G_Prefix (guild_id, text_channel_id) VALUES (${message.guild.id}, ${userLogChannel.id})`);
-				await message.channel.send(Embeds.successEmbed('User Log Channel Updated', `${message.guild.channels.get(userLogChannel.id)}`));
+				await message.channel.send(Embeds.successEmbed('User Log Channel Updated', `${message.guild.channels.resolve(userLogChannel.id)}`));
 			}
 			return resolve();
 		} catch (e) {

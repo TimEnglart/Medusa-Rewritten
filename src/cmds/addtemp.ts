@@ -11,7 +11,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
 			const channelId = Utility.parseChannelMentionToId(args[0]) || (message.member.voice.channel !== null ? message.member.voice.channel.id : null);
 			if (channelId) {
-				const channel = message.guild.channels.get(channelId);
+				const channel = message.guild.channels.resolve(channelId);
 				if (!channel) throw new CommandError('NO_CHANNEL_FOUND');
 				const currentTempChannelMasters = await discordBot.databaseClient.query(`SELECT * FROM G_Master_Temp_Channels WHERE guild_id = ${message.guild.id} AND voice_channel_id = ${channelId}`);
 				if (currentTempChannelMasters.length) {

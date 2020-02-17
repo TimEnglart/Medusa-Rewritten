@@ -23,13 +23,13 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				const response = await discordBot.databaseClient.query(`SELECT * FROM G_Reaction_Roles WHERE guild_id = ${message.guild.id} AND message_id = ${messageId} AND role_id = ${role.id}`);
 				if (!response.length) throw new CommandError('DATABASE_ENTRY_NOT_FOUND', 'Reaction Role Not Linked to Provided Role');
 				const statusMessage = await message.channel.send(`Removing Reaction For ${role.name} From the Selected Message`);
-				const channelLookup = message.guild.channels.get(response[0].channel_id) as discord.TextChannel;
+				const channelLookup = message.guild.channels.resolve(response[0].channel_id) as discord.TextChannel;
 				if (!channelLookup) throw new CommandError('NO_CHANNEL_FOUND');
 				const reactionMessage = await channelLookup.messages.fetch(messageId);
 				if (!reactionMessage) throw new CommandError('NO_MESSAGE_FOUND');
-				reactionMessage.reactions.remove(response[0].reaction_id === null ? response[0].reaction_name : discordBot.emojis.get(response[0].reaction_id));
+				reactionMessage.reactions.remove(response[0].reaction_id === null ? response[0].reaction_name : discordBot.emojis.resolve(response[0].reaction_id));
 				await discordBot.databaseClient.query(`DELETE FROM G_Reaction_Roles WHERE guild_id = ${message.guild.id} AND message_id = ${messageId} AND role_id = ${role.id}`);
-				await statusMessage.edit('', Embeds.successEmbed('Role Reaction Successfully Removed From Message', `Reaction: ${response[0].reaction_id === null ? response[0].reaction_name : discordBot.emojis.get(response[0].reaction_id)}`));
+				await statusMessage.edit('', Embeds.successEmbed('Role Reaction Successfully Removed From Message', `Reaction: ${response[0].reaction_id === null ? response[0].reaction_name : discordBot.emojis.resolve(response[0].reaction_id)}`));
 				return resolve();
 			}
 		} catch (e) {

@@ -24,10 +24,10 @@ class ClanSync {
 		const clanPlayers: IClanPlayerList = {};
 		try {
 			this.discordInstance.logger.logClient.logS(`GETTING SUNBREAKER MEMBERS`);
-			const sbResponse: BungieResponse<IClanListResponse> = await this.requester.request({ path: `/Platform/GroupV2/2135581/Members/`});
+			const sbResponse: BungieResponse<IClanListResponse> = await this.requester.request({ path: `/Platform/GroupV2/2135581/Members/` });
 			clanPlayers.sunbreakers = sbResponse.Response.results;
 			this.discordInstance.logger.logClient.logS(`GETTING CURSEBREAKER MEMBERS`);
-			const cbResponse: BungieResponse<IClanListResponse> = await this.requester.request({ path: `/Platform/GroupV2/3212540/Members/`});
+			const cbResponse: BungieResponse<IClanListResponse> = await this.requester.request({ path: `/Platform/GroupV2/3212540/Members/` });
 			clanPlayers.cursebreakers = cbResponse.Response.results;
 		}
 		catch (e) {
@@ -38,7 +38,7 @@ class ClanSync {
 	public async resolveDiscordNames(clanPlayers: IClanPlayerList): Promise<IClanPlayerUpdateList> {
 		const playerRoles: IClanPlayerUpdateList = {};
 		this.discordInstance.logger.logClient.logS(`GETTING GUILD`);
-		const guild = this.discordInstance.guilds.get(Settings.lighthouse.discordId);
+		const guild = this.discordInstance.guilds.resolve(Settings.lighthouse.discordId);
 		if (!guild) return playerRoles;
 		this.discordInstance.logger.logClient.logS(`CYCLING PLAYERS`);
 		for (const clan in clanPlayers) {
@@ -72,9 +72,9 @@ class ClanSync {
 		return playerRoles;
 	}
 	public async updateDiscordRoles(playersInClan: IClanPlayerUpdateList) {
-		const guild = this.discordInstance.guilds.get(Settings.lighthouse.discordId);
+		const guild = this.discordInstance.guilds.resolve(Settings.lighthouse.discordId);
 		if (!guild) return;
-		for (const [snowflake, member] of guild.members) {
+		for (const [snowflake, member] of guild.members.cache) {
 			await member.roles.remove(this.getRolesToRemove());
 			const roleToAssign = playersInClan[snowflake];
 			if (roleToAssign) {

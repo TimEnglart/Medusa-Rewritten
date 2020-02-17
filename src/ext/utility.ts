@@ -130,26 +130,26 @@ class Utility {
 		if (!isNaN(+userData) && isFinite(+userData)) return guild.member(userData); // Was a Direct Id
 		userData = this.quotedWords(userData)[0];
 		let nameLookup;
-		if (destinyInGameName) nameLookup = guild.members.find(member => (!!member.displayName && member.displayName.split('#')[0].toLowerCase() === userData.toLowerCase()) || (!!member.nickname && member.nickname.split('#')[0].toLowerCase() === userData.toLowerCase()));
-		else nameLookup = guild.members.find(member => (!!member.displayName && member.displayName.toLowerCase() === userData.toLowerCase()) || (!!member.nickname && member.nickname.toLowerCase() === userData.toLowerCase()));
+		if (destinyInGameName) nameLookup = guild.members.cache.find(member => (!!member.displayName && member.displayName.split('#')[0].toLowerCase() === userData.toLowerCase()) || (!!member.nickname && member.nickname.split('#')[0].toLowerCase() === userData.toLowerCase()));
+		else nameLookup = guild.members.cache.find(member => (!!member.displayName && member.displayName.toLowerCase() === userData.toLowerCase()) || (!!member.nickname && member.nickname.toLowerCase() === userData.toLowerCase()));
 		if (nameLookup) return nameLookup; // was plain text Name
 		return null;
 	}
 	public static LookupRole(guild: discord.Guild, roleData: string): discord.Role | null {
 		if (!guild) throw new Error('Message Not Sent From Guild');
 		const userId = this.parseRoleMentionToId(roleData);
-		if (userId) return guild.roles.get(roleData) || null; // Was a Mention
-		if (!isNaN(+roleData) && isFinite(+roleData)) return guild.roles.get(roleData) || null; // Was a Direct Id
-		const roleLookup = guild.roles.find(role => role.name.toLowerCase() === roleData.toLowerCase());
+		if (userId) return guild.roles.resolve(roleData) || null; // Was a Mention
+		if (!isNaN(+roleData) && isFinite(+roleData)) return guild.roles.resolve(roleData) || null; // Was a Direct Id
+		const roleLookup = guild.roles.cache.find(role => role.name.toLowerCase() === roleData.toLowerCase());
 		if (roleLookup) return roleLookup; // was plain text Name
 		return null;
 	}
 	public static LookupChannel(message: discord.Message, channelData: string): discord.GuildChannel | null {
 		if (!message.guild) throw new Error('Message Not Sent From Guild');
 		const userId = this.parseChannelMentionToId(channelData);
-		if (userId) return message.guild.channels.get(channelData) || null; // Was a Mention
-		if (!isNaN(+channelData) && isFinite(+channelData)) return message.guild.channels.get(channelData) || null; // Was a Direct Id
-		const roleLookup = message.guild.channels.find(channel => channel.name.toLowerCase() === channelData.toLowerCase());
+		if (userId) return message.guild.channels.resolve(channelData) || null; // Was a Mention
+		if (!isNaN(+channelData) && isFinite(+channelData)) return message.guild.channels.resolve(channelData) || null; // Was a Direct Id
+		const roleLookup = message.guild.channels.cache.find(channel => channel.name.toLowerCase() === channelData.toLowerCase());
 		if (roleLookup) return roleLookup; // was plain text Name
 		return null;
 	}
@@ -166,7 +166,7 @@ class Utility {
 
 	public static isSuperUser(user: discord.User | discord.GuildMember | string | undefined): boolean {
 		if (user instanceof discord.User || user instanceof discord.GuildMember) return Settings.superUsers.includes(user.id);
-		else if (typeof(user) === 'string') return Settings.superUsers.includes(user);
+		else if (typeof (user) === 'string') return Settings.superUsers.includes(user);
 		return false;
 	}
 }
