@@ -5,24 +5,18 @@ import { ExtendedRequestOptions, RequestError } from './webClient';
 
 
 function disconnectUser(userId: string | null, databaseClient: Database) {
-	return new Promise(async (resolve, reject) => {
-		const response = await databaseClient.query(`SELECT * FROM U_Experience WHERE user_id = ${userId}`);
-		if (response.length) await databaseClient.query(`UPDATE U_Experience SET connected = ${false} WHERE user_id = ${userId}`);
-		else await databaseClient.query(`INSERT INTO U_Experience(user_id, connected) VALUES(${userId}, ${false})`);
-		return resolve();
-	});
+	return updateConnectionStatus(userId, databaseClient, false);
 }
 function connectUser(userId: string | null, databaseClient: Database) {
+	return updateConnectionStatus(userId, databaseClient, true);
+}
+function updateConnectionStatus(userId: string | null, databaseClient: Database, connected: boolean) {
 	return new Promise(async (resolve, reject) => {
 
 		/* Add User to Experience Table */
 		const response = await databaseClient.query(`SELECT * FROM U_Experience WHERE user_id = ${userId}`);
-		if (response.length) await databaseClient.query(`UPDATE U_Experience SET connected = ${true} WHERE user_id = ${userId}`);
-		else await databaseClient.query(`INSERT INTO U_Experience(user_id, connected) VALUES(${userId}, ${true})`);
-
-		/* Add User to Medal Tables */
-		// const medalsResponse = await databaseClient.query(`SELECT * FROM `)
-
+		if (response.length) await databaseClient.query(`UPDATE U_Experience SET connected = ${connected} WHERE user_id = ${userId}`);
+		else await databaseClient.query(`INSERT INTO U_Experience(user_id, connected) VALUES(${userId}, ${connected})`);
 		return resolve();
 	});
 }
@@ -107,9 +101,8 @@ function checkAllMedals(member: discord.GuildMember | null, databaseClient: Data
 			if (!member) return reject('No User Supplied');
 			const records = getRecords ? await getUserRecords(member, databaseClient) : undefined;
 			const unlockedMedals: IMedalData[] = [];
-			for (const medalKey in Settings.lighthouse.medals) {
-				if (!medalKey) continue;
-				const medal: IMedalData = (Settings.lighthouse.medals as any)[medalKey];
+			for (const medal of Settings.lighthouse.medals) {
+				if (!medal) continue;
 				if (medal.available && await checkMedal(member, medal, databaseClient, records)) unlockedMedals.push(medal);
 			}
 			return resolve(unlockedMedals);

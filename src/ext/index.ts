@@ -1,5 +1,6 @@
 import * as discord from 'discord.js';
 const Settings = getSettings();
+import { existsSync } from 'fs';
 import { Database, SqlQuery } from './database';
 import { CommandError } from './errorParser';
 import { LogFilter, Logger } from './logger';
@@ -7,7 +8,6 @@ import { ScoreBook } from './score-book/index.js';
 import { Utility } from './utility';
 import { WebServer } from './web-server/index.js';
 import { MyRequester } from './webClient';
-import { existsSync } from 'fs';
 type CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => Promise<void>;
 type CustomPermissionString = discord.PermissionString;
 interface CommandHelp {
@@ -97,7 +97,7 @@ interface SettingsTemplate {
 	};
 	webData: {
 		[key: string]: string;
-	}
+	};
 	disabledCommands: {
 		[commandName: string]: {
 			reason: string;

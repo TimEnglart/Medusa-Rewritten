@@ -14,7 +14,7 @@ import {
 import * as fs from 'fs';
 import { inspect } from 'util';
 // import * as settings from './config/settings.json';
-import { CommandError, CommandFile, Database, Embeds, ExtendedClient, LogFilter, Logger, getSettings } from './ext/';
+import { CommandError, CommandFile, Database, Embeds, ExtendedClient, getSettings, LogFilter, Logger } from './ext/';
 import { AntiRepost } from './ext/antiRepostInitiative';
 import { ClanSync } from './ext/clanCheck';
 import * as exp from './ext/experienceHandler';
