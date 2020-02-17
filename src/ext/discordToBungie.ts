@@ -73,7 +73,10 @@ interface BungieResponse<T> {
 	ThrottledSeconds: number;
 	ErrorStatus: string;
 	Message: string;
-	MessageData: any;
+	MessageData: {
+		[key: string]: string;
+	};
+	DetailedErrorTrace: string;
 }
 interface DestinyProfilesResponse {
 	membershipType: string;

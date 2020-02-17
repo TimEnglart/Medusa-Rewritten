@@ -102,8 +102,8 @@ class MyRequester {
 				if (res.statusCode !== 200) { // Not Successful
 					switch (res.statusCode!.toString()[0]) { // handle accordingly
 						case '3':
-								if (!res.headers.location || overrideOptions.doNotFollowRedirect) return reject(new RequestError(overrideOptions, res));
-								const redirectUrl = new URL(res.headers.location);
+							if (!res.headers.location || overrideOptions.doNotFollowRedirect) return reject(new RequestError(overrideOptions, res));
+							const redirectUrl = new URL(res.headers.location);
 							try {
 								return resolve(this.request({ hostname: redirectUrl.hostname, path: redirectUrl.pathname /*, protocol: redirectUrl.protocol , port: redirectUrl.port || (redirectUrl.protocol === 'https:' ? 443 : 80)*/ }));
 							}
@@ -174,4 +174,4 @@ class MyRequester {
 	}
 
 }
-export { MyRequester, RequestError };
+export { MyRequester, RequestError, ExtendedRequestOptions };

@@ -1,5 +1,6 @@
 import { Database, discord, ExtendedClient, MyRequester, Settings } from '.';
 import { BungieResponse } from './discordToBungie';
+import { ExtendedRequestOptions, RequestError } from './webClient';
 
 
 
@@ -181,8 +182,8 @@ function getUserRecords(member: discord.GuildMember, databaseClient: Database, f
 			if (!destinyAccounts.length) return reject('User Has No Destiny Profiles [Xbox, Playstation, PC]');
 			for (const dProfile of destinyAccounts) {
 				try {
-				const pRecords: BungieResponse<IRecordResponse> = await requester.request({ path: `/Platform/Destiny2/${dProfile.membership_id}/Profile/${dProfile.destiny_id}/?components=900` });
-				if (pRecords) records.push(pRecords.Response);
+					const pRecords: BungieResponse<IRecordResponse> = await requester.request({ path: `/Platform/Destiny2/${dProfile.membership_id}/Profile/${dProfile.destiny_id}/?components=900` });
+					if (pRecords) records.push(pRecords.Response);
 				}
 				catch (e) {
 					// EndPoint Not Available
@@ -218,8 +219,8 @@ function getUserCollectables(member: discord.GuildMember, databaseClient: Databa
 			if (!destinyAccounts.length) return reject('User Has No Destiny Profiles [Xbox, Playstation, PC]');
 			for (const dProfile of destinyAccounts) {
 				try {
-				const pCollectables: BungieResponse<ICollectableResponse> = await requester.request({ path: `/Platform/Destiny2/${dProfile.membership_id}/Profile/${dProfile.destiny_id}/?components=800` });
-				if (pCollectables) collectables.push(pCollectables.Response);
+					const pCollectables: BungieResponse<ICollectableResponse> = await requester.request({ path: `/Platform/Destiny2/${dProfile.membership_id}/Profile/${dProfile.destiny_id}/?components=800` });
+					if (pCollectables) collectables.push(pCollectables.Response);
 				}
 				catch (e) {
 					// EndPoint Not Available
@@ -233,6 +234,128 @@ function getUserCollectables(member: discord.GuildMember, databaseClient: Databa
 		return resolve(collectables);
 	});
 }
+interface IBungieRequest {
+	member: discord.GuildMember;
+	databaseClient: Database;
+	fails: number;
+	requestPath: string;
+}
+function getBungieResponse<T = any>(member: discord.GuildMember, databaseClient: Database, fails: number = 0): Promise<T[]> {
+	return new Promise(async (resolve, reject) => {
+		const collectables: T[] = [];
+		try {
+			const requester = new MyRequester({
+				hostname: 'www.bungie.net',
+				port: 443,
+				method: 'GET',
+				headers: {
+					'X-API-Key': Settings.bungie.apikey
+				},
+				doNotFollowRedirect: false,
+				responseType: 'JSON'
+			});
+			// Get User Bungie/Destiny Data
+			const bungieAccounts = await databaseClient.query(`SELECT * FROM U_Bungie_Account WHERE user_id = ${member.id}`);
+			if (!bungieAccounts.length) return reject('User Bungie Account Not Registered');
+			const destinyAccounts = await databaseClient.query(`SELECT * FROM U_Destiny_Profile WHERE bungie_id = ${bungieAccounts[0].bungie_id}`);
+			if (!destinyAccounts.length) return reject('User Has No Destiny Profiles [Xbox, Playstation, PC]');
+			for (const dProfile of destinyAccounts) {
+				try {
+					const apiResponse: BungieResponse<T> = await requester.request({ path: `/Platform/Destiny2/${dProfile.membership_id}/Profile/${dProfile.destiny_id}/?components=800` });
+					if (apiResponse) collectables.push(apiResponse.Response);
+				}
+				catch (e) {
+					// EndPoint Not Available
+				}
+			}
+		}
+		catch (e) {
+			if (fails > 2) return reject('Failed to Get API Data:\n' + e);
+			return resolve(await getBungieResponse<T>(member, databaseClient, ++fails));
+		}
+		return resolve(collectables);
+	});
+}
+
+class BungieApiRequester {
+	public numberOfRetries: number = 0;
+
+	private requester: MyRequester;
+	private currentFails: number = 0;
+
+	constructor(requestOptions?: ExtendedRequestOptions) {
+		const defaultOptions: ExtendedRequestOptions = {
+			hostname: 'www.bungie.net',
+			port: 443,
+			method: 'GET',
+			headers: {
+				'X-API-Key': Settings.bungie.apikey
+			},
+			doNotFollowRedirect: false,
+			responseType: 'JSON'
+		};
+		if (requestOptions) Object.assign(defaultOptions, requestOptions);
+		this.requester = new MyRequester(defaultOptions);
+	}
+	public ContactEndpoint<T>(apiEndpoint: string, overrideRequestOptions?: ExtendedRequestOptions): Promise<BungieResponse<T>> {
+		return new Promise(async (resolve, reject) => {
+			try {
+				if (overrideRequestOptions) Object.assign(this.requester.options, overrideRequestOptions);
+				try {
+					const apiResponse: BungieResponse<T> = await this.requester.request({ path: apiEndpoint });
+
+					if (apiResponse.ThrottledSeconds > 0) {
+						await new Promise(sleepDone => setTimeout(sleepDone, apiResponse.ThrottledSeconds * 1000));
+						throw apiResponse;
+					}
+
+					return resolve(apiResponse);
+				}
+				catch (e) {
+					if (e instanceof RequestError) { // Request Error
+						return reject({
+							ErrorType: 'Request Error',
+							Error: e
+						} as EndPointError<RequestError>);
+					}
+					else if (e instanceof Error) { // Default HTTP Client Error
+						return reject({
+							ErrorType: 'Generic Error',
+							Error: e
+						} as EndPointError<Error>);
+					}
+					else { // Verficiation Error
+						throw e;
+					}
+				}
+			}
+			catch (e) {
+				if (this.numberOfRetries <= ++this.currentFails) { // Max Attempts
+					return reject({
+						ErrorType: 'Max Attempts',
+						Error: e
+					} as EndPointError<BungieResponse<T>>); // e should be a IContactEndpointResponse
+				}
+				else {
+					return this.ContactEndpoint<T>(apiEndpoint, overrideRequestOptions);
+				}
+			}
+			finally {
+				this.currentFails = 0;
+			}
+		});
+	}
+}
+interface EndPointError<T> {
+	ErrorType: string;
+	Error: T;
+}
+interface IContactEndpointResponse<T> {
+	BungieResponse: T;
+	ThrottleTime: number;
+	ErrorOccurred: boolean;
+}
+
 
 function checkTriumph(medal: IMedalData, response: IRecordResponse): boolean {
 	if (isNaN(Number(medal.acquisitionMethod.data.recordId))) {
@@ -242,14 +365,14 @@ function checkTriumph(medal: IMedalData, response: IRecordResponse): boolean {
 		try {
 			const triumph = response.profileRecords.data.records[medal.acquisitionMethod.data.recordId];
 			if (triumph) { // Profile IRecord
-				const pTriumphState = new CollectableState(triumph.state);
+				const pTriumphState = new RecordState(triumph.state);
 				if (!pTriumphState.objectiveNotCompleted) return true;
 			}
 			else { // Character IRecord
 				for (const characterId in response.characterRecords.data) {
 					if (characterId) {
 						const cTriumph = response.characterRecords.data[characterId].records[medal.acquisitionMethod.data.recordId];
-						const cTriumphState = new CollectableState(cTriumph.state);
+						const cTriumphState = new RecordState(cTriumph.state);
 						if (!cTriumphState.objectiveNotCompleted) return true;
 					}
 				}
@@ -305,7 +428,12 @@ function medalFunction(member: discord.GuildMember, medal: IMedalData, databaseC
 					const userCollectables = await getUserCollectables(member, databaseClient);
 					for (const collectable of userCollectables) {
 						for (const itemHash of args) {
-							if (collectable.profileCollectibles.data.collectibles[itemHash].state === 0) return true;
+							const collectableState = new CollectableState(collectable.profileCollectibles.data.collectibles[itemHash].state);
+							return collectableState.none ||
+								collectableState.cannotAffordMaterialRequirements ||
+								collectableState.inventorySpaceUnavailable ||
+								collectableState.uniquenessViolation ||
+								collectableState.purchaseDisabled;
 						}
 					}
 				}
@@ -381,15 +509,15 @@ function handleRoles() {
 }
 
 
-class CollectableState {
-	public none: boolean;
-	public recordRedeemed: boolean;
-	public rewardUnavailable: boolean;
-	public objectiveNotCompleted: boolean;
-	public obscured: boolean;
-	public invisible: boolean;
-	public entitlementUnowned: boolean;
-	public canEquipTitle: boolean;
+class RecordState {
+	public none: boolean; // If there are no flags set, the record is in a state where it *could* be redeemed, but it has not been yet.
+	public recordRedeemed: boolean; // If this is set, the completed record has been redeemed.
+	public rewardUnavailable: boolean; // If this is set, there's a reward available from this Record but it's unavailable for redemption.
+	public objectiveNotCompleted: boolean; // If this is set, the objective for this Record has not yet been completed.
+	public obscured: boolean; // If this is set, the game recommends that you replace the display text of this Record with DestinyRecordDefinition.stateInfo.obscuredString.
+	public invisible: boolean; // If this is set, the game recommends that you not show this record. Do what you will with this recommendation.
+	public entitlementUnowned: boolean; // If this is set, you can't complete this record because you lack some permission that's required to complete it.
+	public canEquipTitle: boolean; // If this is set, the record has a title (check DestinyRecordDefinition for title info) and you can equip it.
 	constructor(public state: number) {
 		// tslint:disable: no-bitwise
 		this.none = !!(state & 0);
@@ -403,6 +531,30 @@ class CollectableState {
 	}
 
 }
+// tslint:disable-next-line: max-classes-per-file
+class CollectableState {
+	public none: boolean; // Has Collectable
+	public notAcquired: boolean; // If this flag is set, you have not yet obtained this collectible.
+	public obscured: boolean; // If this flag is set, the item is "obscured" to you: you can/should use the alternate item hash found in DestinyCollectibleDefinition.stateInfo.obscuredOverrideItemHash when displaying this collectible instead of the default display info.
+	public invisible: boolean; // If this flag is set, the collectible should not be shown to the user.
+	public cannotAffordMaterialRequirements: boolean; // If this flag is set, the collectible requires payment for creating an instance of the item, and you are lacking in currency. Bring the benjamins next time. Or spinmetal. Whatever.
+	public inventorySpaceUnavailable: boolean; // If this flag is set, you can't pull this item out of your collection because there's no room left in your inventory.
+	public uniquenessViolation: boolean; // If this flag is set, you already have one of these items and can't have a second one.
+	public purchaseDisabled: boolean; // If this flag is set, the ability to pull this item out of your collection has been disabled.
+	constructor(public state: number) {
+		// tslint:disable: no-bitwise
+		this.none = !!(state & 0);
+		this.notAcquired = !!(state & 1);
+		this.obscured = !!(state & 2);
+		this.invisible = !!(state & 4);
+		this.cannotAffordMaterialRequirements = !!(state & 8);
+		this.inventorySpaceUnavailable = !!(state & 16);
+		this.uniquenessViolation = !!(state & 32);
+		this.purchaseDisabled = !!(state & 64);
+	}
+
+}
+
 
 interface IMedalData {
 	name: string;
