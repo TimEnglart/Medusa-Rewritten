@@ -1,6 +1,5 @@
 import * as discord from 'discord.js';
-import * as express from 'express';
-import * as Settings from '../config/settings.json';
+const Settings = getSettings();
 import { Database, SqlQuery } from './database';
 import { CommandError } from './errorParser';
 import { LogFilter, Logger } from './logger';
@@ -8,6 +7,7 @@ import { ScoreBook } from './score-book/index.js';
 import { Utility } from './utility';
 import { WebServer } from './web-server/index.js';
 import { MyRequester } from './webClient';
+import { existsSync } from 'fs';
 type CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => Promise<void>;
 type CustomPermissionString = discord.PermissionString;
 interface CommandHelp {
@@ -24,7 +24,92 @@ interface CommandHelp {
 	hidden?: boolean;
 }
 
+interface SettingsTemplate {
+	version: string;
+	debug: boolean;
+	defaultPrefix: string;
+	superUsers: string[];
+	tokens: {
+		production: string;
+		debugging: string;
+	};
+	database: {
+		hostname: string;
+		port: number | string;
+		database: string;
+		username: string;
+		password: string;
+	};
+	lighthouse: {
+		discordId: string;
+		destinyReset: {
+			day: string;
+			auDay: string;
+			time: string;
+			auTime: string;
+		};
+		scorebook: {
+			epoch: string;
+			auEpoch: string;
+			channelId: string;
+			season: number;
+		};
+		roleIds: {
+			[roleId: string]: string;
+		};
+		clanIds: {
+			[clanName: string]: string;
+		};
+		ranks: Array<{
+			name: string;
+			icon: string;
+			emoji: {
+				name: string;
+				id: string;
+				animated: false;
+				text: string;
+			};
+		}>;
+		medals: Array<{
+			name: string;
+			emoji: string;
+			dbData: {
+				column: string;
+				table: string;
+			};
+			acquisitionMethod: {
+				function: string;
+				data: {
+					[key: string]: any;
+				};
+			};
+			xp: number;
+			category: string;
+			description: string;
+			limited: boolean;
+			available: boolean;
+		}>
+	};
+	statuses: string[];
+	sentry: string;
+	bungie: {
+		[key: string]: string;
+	};
+	webData: {
+		[key: string]: string;
+	}
+	disabledCommands: {
+		[commandName: string]: {
+			reason: string;
+		};
+	};
+}
 
+export function getSettings(): SettingsTemplate {
+	const configLocation = './config/settings.json';
+	if (existsSync(configLocation)) return require(configLocation);
+	return {} as any;
+}
 
 interface CommandFile {
 	run: CommandRun;

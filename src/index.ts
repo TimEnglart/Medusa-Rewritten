@@ -1,7 +1,3 @@
-/* TODO:
-	Implement all //yeet comments with working code
-	Move all Commands and
-*/
 import {
 	BitFieldResolvable,
 	Client,
@@ -18,7 +14,7 @@ import {
 import * as fs from 'fs';
 import { inspect } from 'util';
 // import * as settings from './config/settings.json';
-import { CommandError, CommandFile, Database, Embeds, ExtendedClient, LogFilter, Logger, Settings } from './ext/';
+import { CommandError, CommandFile, Database, Embeds, ExtendedClient, LogFilter, Logger, getSettings } from './ext/';
 import { AntiRepost } from './ext/antiRepostInitiative';
 import { ClanSync } from './ext/clanCheck';
 import * as exp from './ext/experienceHandler';
@@ -45,14 +41,14 @@ process
 		console.log(e);
 	});
 discordBot.webServer = new WebServer(discordBot);
-discordBot.settings = Settings;
+discordBot.settings = getSettings();
 discordBot.databaseClient = new Database(
 	{
 		database: discordBot.settings.database.database,
-		host: discordBot.settings.database.ip,
+		host: discordBot.settings.database.hostname,
 		user: discordBot.settings.database.username,
 		password: discordBot.settings.database.password,
-		port: discordBot.settings.database.port,
+		port: +discordBot.settings.database.port,
 		connectionLimit: 20,
 		supportBigNumbers: true,
 		bigNumberStrings: true,
@@ -116,7 +112,7 @@ discordBot.on('message', async (message: Message) => {
 		const guildPrefix = await discordBot.databaseClient.query(
 			`SELECT prefix FROM G_Prefix WHERE guild_id = ${message.guild ? message.guild.id : message.author.id}`,
 		);
-		const prefix: string = guildPrefix.length ? guildPrefix[0].prefix : Settings.defaultPrefix;
+		const prefix: string = guildPrefix.length ? guildPrefix[0].prefix : discordBot.settings.defaultPrefix;
 
 		// Check if Sent Message Starts With the Servers Prefix
 		if (!message.content.startsWith(prefix)) {
@@ -498,11 +494,11 @@ async function primeDatabase() {
 	}
 }
 function randomPresence() {
-	const num = Math.floor(Math.random() * Settings.statuses.length);
+	const num = Math.floor(Math.random() * discordBot.settings.statuses.length);
 	// tslint:disable-next-line: no-floating-promises
 	discordBot.user!.setPresence({
 		activity: {
-			name: Settings.statuses[num],
+			name: discordBot.settings.statuses[num],
 			type: 'PLAYING'
 		},
 		status: 'online'
