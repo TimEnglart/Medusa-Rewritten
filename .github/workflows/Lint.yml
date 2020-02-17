@@ -22,7 +22,7 @@ jobs:
       - name: Install NPM Packages
         run: npm install
       - name: Lint Source
-        uses: icrawl/action-eslint@v1
+        run: npm lint
   build:
     name: build
     runs-on: ubuntu-latest
