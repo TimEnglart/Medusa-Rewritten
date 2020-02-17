@@ -28,7 +28,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pattern: '*.ts'
-          project: 'tsconfig.json'
+          project: './src/**/*'
           config: 'tslint.json'
   build:
     name: build
