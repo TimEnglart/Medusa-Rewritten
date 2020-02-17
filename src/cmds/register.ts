@@ -1,4 +1,4 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Embeds, CommandError } from '../ext/index';
+import { CommandError, CommandFile, CommandHelp, CommandRun, discord, Embeds, ExtendedClient } from '../ext/index';
 
 // Only Reject Promise if a Real Error Occurs
 // run Function is pretty convoluted
@@ -10,7 +10,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
 			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
 			message.channel.stopTyping();
-			
+
 			const initialTimeStamp = new Date();
 			const registerEmbed = new discord.MessageEmbed()
 				.setURL(`${discordBot.settings.webData.url}initialize.php?did=${message.author.id}`)

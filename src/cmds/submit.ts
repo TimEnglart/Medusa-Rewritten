@@ -1,5 +1,5 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, LogFilter, MyRequester, Embeds, CommandError } from '../ext/index';
-import {BungieResponse, IActivityDefinition, DestinyPlayer, INightfallSubmission, IActivityDetails, IPostGameCarnageReport } from '../ext/discordToBungie';
+import {BungieResponse, DestinyPlayer, IActivityDefinition, IActivityDetails, INightfallSubmission, IPostGameCarnageReport } from '../ext/discordToBungie';
+import { CommandError, CommandFile, CommandHelp, CommandRun, discord, Embeds, ExtendedClient, LogFilter, MyRequester } from '../ext/index';
 import { ScoreBook } from '../ext/score-book';
 // Only Reject Promise if a Real Error Occurs
 // run Function is pretty convoluted
@@ -24,10 +24,10 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			let activityId = null;
 			if (message.guild && message.guild.me && message.guild.me.hasPermission('MANAGE_MESSAGES')) await message.delete();
 			if (args.length) {
-				const bungieSiteRegex = /https:\/\/www.bungie.net\/en\/PGCR\/(\d+)(\?character=(\d+))?/; //data[1] = ActivityId, data[3] = CharacterId
+				const bungieSiteRegex = /https:\/\/www.bungie.net\/en\/PGCR\/(\d+)(\?character=(\d+))?/; // data[1] = ActivityId, data[3] = CharacterId
 				const regex = args[0].match(bungieSiteRegex);
-				if (regex && regex.length > 1) activityId = regex[1]; //PGCR Link as Arg
-				else if (args.length === 1) activityId = args[0]; //Acivity Id as Arg
+				if (regex && regex.length > 1) activityId = regex[1]; // PGCR Link as Arg
+				else if (args.length === 1) activityId = args[0]; // Acivity Id as Arg
 				else {
 					// TODO: Add the Ability to Add Custom Run?
 				}
@@ -95,9 +95,9 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 					));
 				return resolve();
 			}
-			const entityDef: BungieResponse<IActivityDefinition> = await requester.request({ path: `/Platform/Destiny2/Manifest/${'DestinyActivityDefinition'}/${pgcr.Response.activityDetails.referenceId}/` })
+			const entityDef: BungieResponse<IActivityDefinition> = await requester.request({ path: `/Platform/Destiny2/Manifest/${'DestinyActivityDefinition'}/${pgcr.Response.activityDetails.referenceId}/` });
 			if (!entityDef) throw new CommandError('B_API_NO_ENTITY');
-			let embed = new discord.MessageEmbed()
+			const embed = new discord.MessageEmbed()
 				.setTitle(`Nightfall to Submit`)
 				.setDescription(
 					`**${entityDef.Response.displayProperties.name} - ${
@@ -136,7 +136,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			const pendingMessage = await message.author.send(embed);
 			await pendingMessage.react('✅');
 			await pendingMessage.react('❌');
-			const filter = (reaction: discord.MessageReaction, user: discord.User) => (reaction.emoji.name === '✅' || reaction.emoji.name === '❌') && user.id === message.author!.id;
+			const filter = (reaction: discord.MessageReaction, user: discord.User) => (reaction.emoji.name === '✅' || reaction.emoji.name === '❌') && user.id === message.author.id;
 			const reactionCollection = await pendingMessage.awaitReactions(filter, { max: 1, time: 60000 });
 			if (reactionCollection.size) {
 				const messageReaction = reactionCollection.get('✅');

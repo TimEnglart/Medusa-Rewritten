@@ -3,8 +3,8 @@
 module.exports.help = {
 
 	permissionRequired: null
-}
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Embeds, Settings, CommandError } from '../ext/index';
+};
+import { CommandError, CommandFile, CommandHelp, CommandRun, discord, Embeds, ExtendedClient, Settings } from '../ext/index';
 
 // Only Reject Promise if a Real Error Occurs
 // run Function is pretty convoluted
@@ -37,9 +37,9 @@ const help: CommandHelp = {
 	environments: ['text', 'dm'],
 	expectedArgs: [],
 	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
-	name: "ranks",
-	description: "Responds with a list of all current Ranks via direct message.",
-	example: "ranks",
+	name: 'ranks',
+	description: 'Responds with a list of all current Ranks via direct message.',
+	example: 'ranks',
 };
 
 module.exports = {

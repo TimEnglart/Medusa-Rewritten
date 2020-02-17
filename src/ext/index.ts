@@ -1,13 +1,13 @@
 import * as discord from 'discord.js';
+import * as express from 'express';
 import * as Settings from '../config/settings.json';
 import { Database, SqlQuery } from './database';
-import { LogFilter, Logger } from './logger';
-import { Utility } from './utility';
-import { MyRequester } from './webClient';
-import * as express from 'express';
-import { WebServer } from './web-server/index.js';
-import { ScoreBook } from './score-book/index.js';
 import { CommandError } from './errorParser';
+import { LogFilter, Logger } from './logger';
+import { ScoreBook } from './score-book/index.js';
+import { Utility } from './utility';
+import { WebServer } from './web-server/index.js';
+import { MyRequester } from './webClient';
 type CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => Promise<void>;
 type CustomPermissionString = discord.PermissionString;
 interface CommandHelp {

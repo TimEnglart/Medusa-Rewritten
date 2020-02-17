@@ -8,7 +8,7 @@
 		"start": "(cd ./lib/ && node .)",
 		"build": "tsc -p .",
 		"format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
-		"lint": "tslint -p tsconfig.json",
+		"lint": "tslint -p tsconfig.json --fix",
 		"localPublish": "npm run format && npm run lint && npm run build",
 		"test1": "tslint --fix -p tsconfig.json",
 		"serve": "npm run serve --prefix client",

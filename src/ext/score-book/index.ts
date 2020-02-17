@@ -1,6 +1,6 @@
-import { ExtendedClient, Database, MyRequester, discord, CommandError } from '..';
+import { CommandError, Database, discord, ExtendedClient, MyRequester } from '..';
+import { BungieResponse, IActivityDefinition, IActivityEntry, IPostGameCarnageReport } from '../discordToBungie';
 import { calculateExperience, giveMedal } from '../experienceHandler';
-import { BungieResponse, IActivityDefinition, IPostGameCarnageReport, IActivityEntry } from '../discordToBungie';
 import { LogFilter } from '../logger';
 class ScoreBook {
 	public static toReadableTime(time: number) {
@@ -218,10 +218,10 @@ class ScoreBook {
 		if (!speedEntDef || !pointEntDef) return;
 		const currentWeek = this.currentWeek();
 		const thisReset = this.lastReset.toLocaleDateString();
-		const lastReset = new Date().setDate(this.lastReset.getDate() - 7); //new Date().setDate(this.lastReset.getDate() + 7); // Add One Week to Last Reset or May need to subtract from
-        const winnerEmbed = new discord.MessageEmbed()
-            .setTitle(`Week ${currentWeek} Winners`)
-            .setColor('#FFD662')
+		const lastReset = new Date().setDate(this.lastReset.getDate() - 7); // new Date().setDate(this.lastReset.getDate() + 7); // Add One Week to Last Reset or May need to subtract from
+		const winnerEmbed = new discord.MessageEmbed()
+			.setTitle(`Week ${currentWeek} Winners`)
+			.setColor('#FFD662')
 			.setDescription(`**${lastReset} - ${thisReset}**`); // because the last reset should** be a few seconds ago as it has registered that it has reset
 			winnerEmbed.addField(
 				`Speedbreakers Winners - ${speedEntDef.Response.displayProperties.name}\nRun Time - ${winners.speedBreakers.activity.Response.entries[0].values.activityDurationSeconds.basic.displayValue}`,

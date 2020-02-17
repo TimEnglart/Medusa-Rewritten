@@ -39,9 +39,9 @@ class RateLimiter {
 			callback,
 			function: fn,
 			timeAdded: Date.now(),
-			//promise: new Promise(async (resolve: (fn: void) => void | Promise<void>) => {
-			//	return resolve(await fn());
-			//})
+			// promise: new Promise(async (resolve: (fn: void) => void | Promise<void>) => {
+			// 	return resolve(await fn());
+			// })
 		};
 		this._queue.enqueue(rateLimitedCall);
 		// tslint:disable-next-line: no-floating-promises
@@ -101,7 +101,7 @@ class RateLimiter {
 			error = e;
 		}
 		if (request.callback) {
-			//request.promise.then(async r => {
+			// request.promise.then(async r => {
 			request.callback(Object.assign(request, {
 				timeCompleted: Date.now(),
 				returnValue

@@ -1,4 +1,4 @@
-import { RequestError } from "./webClient";
+import { RequestError } from './webClient';
 
 class CommandError extends Error {
 	constructor(errorCode: string, public reason?: string) {
@@ -16,7 +16,7 @@ class CommandError extends Error {
 				return 'No Bot was Found in the Context of The Command -> Possible Bot Error';
 			case 'NO_GUILD':
 				return 'No Server was Found in the Context of The Command -> Use Command in a Server so Server Attributes (like Member Lists) are exposed';
-	
+
 			/* SPECIFIC CASES */
 			case 'NO_CHANNEL':
 				return 'No Voice/Text Channel was Found in the Context or Arguments of The Command -> Either Execute The Command in the Given Channel or Provide an Channel Resolvable When Using the Command\nIf Your Unsure about Resolvable use the `resolvable` Command';
@@ -28,7 +28,7 @@ class CommandError extends Error {
 				return 'The Bot Does Not Have the Privileges on the Server to Execute the Given Command -> *This Isn\'t Very Well Documented in the Bot.*\nUse `help <command>` to get ~ Privilege Details';
 			case 'USER_INSUFFICIENT_PRIVILEGES':
 				return 'You Do Not Have the Privileges on the Server to Execute the Given Command\nUse `help <command>` to get Privilege Details';
-	
+
 			/* Parsing Errors */
 			case 'FAILED_EMOJI_PARSE':
 				return 'Failed to Parse the Provided Emoji -> Make sure You are Providing a Correct Emoji Resolvable\nIf Your Unsure about Resolvable use the `resolvable` Command';

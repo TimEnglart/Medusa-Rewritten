@@ -1,5 +1,5 @@
-import { MyRequester, ExtendedClient, Utility, discord, Settings } from ".";
-import { BungieResponse } from "./discordToBungie";
+import { discord, ExtendedClient, MyRequester, Settings, Utility } from '.';
+import { BungieResponse } from './discordToBungie';
 
 class ClanSync {
 	private requester: MyRequester;
@@ -97,12 +97,10 @@ class ClanSync {
 	}
 
 }
-interface IClanPlayerUpdateList
-{
+interface IClanPlayerUpdateList {
 	[discordId: string]: string; // Role id
 }
-interface IClanPlayerList
-{
+interface IClanPlayerList {
 	[clan: string]: IClanListPlayer[];
 }
 interface IClanListResponse {

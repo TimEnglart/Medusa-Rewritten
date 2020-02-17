@@ -1,14 +1,14 @@
 
-import * as discord from 'discord.js';
 import { createHash, Hash } from 'crypto';
-import { Stream } from 'stream';
+import * as discord from 'discord.js';
 import { get } from 'https';
+import { Stream } from 'stream';
 import { ExtendedClient } from '.';
 
-type HashData = {
+interface HashData {
 	hash: Hash;
 	data: Buffer; // Maybe Later
-};
+}
 class AntiRepost {
 	public hashType: string;
 	public outputText: string;

@@ -1,5 +1,5 @@
-import { CommandFile, CommandHelp, CommandRun, discord, Embeds, ExtendedClient, CommandError } from '../ext/index';
 import * as exp from '../ext/experienceHandler';
+import { CommandError, CommandFile, CommandHelp, CommandRun, discord, Embeds, ExtendedClient } from '../ext/index';
 
 // Only Reject Promise if a Real Error Occurs
 // run Function is pretty convoluted

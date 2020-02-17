@@ -1,5 +1,5 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Utility, Embeds, Settings, CommandError } from '../ext/index';
-import * as exp from '../ext/experienceHandler'
+import * as exp from '../ext/experienceHandler';
+import { CommandError, CommandFile, CommandHelp, CommandRun, discord, Embeds, ExtendedClient, Settings, Utility } from '../ext/index';
 // Only Reject Promise if a Real Error Occurs
 
 const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
@@ -61,7 +61,7 @@ module.exports = {
 
 function determineUser(message: discord.Message, args: string[]) {
 	// See if it is Raw Name of Role
-	if (args.length > help.expectedArgs!.length) { // its a raw name
+	if (args.length > help.expectedArgs.length) { // its a raw name
 		const lookupRole = message.guild!.roles.find(role => role.name.toLowerCase() === args.slice(2).join(' '));
 		if (!lookupRole && isNaN(Number(args[2]))) {
 			return args[2];

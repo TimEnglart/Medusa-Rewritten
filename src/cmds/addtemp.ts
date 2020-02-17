@@ -1,4 +1,4 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, CommandError, Utility } from '../ext/index';
+import { CommandError, CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Utility } from '../ext/index';
 
 
 

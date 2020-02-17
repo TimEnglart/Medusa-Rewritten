@@ -1,14 +1,14 @@
 // use an express webserver
 import * as express from 'express';
 import * as fs from 'fs';
-import { ExtendedClient } from '..';
-import * as serveStatic from 'serve-static';
 import * as path from 'path';
+import * as serveStatic from 'serve-static';
+import { ExtendedClient } from '..';
 class WebServer {
 	private app: express.Express;
 	constructor(discordInstance: ExtendedClient, port?: number) {
 		this.app = express();
-		this.app.use(express.static(path.join(__dirname, "../../../public")));
+		this.app.use(express.static(path.join(__dirname, '../../../public')));
 		this.app
 			.get('*', (req, res) => {
 				res.sendFile(__dirname, '../../../public/index.html');

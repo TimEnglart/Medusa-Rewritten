@@ -1,4 +1,4 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Embeds, CommandError } from '../ext/index';
+import { CommandError, CommandFile, CommandHelp, CommandRun, discord, Embeds, ExtendedClient } from '../ext/index';
 
 // Only Reject Promise if a Real Error Occurs
 // run Function is pretty convoluted
@@ -39,7 +39,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			}
 			await voiceChannel.edit({
 				permissionOverwrites: voiceData,
-				userLimit: 0, //voiceChannel.members.size, locked so no one can join fixes invite
+				userLimit: 0, // voiceChannel.members.size, locked so no one can join fixes invite
 				name: `🔒 ${voiceChannel.name}`
 			},
 				`Channel Locked By ${message.member.displayName}`

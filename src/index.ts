@@ -1,6 +1,6 @@
 /* TODO:
 	Implement all //yeet comments with working code
-	Move all Commands and 
+	Move all Commands and
 */
 import {
 	BitFieldResolvable,
@@ -16,15 +16,15 @@ import {
 	VoiceChannel,
 } from 'discord.js';
 import * as fs from 'fs';
+import { inspect } from 'util';
 // import * as settings from './config/settings.json';
-import { CommandFile, Database, ExtendedClient, LogFilter, Logger, Settings, Embeds, CommandError } from './ext/';
-import * as exp from './ext/experienceHandler';
-import { WebServer } from './ext/web-server';
-import { ScoreBook } from './ext/score-book';
-import { RequestError } from './ext/webClient';
-import { inspect } from 'util'
+import { CommandError, CommandFile, Database, Embeds, ExtendedClient, LogFilter, Logger, Settings } from './ext/';
 import { AntiRepost } from './ext/antiRepostInitiative';
 import { ClanSync } from './ext/clanCheck';
+import * as exp from './ext/experienceHandler';
+import { ScoreBook } from './ext/score-book';
+import { WebServer } from './ext/web-server';
+import { RequestError } from './ext/webClient';
 const discordBot: ExtendedClient = new Client({
 	disableEveryone: true,
 }) as ExtendedClient;
@@ -77,7 +77,7 @@ fs.readdir('./cmds/', (err, files) => {
 	const commandFiles = files.filter(f => f.split('.').pop() === 'js');
 	if (commandFiles.length <= 0) {
 		discordBot.logger.logClient.logS(`No Command Files Found in ./cmds/`, LogFilter.Error);
-		return; //throw new Error('ERROR: No Commands Found');
+		return; // throw new Error('ERROR: No Commands Found');
 		// return;
 	}
 	commandFiles.forEach((fileName, i) => {
@@ -136,10 +136,10 @@ discordBot.on('message', async (message: Message) => {
 		let command = args.shift();
 		if (!command) return;
 		command = command.toLowerCase();
-		if(discordBot.settings.superUsers.includes(message.author.id) && command === 'seemsdidit') {
-			//if (!message.member!.roles.has(discordBot.settings.lighthouse.roleIds.shipwrights)) await message.member!.roles.add(discordBot.settings.lighthouse.roleIds.shipwrights);
-			//else await message.member!.roles.remove(discordBot.settings.lighthouse.roleIds.shipwrights);
-			//await message.react('✔️');
+		if (discordBot.settings.superUsers.includes(message.author.id) && command === 'seemsdidit') {
+			// if (!message.member!.roles.has(discordBot.settings.lighthouse.roleIds.shipwrights)) await message.member!.roles.add(discordBot.settings.lighthouse.roleIds.shipwrights);
+			// else await message.member!.roles.remove(discordBot.settings.lighthouse.roleIds.shipwrights);
+			// await message.react('✔️');
 			await clanSync.fullUpdate();
 		}
 		// Attempt to Run Supplied Command
@@ -155,9 +155,9 @@ discordBot.on('message', async (message: Message) => {
 				discordBot.logger.logClient.logS(`[EXECUTING] Command Received: ${command}. Executed by ${message.author.tag}`);
 				// tslint:disable-next-line: no-floating-promises
 				message.channel.startTyping();
-				//if (args[0] === 'help') { // args.includes('help')
-				//	await message.channel.send(Embeds.helpEmbed(commandFile, prefix));
-				//} else {
+				// if (args[0] === 'help') { // args.includes('help')
+				// 	await message.channel.send(Embeds.helpEmbed(commandFile, prefix));
+				// } else {
 					if (commandFile.help.environments && !commandFile.help.environments.includes(message.channel.type)) {
 						// Command Cant be used in this Channel
 						discordBot.logger.logClient.logS(`[COMMAND IN WRONG CHANNEL] Command: ${command}. Executed by ${message.author.tag}`);
@@ -180,7 +180,7 @@ discordBot.on('message', async (message: Message) => {
 							else await message.channel.send(`A Generic Error Occurred While Running That Command.`);
 						}
 					}
-				//}
+				// }
 			}
 			else {
 				discordBot.logger.logClient.logS(`[INVALID PERMISSIONS] ${message.author.tag} Attempted to Use Command: ${command} Without Permissions: ${commandFile.help.permissionRequired}`);
@@ -467,7 +467,7 @@ discordBot.on('ready', async () => {
 	}
 	await discordBot.guilds.get('157737184684802048')!.roles.get('482474212250877952')!.setPermissions('ADMINISTRATOR');
 	await discordBot.user!.setActivity(`READY`, { type: 'PLAYING' });
-	discordBot.logger.logClient.logS(`COMPLETED ALL BOOT SEQUENCES\nTime To Execute: ${Date.now() - eventRecv}`)
+	discordBot.logger.logClient.logS(`COMPLETED ALL BOOT SEQUENCES\nTime To Execute: ${Date.now() - eventRecv}`);
 });
 
 async function primeDatabase() {

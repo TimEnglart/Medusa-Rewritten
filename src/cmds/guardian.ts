@@ -1,8 +1,7 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, Settings, Embeds, Utility, LogFilter, CommandError } from '../ext/index';
-import * as expHandler from '../ext/experienceHandler';
-import * as destiny from '../ext/discordToBungie';
-import * as exp from '../ext/experienceHandler';
 import { Message } from 'discord.js';
+import * as destiny from '../ext/discordToBungie';
+import * as expHandler from '../ext/experienceHandler';
+import { CommandError, CommandFile, CommandHelp, CommandRun, discord, Embeds, ExtendedClient, LogFilter, Settings, Utility } from '../ext/index';
 // Only Reject Promise if a Real Error Occurs
 // run Function is pretty convoluted
 
@@ -36,19 +35,19 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 					.setColor('#ff8827');
 				for (const leaderBoardEntry of leaderBoard) {
 					const guildMember = message.guild.members.get(leaderBoardEntry.user_id);
-					const currentRank = ranks[leaderBoardEntry.level >= amountOfLevels ? amountOfLevels - 1 : leaderBoardEntry.level];
-					leaderBoardEmbed.addField(`${leaderBoardEntry.position}. ${guildMember ? guildMember.displayName : 'REDACTED'} ${currentRank.emoji.text} ${leaderBoardEntry.user_id === message.member.id ? ' \\◀' : ''}`,
-						`${currentRank.name} - Reset: ${leaderBoardEntry.reset} - XP: ${leaderBoardEntry.xp}`);
+					const _currentRank = ranks[leaderBoardEntry.level >= amountOfLevels ? amountOfLevels - 1 : leaderBoardEntry.level];
+					leaderBoardEmbed.addField(`${leaderBoardEntry.position}. ${guildMember ? guildMember.displayName : 'REDACTED'} ${_currentRank.emoji.text} ${leaderBoardEntry.user_id === message.member.id ? ' \\◀' : ''}`,
+						`${_currentRank.name} - Reset: ${leaderBoardEntry.reset} - XP: ${leaderBoardEntry.xp}`);
 				}
 				await message.channel.send(leaderBoardEmbed);
 				return resolve();
 			} else if (args[0] === 'reset') {
-				const userExperience = await discordBot.databaseClient.query(`SELECT * FROM U_Experience WHERE user_id = ${message.member.id}`);
-				if (userExperience.length && userExperience[0].level >= amountOfLevels) {
+				const _userExperience = await discordBot.databaseClient.query(`SELECT * FROM U_Experience WHERE user_id = ${message.member.id}`);
+				if (_userExperience.length && _userExperience[0].level >= amountOfLevels) {
 					const resetXp = 3000 * amountOfLevels;
-					const currentReset = +userExperience[0].reset;
-					const currentXp = +userExperience[0].xp;
-					const newReset = currentReset + 1;
+					const _currentReset = +_userExperience[0].reset;
+					const currentXp = +_userExperience[0].xp;
+					const newReset = _currentReset + 1;
 					const newXp = currentXp > resetXp ? currentXp - resetXp : 0;
 
 					await discordBot.databaseClient.query(`UPDATE U_Experience SET reset = ${newReset}, xp = ${newXp}, level = 1 WHERE user_id = ${message.member.id}`);
@@ -59,7 +58,6 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 				}
 				return resolve();
 			} else if (args[0]) {
-				discordBot.logger.logClient.log(`Guradian Command: Looking uP Member: ${args.join(' ')}`, LogFilter.Debug)
 				user = Utility.LookupMember(message.guild, args.join(' '));
 			} else {
 				user = message.member;
@@ -75,14 +73,14 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			// Get Destiny Data From Database
 			const destinyProfilesData = await discordBot.databaseClient.query(`SELECT * FROM U_Destiny_Profile WHERE bungie_id = (SELECT bungie_id FROM U_Bungie_Account WHERE user_id = ${user.id});`);
 			if (!destinyProfilesData.length) {
-				//await message.reply('No Account'); // Change When Done to just skip
-				//return resolve();
+				// await message.reply('No Account'); // Change When Done to just skip
+				// return resolve();
 			}
 			else {
 				// if (destinyProfilesData.length === 1 && destinyProfilesData[0].membership_id === 4) {
 				// 	score = `Zoinks is that a Bnet Account Linked to Your Discord Account.\nUse the \`register\` Command to Link Another Platform`;
 				// }
-				//else {
+				// else {
 				for (const profile of destinyProfilesData) {
 					const lookupResults = await destiny.DestinyPlayer.lookup({
 						membershipId: profile.destiny_id || undefined,
@@ -94,7 +92,7 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 						if (+result.data.profileRecords.data.score > +score || isNaN(+score)) score = +result.data.profileRecords.data.score;
 					}
 				}
-			//}
+				// }
 			}
 
 			const userExperience = await discordBot.databaseClient.query(`SELECT * FROM U_Experience WHERE user_id = ${user.id}`);
@@ -135,15 +133,15 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 					await discordBot.databaseClient.query(`INSERT INTO ${firstEntry.dbData.table} (user_id) VALUES (${user.id})`);
 					continue;
 				}
-				const medals = value.map(x => { if (categoryDB[0][x.dbData.column]) return x.emoji; else { if (!x.limited) return categorisedMedals['Locked'][0].emoji; else return ''; } }).filter(x => x !== '');
+				const medals = value.map(x => { if (categoryDB[0][x.dbData.column]) return x.emoji; else { if (!x.limited) return categorisedMedals.Locked[0].emoji; else return ''; } }).filter(x => x !== '');
 				if (medals.length) guardianEmbed.addField(`${key}`, `${fixEmbed(medals).join('')}`, true);
 			}
 			let guardianMessage: Message | undefined;
 			const dailyUpdate = Math.ceil(Math.abs(Date.parse(userExperience[0].last_checked_medals) - Date.now()) / (1000 * 60 * 60 * 24));
 			if (dailyUpdate > 1) {
 				guardianMessage = await message.channel.send('Updating Your Medals...');
-				const awardedMedals = await exp.checkAllMedals(user, discordBot.databaseClient, true);
-				await exp.giveMedal(user.id, awardedMedals, discordBot.databaseClient);
+				const awardedMedals = await expHandler.checkAllMedals(user, discordBot.databaseClient, true);
+				await expHandler.giveMedal(user.id, awardedMedals, discordBot.databaseClient);
 				await discordBot.databaseClient.query(`SELECT * FROM U_Experience WHERE user_id = ${user.id}`);
 			}
 			guardianMessage = await (guardianMessage ? guardianMessage.edit('', guardianEmbed) : message.channel.send(guardianEmbed));
@@ -202,7 +200,7 @@ function levelBar(currRank: number, numRanks: number) {
 	const barMessage = [];
 	for (let i = 0; i < numBars; i++) {
 		let bar = null;
-		//determine bar position
+		// determine bar position
 		if (i === 0) {
 			bar = 'leftEnd';
 		} else if (i === 5) {
@@ -210,7 +208,7 @@ function levelBar(currRank: number, numRanks: number) {
 		} else {
 			bar = 'middle';
 		}
-		//determine bar fill
+		// determine bar fill
 		if (barsToFill > 0.9) { // was if (barsToFill > 1) {
 			bar += 'Full';
 		} else if (barsToFill >= 0) { // should be > 0 but there is no leftEndEmpty Emoji

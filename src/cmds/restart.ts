@@ -1,4 +1,4 @@
-import { CommandFile, CommandHelp, CommandRun, discord, ExtendedClient, CommandError } from '../ext/index';
+import { CommandError, CommandFile, CommandHelp, CommandRun, discord, ExtendedClient } from '../ext/index';
 
 // Only Reject Promise if a Real Error Occurs
 // run Function is pretty convoluted

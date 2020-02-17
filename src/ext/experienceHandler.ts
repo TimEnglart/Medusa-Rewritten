@@ -244,16 +244,7 @@ function getBungieResponse<T = any>(member: discord.GuildMember, databaseClient:
 	return new Promise(async (resolve, reject) => {
 		const collectables: T[] = [];
 		try {
-			const requester = new MyRequester({
-				hostname: 'www.bungie.net',
-				port: 443,
-				method: 'GET',
-				headers: {
-					'X-API-Key': Settings.bungie.apikey
-				},
-				doNotFollowRedirect: false,
-				responseType: 'JSON'
-			});
+			const requester = new BungieApiRequester();
 			// Get User Bungie/Destiny Data
 			const bungieAccounts = await databaseClient.query(`SELECT * FROM U_Bungie_Account WHERE user_id = ${member.id}`);
 			if (!bungieAccounts.length) return reject('User Bungie Account Not Registered');
@@ -261,7 +252,7 @@ function getBungieResponse<T = any>(member: discord.GuildMember, databaseClient:
 			if (!destinyAccounts.length) return reject('User Has No Destiny Profiles [Xbox, Playstation, PC]');
 			for (const dProfile of destinyAccounts) {
 				try {
-					const apiResponse: BungieResponse<T> = await requester.request({ path: `/Platform/Destiny2/${dProfile.membership_id}/Profile/${dProfile.destiny_id}/?components=800` });
+					const apiResponse = await requester.ContactEndpoint<T>(`/Platform/Destiny2/${dProfile.membership_id}/Profile/${dProfile.destiny_id}/?components=800`);
 					if (apiResponse) collectables.push(apiResponse.Response);
 				}
 				catch (e) {
@@ -307,6 +298,13 @@ class BungieApiRequester {
 					if (apiResponse.ThrottledSeconds > 0) {
 						await new Promise(sleepDone => setTimeout(sleepDone, apiResponse.ThrottledSeconds * 1000));
 						throw apiResponse;
+					}
+
+					if (apiResponse.ErrorCode !== 1) {
+						return reject({
+							ErrorType: 'API Provided Error Code',
+							Error: apiResponse
+						} as EndPointError<BungieResponse<T>>);
 					}
 
 					return resolve(apiResponse);
@@ -358,31 +356,23 @@ interface IContactEndpointResponse<T> {
 
 
 function checkTriumph(medal: IMedalData, response: IRecordResponse): boolean {
-	if (isNaN(Number(medal.acquisitionMethod.data.recordId))) {
-		if (response.profileRecords.data.score >= 50000) return true;
-	}
-	else {
-		try {
-			const triumph = response.profileRecords.data.records[medal.acquisitionMethod.data.recordId];
-			if (triumph) { // Profile IRecord
-				const pTriumphState = new RecordState(triumph.state);
-				if (!pTriumphState.objectiveNotCompleted) return true;
-			}
-			else { // Character IRecord
-				for (const characterId in response.characterRecords.data) {
-					if (characterId) {
-						const cTriumph = response.characterRecords.data[characterId].records[medal.acquisitionMethod.data.recordId];
-						const cTriumphState = new RecordState(cTriumph.state);
-						if (!cTriumphState.objectiveNotCompleted) return true;
-					}
+	try {
+		const triumph = response.profileRecords.data.records[medal.acquisitionMethod.data.recordId];
+		if (triumph) { // Profile IRecord
+			const pTriumphState = new RecordState(triumph.state);
+			if (!pTriumphState.objectiveNotCompleted) return true;
+		}
+		else { // Character IRecord
+			for (const characterId in response.characterRecords.data) {
+				if (characterId) {
+					const cTriumph = response.characterRecords.data[characterId].records[medal.acquisitionMethod.data.recordId];
+					const cTriumphState = new RecordState(cTriumph.state);
+					if (!cTriumphState.objectiveNotCompleted) return true;
 				}
 			}
 		}
-		catch (e) {
-			console.error(e);
-			return false;
-		}
 	}
+	catch (e) { }
 	return false;
 }
 function medalFunction(member: discord.GuildMember, medal: IMedalData, databaseClient?: Database, existingRecords?: IRecordResponse[]): Promise<boolean> {
@@ -395,6 +385,16 @@ function medalFunction(member: discord.GuildMember, medal: IMedalData, databaseC
 			},
 			medalMaster: async (args: string[]) => {
 
+				return false;
+			},
+			triumphScore: async (args: string[]) => {
+				const requiredTriumphScore = +args[0];
+				if (databaseClient) {
+					const records = await getUserRecords(member, databaseClient);
+					for (const record of records) {
+						if (record.profileRecords.data.score >= requiredTriumphScore) return true;
+					}
+				}
 				return false;
 			},
 			multipleRecords: async (args: string[]) => {

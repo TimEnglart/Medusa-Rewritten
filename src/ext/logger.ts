@@ -1,9 +1,38 @@
 'use strict';
 import * as fs from 'fs';
-import { RateLimiter } from './rate-limiter';
 import * as path from 'path';
+import { RateLimiter } from './rate-limiter';
 const writeLine = console.log;
 export class Logger {
+	public static async log(message: string, filter: LogFilter = LogFilter.Info) {
+		// Always Log Just Check if you Want to Print
+		if (filter === LogFilter.Info) {
+			writeLine(/*`[${LogFilter[filter]}] ${message}`*/ message);
+		}
+		const formattedMessage = Logger.formatMessage({
+			message,
+			time: new Date(),
+			type: filter,
+		});
+
+		if (!formattedMessage) {
+			return;
+		}
+		// this.rateLimiter.add(async () => {
+		// 	await this.startLog(formattedMessage);
+		// });
+
+	}
+	private static formatMessage(message: ILogMessage): IFormattedLogMessage | undefined {
+		if (message.message) {
+			return {
+				type: LogFilter[message.type],
+				time: message.time.toISOString(),
+				message: message.message
+			};
+		}
+		return;
+	}
 	public logFile: string;
 	private rateLimiter: RateLimiter;
 	constructor(private logFileLocation = './logs', public filters: LogFilter[] | null = [LogFilter.Info], public json?: boolean) {
@@ -19,25 +48,6 @@ export class Logger {
 		fs.writeFileSync(this.logFile, this.json ? '{"logs":[]}' : ''); // Initialize File
 		this.log('Logging Process Started', LogFilter.Debug);
 		return this;
-	}
-	public static async log(message: string, filter: LogFilter = LogFilter.Info) {
-		// Always Log Just Check if you Want to Print
-		if (filter === LogFilter.Info) {
-			writeLine(/*`[${LogFilter[filter]}] ${message}`*/ message);
-		}
-		const formattedMessage = Logger.formatMessage({
-			message,
-			time: new Date(),
-			type: filter,
-		});
-
-		if (!formattedMessage) {
-			return;
-		}
-		//this.rateLimiter.add(async () => {
-		//	await this.startLog(formattedMessage);
-		//});
-
 	}
 	public async log(message: string, filter: LogFilter = LogFilter.Info): Promise<void> {
 		// New Message
@@ -107,16 +117,6 @@ export class Logger {
 						return;
 					});
 			});
-	}
-	private static formatMessage(message: ILogMessage): IFormattedLogMessage | undefined {
-		if (message.message) {
-			return {
-				type: LogFilter[message.type],
-				time: message.time.toISOString(),
-				message: message.message
-			};
-		}
-		return;
 	}
 }
 export enum LogFilter {

@@ -1,7 +1,7 @@
-import * as https from 'https';
-import * as xml from 'xml2js';
 import { IncomingMessage } from 'http';
+import * as https from 'https';
 import { Url } from 'url';
+import * as xml from 'xml2js';
 import { CommandError } from '.';
 
 class Cookie {

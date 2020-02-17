@@ -103,23 +103,23 @@ interface DestinyCharacterResponse {
 
 interface IActivityDefinition {
 	displayProperties: {
-		description: string; //The Fanatic has returned. Take him down and finish the job you started.;
-		name: string; //Nightfall: The Hollowed Lair;
-		icon: string; ///common/destiny2_content/icons/f2154b781b36b19760efcb23695c66fe.png;
+		description: string; // The Fanatic has returned. Take him down and finish the job you started.;
+		name: string; // Nightfall: The Hollowed Lair;
+		icon: string; /// common/destiny2_content/icons/f2154b781b36b19760efcb23695c66fe.png;
 		hasIcon: boolean
 	};
 	originalDisplayProperties: {
-		description: string; //The Fanatic has returned. Take him down and finish the job you started.;
-		name: string; //Nightfall;
-		icon: string; ///img/misc/missing_icon_d2.png;
+		description: string; // The Fanatic has returned. Take him down and finish the job you started.;
+		name: string; // Nightfall;
+		icon: string; /// img/misc/missing_icon_d2.png;
 		hasIcon: boolean
 	};
 	selectionScreenDisplayProperties: {
-		description: string; //The Fanatic has returned. Take him down and finish the job you started.;
-		name: string; //The Hollowed Lair;
+		description: string; // The Fanatic has returned. Take him down and finish the job you started.;
+		name: string; // The Hollowed Lair;
 		hasIcon: boolean
 	};
-	releaseIcon: string; ///img/misc/missing_icon_d2.png;
+	releaseIcon: string; /// img/misc/missing_icon_d2.png;
 	releaseTime: number;
 	activityLevel: number;
 	completionUnlockHash: number;
@@ -128,7 +128,7 @@ interface IActivityDefinition {
 	placeHash: number;
 	activityTypeHash: number;
 	tier: number;
-	pgcrImage: string; ///img/destiny_content/pgcr/strike_taurus.jpg;
+	pgcrImage: string; /// img/destiny_content/pgcr/strike_taurus.jpg;
 	rewards: any[];
 	modifiers: Array<{
 		activityModifierHash: number
@@ -206,8 +206,8 @@ class DestinyPlayer {
 
 		});
 	}
-	private requester: MyRequester;
 	public parsedData: DestinyProfileResponse;
+	private requester: MyRequester;
 	constructor(public data: any) {
 		this.requester = new MyRequester({
 			hostname: 'www.bungie.net',
