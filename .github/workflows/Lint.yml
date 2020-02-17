@@ -22,7 +22,7 @@ jobs:
       - name: Install NPM Packages
         run: npm install
       - name: Lint Source
-        run: npm lint
+        run: npm run lint
   build:
     name: build
     runs-on: ubuntu-latest
