@@ -23,11 +23,12 @@ const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, a
 			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
 			let activityId = null;
 			if (message.guild && message.guild.me && message.guild.me.hasPermission('MANAGE_MESSAGES')) await message.delete();
-			if (args.length) { const bungieSiteRegex = /https:\/\/www.bungie.net\/en\/PGCR\/(\d+)(\?character=(\d+))?/; // data[1] = ActivityId, data[3] = CharacterId
+			if (args.length) {
+				const bungieSiteRegex = /https:\/\/www.bungie.net\/en\/PGCR\/(\d+)(\?character=(\d+))?/; // data[1] = ActivityId, data[3] = CharacterId
 				const regex = args[0].match(bungieSiteRegex);
-						if (regex && regex.length > 1) activityId = regex[1]; // PGCR Link as Arg
+				if (regex && regex.length > 1) activityId = regex[1]; // PGCR Link as Arg
 				else if (args.length === 1) activityId = args[0]; // Acivity Id as Arg
-		else {
+				else {
 					// TODO: Add the Ability to Add Custom Run?
 				}
 			}
