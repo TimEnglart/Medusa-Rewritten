@@ -1,5 +1,9 @@
-import { discord, ExtendedClient, MyRequester, Settings, Utility } from '.';
+
 import { BungieResponse } from './discordToBungie';
+import { MyRequester } from './webClient';
+import ExtendedClient from './ExtendedClient';
+import { IKeyBasedObject } from '.';
+import { Utility } from './utility';
 
 class ClanSync {
 	private requester: MyRequester;
@@ -10,69 +14,82 @@ class ClanSync {
 			// path: `/GroupV2/{groupId}/Members/`,
 			method: 'GET',
 			headers: {
-				'X-API-Key': discordInstance.settings.bungie.apikey
+				'X-API-Key': discordInstance.settings.bungie.apikey,
 			},
 			doNotFollowRedirect: false,
-			responseType: 'JSON'
+			responseType: 'JSON',
 		});
 		return this;
 	}
-	public async updateClanList(): Promise<IClanPlayerList> {
+	public async updateClanList(): Promise<IKeyBasedObject<IClanListPlayer[]>> {
 		// Sunbreakers Id: 2135581
 		// Tidebreakers Id: GONE
 		// Cursebreakers Id: 3212540
-		const clanPlayers: IClanPlayerList = {};
+		const clanPlayers: IKeyBasedObject<IClanListPlayer[]> = {};
 		try {
-			this.discordInstance.logger.logClient.logS(`GETTING SUNBREAKER MEMBERS`);
-			const sbResponse: BungieResponse<IClanListResponse> = await this.requester.request({ path: `/Platform/GroupV2/2135581/Members/` });
+			this.discordInstance.logger.logS(`GETTING SUNBREAKER MEMBERS`);
+			const sbResponse: BungieResponse<IClanListResponse> = await this.requester.request({
+				path: `/Platform/GroupV2/2135581/Members/`,
+			});
 			clanPlayers.sunbreakers = sbResponse.Response.results;
-			this.discordInstance.logger.logClient.logS(`GETTING CURSEBREAKER MEMBERS`);
-			const cbResponse: BungieResponse<IClanListResponse> = await this.requester.request({ path: `/Platform/GroupV2/3212540/Members/` });
+			this.discordInstance.logger.logS(`GETTING CURSEBREAKER MEMBERS`);
+			const cbResponse: BungieResponse<IClanListResponse> = await this.requester.request({
+				path: `/Platform/GroupV2/3212540/Members/`,
+			});
 			clanPlayers.cursebreakers = cbResponse.Response.results;
-		}
-		catch (e) {
-			this.discordInstance.logger.logClient.logS(`ERROR: ${JSON.stringify(e)}`);
+		} catch (e) {
+			this.discordInstance.logger.logS(`ERROR: ${JSON.stringify(e)}`);
 		}
 		return clanPlayers;
 	}
-	public async resolveDiscordNames(clanPlayers: IClanPlayerList): Promise<IClanPlayerUpdateList> {
-		const playerRoles: IClanPlayerUpdateList = {};
-		this.discordInstance.logger.logClient.logS(`GETTING GUILD`);
-		const guild = this.discordInstance.guilds.resolve(Settings.lighthouse.discordId);
+	public async resolveDiscordNames(
+		clanPlayers: IKeyBasedObject<IClanListPlayer[]>,
+	): Promise<IKeyBasedObject<string>> {
+		const playerRoles: IKeyBasedObject<string> = {};
+		this.discordInstance.logger.logS(`GETTING GUILD`);
+		const guild = this.discordInstance.guilds.resolve(this.discordInstance.settings.lighthouse.discordId);
 		if (!guild) return playerRoles;
-		this.discordInstance.logger.logClient.logS(`CYCLING PLAYERS`);
+		this.discordInstance.logger.logS(`CYCLING PLAYERS`);
 		for (const clan in clanPlayers) {
 			if (!clan) continue;
-			this.discordInstance.logger.logClient.logS(`THERE ARE PLAYERS IN CLAN: ${clan}`);
+			this.discordInstance.logger.logS(`THERE ARE PLAYERS IN CLAN: ${clan}`);
 			for (const player of clanPlayers[clan]) {
-				this.discordInstance.logger.logClient.logS(`SEARCHING: ${player.destinyUserInfo.displayName}`);
+				this.discordInstance.logger.logS(`SEARCHING: ${player.destinyUserInfo.displayName}`);
 				try {
 					const playerInGuild = Utility.LookupMember(guild, player.destinyUserInfo.displayName, true);
 					if (playerInGuild) {
 						playerRoles[playerInGuild.id] = (this.discordInstance.settings.lighthouse.roleIds as any)[clan];
-						this.discordInstance.logger.logClient.logS(`ADDED ROLE TO LOOKUP:\n${playerInGuild.displayName} ->${player.destinyUserInfo.displayName}\n`);
-					}
-					else {
+						this.discordInstance.logger.logS(
+							`ADDED ROLE TO LOOKUP:\n${playerInGuild.displayName} ->${player.destinyUserInfo.displayName}\n`,
+						);
+					} else {
 						// Lookup Via Database
-						const discordId = await this.discordInstance.databaseClient.query(`SELECT user_id FROM U_Bungie_Account WHERE bungie_id = ${player.bungieNetUserInfo.membershipId}`);
+						const discordId = await this.discordInstance.databaseClient.query(
+							`SELECT user_id FROM U_Bungie_Account WHERE bungie_id = ${player.bungieNetUserInfo.membershipId}`,
+						);
 						if (discordId && discordId.length) {
 							const possibleUser = guild.member(discordId[0].user_id);
 							if (possibleUser) {
-								playerRoles[possibleUser.id] = (this.discordInstance.settings.lighthouse.roleIds as any)[clan];
-								this.discordInstance.logger.logClient.logS(`ADDED ROLE FROM DATABASE REGISTER:\n${player.destinyUserInfo.displayName}\n`);
+								playerRoles[possibleUser.id] = (this.discordInstance.settings.lighthouse
+									.roleIds as any)[clan];
+								this.discordInstance.logger.logS(
+									`ADDED ROLE FROM DATABASE REGISTER:\n${player.destinyUserInfo.displayName}\n`,
+								);
 							}
 						}
 					}
-				}
-				catch (e) {
-					await this.discordInstance.logger.logClient.log(`Failed to Parse Player Name: ${player.destinyUserInfo.displayName}`, 1);
+				} catch (e) {
+					this.discordInstance.logger.logS(
+						`Failed to Parse Player Name: ${player.destinyUserInfo.displayName}`,
+						1,
+					);
 				}
 			}
 		}
 		return playerRoles;
 	}
-	public async updateDiscordRoles(playersInClan: IClanPlayerUpdateList) {
-		const guild = this.discordInstance.guilds.resolve(Settings.lighthouse.discordId);
+	public async updateDiscordRoles(playersInClan: IKeyBasedObject<string>) {
+		const guild = this.discordInstance.guilds.resolve(this.discordInstance.settings.lighthouse.discordId);
 		if (!guild) return;
 		for (const [snowflake, member] of guild.members.cache) {
 			await member.roles.remove(this.getRolesToRemove());
@@ -92,17 +109,11 @@ class ClanSync {
 		// Add Dynamic Resolution For Roles to Remove
 		return [
 			this.discordInstance.settings.lighthouse.roleIds.cursebreakers,
-			this.discordInstance.settings.lighthouse.roleIds.sunbreakers
+			this.discordInstance.settings.lighthouse.roleIds.sunbreakers,
 		];
 	}
+}
 
-}
-interface IClanPlayerUpdateList {
-	[discordId: string]: string; // Role id
-}
-interface IClanPlayerList {
-	[clan: string]: IClanListPlayer[];
-}
 interface IClanListResponse {
 	results: IClanListPlayer[];
 }
@@ -112,24 +123,24 @@ interface IClanListPlayer {
 	lastOnlineStatusChange: string;
 	groupId: string;
 	destinyUserInfo: {
-		LastSeenDisplayName: string,
-		LastSeenDisplayNameType: number,
-		iconPath: string,
-		crossSaveOverride: number,
-		applicableMembershipTypes: number[],
-		isPublic: boolean,
-		membershipType: number,
-		membershipId: string,
-		displayName: string
+		LastSeenDisplayName: string;
+		LastSeenDisplayNameType: number;
+		iconPath: string;
+		crossSaveOverride: number;
+		applicableMembershipTypes: number[];
+		isPublic: boolean;
+		membershipType: number;
+		membershipId: string;
+		displayName: string;
 	};
 	bungieNetUserInfo: {
-		supplementalDisplayName: string,
-		iconPath: string,
-		crossSaveOverride: number,
-		isPublic: boolean,
-		membershipType: number,
-		membershipId: string,
-		displayName: string
+		supplementalDisplayName: string;
+		iconPath: string;
+		crossSaveOverride: number;
+		isPublic: boolean;
+		membershipType: number;
+		membershipId: string;
+		displayName: string;
 	};
 	joinDate: string;
 }

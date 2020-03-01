@@ -1,43 +1,42 @@
-import { CommandError, CommandFile, CommandHelp, CommandRun, discord, Embeds, ExtendedClient } from '../ext/index';
+import ExtendedClientCommand, { ICommandResult } from "@extensions/CommandTemplate";
+import CommandHandler from "@extensions/CommandHandler";
+import { Message, MessageEmbed } from "discord.js";
+import { CommandError } from "@extensions/errorParser";
+import RichEmbedGenerator from "@extensions/RichEmbeds";
 
-// Only Reject Promise if a Real Error Occurs
-// run Function is pretty convoluted
-
-
-const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
-	return new Promise(async (resolve: () => void, reject: (err: CommandError) => void) => {
-		try {
-			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
-			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
-			if (!message.guild) throw new CommandError('NO_GUILD'); 		// If Guild is Needed
-			let stuff = 1;
-			let botEmbed = new discord.MessageEmbed().setTitle(`Emojis ;) Pt.${stuff}`);
-			for (const [snowflake, emoji] of message.guild.emojis.cache.entries()) {
-				if (botEmbed.fields.length === 25) {
-					await message.author.send(botEmbed);
-					botEmbed = new discord.MessageEmbed().setTitle(`Emojis ;) Pt.${++stuff}`);
-				}
-				botEmbed.addField(`${emoji.name} - <${emoji.animated ? 'a' : ''}:${emoji.name}:${snowflake}>`, `\\<${emoji.animated ? 'a' : ''}:${emoji.name}:${snowflake}>`);
+export default class DisableCommand extends ExtendedClientCommand {
+	constructor(commandHandler: CommandHandler) {
+		super(commandHandler);
+		this.name = 'emojis';
+		this.description = 'Sends a list of all Discord servers custom emojis via direct message.';
+		this.environments = ['text'];
+		this.expectedArguments = [];
+		this.permissionRequired = 'SEND_MESSAGES';
+		this.requiredProperties = undefined;
+	}
+	protected async Run(message: Message, ...args: string[]): Promise<ICommandResult | void> {
+		if (!message.author) throw new CommandError('NO_AUTHOR'); // If Author is Needed
+		if (!this.client.user) throw new CommandError('NO_BOT_USER'); // If Bot Instance is Needed
+		if (!message.guild) throw new CommandError('NO_GUILD'); // If Guild is Needed
+		let stuff = 1;
+		let botEmbed = new MessageEmbed().setTitle(`Emojis ;) Pt.${stuff}`);
+		for (const [snowflake, emoji] of message.guild.emojis.cache.entries()) {
+			if (botEmbed.fields.length === 25) {
+				await message.author.send(botEmbed);
+				botEmbed = new MessageEmbed().setTitle(`Emojis ;) Pt.${++stuff}`);
 			}
-			await message.author.send(botEmbed);
-			await message.channel.send(Embeds.notifyEmbed(`List of ${message.guild} Custom Emojis has been sent`, `Useful tool for bot development.`));
-			return resolve();
-		} catch (e) {
-			return reject(e);
+			botEmbed.addFields({
+				name: `${emoji.name} - <${emoji.animated ? 'a' : ''}:${emoji.name}:${snowflake}>`,
+				value: `\\<${emoji.animated ? 'a' : ''}:${emoji.name}:${snowflake}>`,
+				inline: false
+			});
 		}
-	});
-};
-
-const help: CommandHelp = {
-	environments: ['text', 'dm'],
-	expectedArgs: [],
-	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
-	name: 'emojis',
-	description: 'Sends a list of all Discord servers custom emojis via direct message.',
-	example: 'emojis',
-};
-
-module.exports = {
-	help,
-	run
-} as CommandFile;
+		await message.author.send(botEmbed);
+		await message.channel.send(
+			RichEmbedGenerator.notifyEmbed(
+				`List of ${message.guild} Custom Emojis has been sent`,
+				`Useful tool for bot development.`,
+			),
+		);
+	}
+}

@@ -8,9 +8,17 @@
 		"forceConsistentCasingInFileNames": true,
 		"resolveJsonModule": true,
 		"removeComments": true,
-		"strict": true
+		"strict": true,
+		"baseUrl": "src",
+		"paths": {
+			"@extensions/*": ["ext/*"],
+			"@commands/*": ["cmds/*"],
+			"@configuration/*": ["config/*"],
+			"@vue-client/*": ["../client/*"],
+			"@vue-public/*": ["../public/*"]
+		}
 	},
 	"include": ["src/**/*"],
-	"exclude": ["node_modules", "**/__tests__/**", "etc", "lib", "public", "client"],
+	"exclude": ["node_modules"],
 	"compileOnSave": true
 }

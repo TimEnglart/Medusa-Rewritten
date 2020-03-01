@@ -1,48 +1,53 @@
+import ExtendedClientCommand, { ICommandResult } from "@extensions/CommandTemplate";
+import CommandHandler from "@extensions/CommandHandler";
+import { Message, MessageEmbed } from "discord.js";
+import { CommandError } from "@extensions/errorParser";
+import RichEmbedGenerator from "@extensions/RichEmbeds";
 
 
-module.exports.help = {
+export default class ExitBot extends ExtendedClientCommand {
+	constructor(commandHandler: CommandHandler) {
+		super(commandHandler);
+		this.name = 'ranks';
+		this.description = 'Responds with a list of all current Ranks via direct message.';
+		this.environments = ['text', 'dm'];
+		this.expectedArguments = [];
+		this.permissionRequired = 'SEND_MESSAGES';
+		this.requiredProperties = {
+			Message: {
+				author: undefined,
+			},
+			ExtendedClient: {
+				user: undefined,
+				me: undefined,
+			},
+		};
+	}
+	protected async Run(message: Message, ...args: string[]): Promise<ICommandResult | void> {
+		if (!message.author || !this.client.user) throw new CommandError('DYNAMIC_PROPERTY_CHECK_FAILED');
+		if (!message.author) throw new CommandError('NO_AUTHOR'); // If Author is Needed
+		if (!this.client.user) throw new CommandError('NO_BOT_USER'); // If Bot Instance is Needed
 
-	permissionRequired: null
-};
-import { CommandError, CommandFile, CommandHelp, CommandRun, discord, Embeds, ExtendedClient, Settings } from '../ext/index';
-
-// Only Reject Promise if a Real Error Occurs
-// run Function is pretty convoluted
-
-
-const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
-	return new Promise(async (resolve: () => void, reject: (err: CommandError) => void) => {
-		try {
-			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
-			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
-
-			const guildIcon = message.guild ? message.guild.iconURL() || '' : '';
-			const ranksEmbed = new discord.MessageEmbed()
-				.setTitle(`${message.guild} Ranks`)
-				.setColor('#ffae00')
-				.setThumbnail(guildIcon);
-			for (let i = 0; i < Settings.lighthouse.medals.length; i++) {
-				ranksEmbed.addField(`${i} ${Settings.lighthouse.medals[i].name}`, `${Settings.lighthouse.medals[i].emoji}`);
-			}
-			await message.author.send(ranksEmbed);
-			await message.channel.send(Embeds.notifyEmbed(`Prove your Worth Guardian ${Settings.lighthouse.medals[Settings.lighthouse.medals.length - 1].emoji}`, `List of ${message.guild} Ranks has been sent, best of luck on your hunt!`));
-			return resolve();
-		} catch (e) {
-			return reject(e);
+		const guildIcon = message.guild ? message.guild.iconURL() || '' : '';
+		const ranksEmbed = new MessageEmbed()
+			.setTitle(`${message.guild} Ranks`)
+			.setColor('#ffae00')
+			.setThumbnail(guildIcon);
+		for (let i = 0; i < this.client.settings.lighthouse.ranks.length; i++) {
+			ranksEmbed.addFields({
+				name: `${i} ${this.client.settings.lighthouse.ranks[i].name}`,
+				value: `${this.client.settings.lighthouse.ranks[i].emoji}`,
+				inline: false,
+			});
 		}
-	});
-};
-
-const help: CommandHelp = {
-	environments: ['text', 'dm'],
-	expectedArgs: [],
-	permissionRequired: 'SEND_MESSAGES', // Change nulls to 'SEND_MESSAGES'
-	name: 'ranks',
-	description: 'Responds with a list of all current Ranks via direct message.',
-	example: 'ranks',
-};
-
-module.exports = {
-	help,
-	run
-} as CommandFile;
+		await message.author.send(ranksEmbed);
+		await message.channel.send(
+			RichEmbedGenerator.notifyEmbed(
+				`Prove your Worth Guardian ${
+					this.client.settings.lighthouse.medals[this.client.settings.lighthouse.medals.length - 1].emoji
+				}`,
+				`List of ${message.guild} Ranks has been sent, best of luck on your hunt!`,
+			),
+		);
+	}
+}

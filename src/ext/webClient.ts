@@ -2,7 +2,7 @@ import { IncomingMessage } from 'http';
 import * as https from 'https';
 import { Url } from 'url';
 import * as xml from 'xml2js';
-import { CommandError } from '.';
+import { CommandError } from './errorParser';
 
 class Cookie {
 	public cookieName?: string;
@@ -24,7 +24,7 @@ class Cookie {
 	}
 
 	private parseCookie() {
-		const pattern = /([.\|]*[^; =]+)(?:=(.[^;]*))?/g;
+		const pattern = /([.\\|]*[^; =]+)(?:=(.[^;]*))?/g;
 		let match;
 		const matches = [];
 		do {
@@ -35,27 +35,27 @@ class Cookie {
 	}
 	private assign() {
 		const matches = this.parseCookie();
-		for (let i = 1; i < matches.length; i++) { // 0 - Full Match, 1 - Name/Key, 2 - Value
-			if (matches[i][2]) { // key and Value
+		for (let i = 1; i < matches.length; i++) {
+			// 0 - Full Match, 1 - Name/Key, 2 - Value
+			if (matches[i][2]) {
+				// key and Value
 				if (i === 1) {
 					const removePrefix = /__(Secure|Host)-(.*)$/.exec(matches[i][1]);
 					if (removePrefix) {
 						this.prefix = removePrefix[1];
 						this.cookieName = removePrefix[2];
-					}
-					else {
+					} else {
 						this.cookieName = matches[i][1];
 					}
 					this.cookieValue = matches[i][2];
 				} else {
 					Object.assign(this, {
-						[matches[i][1]]: matches[i][2]
+						[matches[i][1]]: matches[i][2],
 					});
 				}
-			}
-			else {
+			} else {
 				Object.assign(this, {
-					[matches[i][1]]: true
+					[matches[i][1]]: true,
 				});
 			}
 		}
@@ -90,55 +90,62 @@ class MyRequester {
 		this.cookies = new Map<string, Cookie[]>();
 		// options.protocol = 'https:';
 	}
-	public request(options?: ExtendedRequestOptions, postData: any = null): Promise<any | Error> {
+	public async request(options?: ExtendedRequestOptions, postData: any = null): Promise<any | Error> {
 		if (!this.options && !options) throw new Error('No Options');
-		return new Promise(async (resolve, reject) => {
-			const overrideOptions = this.options;
-			Object.assign(overrideOptions, options);
-			overrideOptions.headers!.cookie = this.prepareCookies(overrideOptions.hostname);
-			const req = https.request(overrideOptions, (res) => {
+		const overrideOptions = this.options;
+		Object.assign(overrideOptions, options);
+		if (!overrideOptions.headers) overrideOptions.headers = {};
+		overrideOptions.headers.cookie = this.prepareCookies(overrideOptions.hostname);
+		const req = https
+			.request(overrideOptions, res => {
 				if (res.headers['set-cookie']) this.addCookies(overrideOptions.hostname, res.headers['set-cookie']);
 				const responseData: string[] = [];
-				if (res.statusCode !== 200) { // Not Successful
-					switch (res.statusCode!.toString()[0]) { // handle accordingly
-						case '3':
-							if (!res.headers.location || overrideOptions.doNotFollowRedirect) return reject(new RequestError(overrideOptions, res));
+				if (res.statusCode && res.statusCode !== 200) {
+					// Not Successful
+					switch (
+						res.statusCode.toString()[0] // handle accordingly
+					) {
+						case '3': {
+							if (!res.headers.location || overrideOptions.doNotFollowRedirect)
+								throw new RequestError(overrideOptions, res);
 							const redirectUrl = new URL(res.headers.location);
 							try {
-								return resolve(this.request({ hostname: redirectUrl.hostname, path: redirectUrl.pathname /*, protocol: redirectUrl.protocol , port: redirectUrl.port || (redirectUrl.protocol === 'https:' ? 443 : 80)*/ }));
+								return this.request({
+									hostname: redirectUrl.hostname,
+									path:
+                                            redirectUrl.pathname /*, protocol: redirectUrl.protocol , port: redirectUrl.port || (redirectUrl.protocol === 'https:' ? 443 : 80)*/,
+								});
+							} catch (e) {
+								throw new RequestError(overrideOptions, res);
 							}
-							catch (e) {
-								return reject(new RequestError(overrideOptions, res));
-							}
+						}
 						default:
-							return reject(new RequestError(overrideOptions, res));
+							throw new RequestError(overrideOptions, res);
 					}
-				}
-				else {
+				} else {
 					res.on('data', (chunk) => {
 						responseData.push(chunk.toString());
 					}).on('end', () => {
 						// figure out what to change Data to
 						const resolvedData: string = responseData.join('');
 						if (overrideOptions.responseType === 'JSON') {
-							return resolve(JSON.parse(resolvedData));
+							return JSON.parse(resolvedData);
 						} else if (overrideOptions.responseType === 'XML') {
 							xml.parseString(resolvedData, (err, results) => {
-								if (err) reject(err);
-								return resolve(JSON.parse(results));
+								if (err) throw err;
+								return JSON.parse(results);
 							});
-						}
-						else {
-							return resolve(resolvedData);
+						} else {
+							return resolvedData;
 						}
 					});
 				}
-			}).on('error', (err) => {
-				return reject(err);
+			})
+			.on('error', err => {
+				throw err;
 			});
-			if (overrideOptions.method === 'POST' && postData) req.write(postData);
-			req.end();
-		});
+		if (overrideOptions.method === 'POST' && postData) req.write(postData);
+		req.end();
 	}
 	private prepareCookies(hostName?: string | null | undefined) {
 		if (!hostName) return;
@@ -172,6 +179,5 @@ class MyRequester {
 			this.cookies.set(hostname, currentHostCookies);
 		}
 	}
-
 }
 export { MyRequester, RequestError, ExtendedRequestOptions };

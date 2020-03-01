@@ -5,7 +5,7 @@ class CommandError extends Error {
 		super(errorCode);
 		if (!reason) this.reason = this.determineReason();
 	}
-	private determineReason() {
+	private determineReason(): string {
 		switch (this.message) {
 			/* General Command Errors */
 			case 'NO_AUTHOR':
@@ -17,7 +17,7 @@ class CommandError extends Error {
 			case 'NO_GUILD':
 				return 'No Server was Found in the Context of The Command -> Use Command in a Server so Server Attributes (like Member Lists) are exposed';
 
-			/* SPECIFIC CASES */
+				/* SPECIFIC CASES */
 			case 'NO_CHANNEL':
 				return 'No Voice/Text Channel was Found in the Context or Arguments of The Command -> Either Execute The Command in the Given Channel or Provide an Channel Resolvable When Using the Command\nIf Your Unsure about Resolvable use the `resolvable` Command';
 			case 'NO_ARGUMENTS':
@@ -25,11 +25,11 @@ class CommandError extends Error {
 			case 'MISSING_ARGUMENTS':
 				return 'Not All Arguments were Found in the Context of the Command -> The Command Executed Requires Arguments which were not Provided in the Command Message\nUse `help <command>` to get Argument Details';
 			case 'INSUFFICIENT_PRIVILEGES':
-				return 'The Bot Does Not Have the Privileges on the Server to Execute the Given Command -> *This Isn\'t Very Well Documented in the Bot.*\nUse `help <command>` to get ~ Privilege Details';
+				return "The Bot Does Not Have the Privileges on the Server to Execute the Given Command -> *This Isn't Very Well Documented in the Bot.*\nUse `help <command>` to get ~ Privilege Details";
 			case 'USER_INSUFFICIENT_PRIVILEGES':
 				return 'You Do Not Have the Privileges on the Server to Execute the Given Command\nUse `help <command>` to get Privilege Details';
 
-			/* Parsing Errors */
+				/* Parsing Errors */
 			case 'FAILED_EMOJI_PARSE':
 				return 'Failed to Parse the Provided Emoji -> Make sure You are Providing a Correct Emoji Resolvable\nIf Your Unsure about Resolvable use the `resolvable` Command';
 			case 'FAILED_ROLE_PARSE':
@@ -39,7 +39,7 @@ class CommandError extends Error {
 			case 'FAILED_USER_PARSE':
 				return 'Failed to Parse the Provided User -> Make sure You are Providing a Correct User Resolvable\nIf Your Unsure about Resolvable use the `resolvable` Command';
 
-			/* Locating Errors */
+				/* Locating Errors */
 			case 'NO_CHANNEL_FOUND':
 				return 'Failed to Find Given Channel Based on the Provided Resolvable -> Make Sure the Resolvable is Accessible in the Current Scope of the Command (eg. Attempting to use a Channel From Another Server)';
 			case 'NO_ROLE_FOUND':
@@ -50,7 +50,7 @@ class CommandError extends Error {
 				return 'Failed to Find Given Emoji Based on the Provided Resolvable -> Make Sure the Resolvable is Accessible in the Current Scope of the Command (eg. Attempting to use a Emoji From Another Server)';
 
 			case 'DATABASE_ENTRY_NOT_FOUND':
-				return 'Missing Record At Backend -> The Given Context is not Available on The Server as It Doesn\'t Exist';
+				return "Missing Record At Backend -> The Given Context is not Available on The Server as It Doesn't Exist";
 
 			case 'HTTP_STATUS_CODE_300':
 			case 'HTTP_STATUS_CODE_301':
@@ -58,7 +58,7 @@ class CommandError extends Error {
 			case 'HTTP_STATUS_CODE_303':
 			case 'HTTP_STATUS_CODE_304':
 			case 'HTTP_STATUS_CODE_305':
-				return 'Failed HTTP Redirect -> When Accessing Online Resources A Redirection Was Required and Wasn\'t Done.';
+				return "Failed HTTP Redirect -> When Accessing Online Resources A Redirection Was Required and Wasn't Done.";
 			case 'HTTP_STATUS_CODE_400':
 			case 'HTTP_STATUS_CODE_401':
 			case 'HTTP_STATUS_CODE_402':
@@ -79,7 +79,5 @@ class CommandError extends Error {
 		}
 	}
 }
-
-
 
 export { CommandError };

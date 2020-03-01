@@ -1,0 +1,9 @@
+node_modules
+public
+lib
+src/__tests__
+etc
+client
+.git
+.github
+.vscode

@@ -1,72 +1,64 @@
 'use strict';
-import { createPool, Pool, PoolConfig, PoolConnection, QueryOptions } from 'mariadb';
+import { createPool, Pool, PoolConfig, PoolConnection, QueryOptions, UpsertResult } from 'mariadb';
 import { LogFilter, Logger } from './logger';
 export class Database {
-	public static constructQuery(sqlQuery: string | SqlQuery) {
-		if (typeof sqlQuery === 'string') {
-			return sqlQuery;
-		}
-		const brokenQuery = [sqlQuery.type, sqlQuery.columns.join(', '), 'FROM', sqlQuery.tables.join(', ')];
-		if (sqlQuery.conditions) {
-			brokenQuery.push('WHERE');
-			const whereQuery = [];
-			for (const condition of sqlQuery.conditions) {
-				whereQuery.push(
-					`${condition.column} ${condition.operator ? condition.operator : '='} ${condition.value}`,
+	public pool: Pool;
+	constructor(private connectionSettings: PoolConfig, private logger?: Logger) {
+		this.pool = createPool(this.connectionSettings);
+	}
+	public async query<T = any>(sqlQuery: string | QueryOptions): Promise<T[]> {
+		let connection: PoolConnection | undefined;
+		try {
+			connection = await this.pool.getConnection();
+			await connection.beginTransaction();
+			const rows: T[] = await connection.query(sqlQuery);
+			await connection.commit();
+			if (this.logger) {
+				this.logger.logS(`SQL Query Successful:\n${sqlQuery}`, LogFilter.Debug);
+			}
+			connection.end();
+			return rows;
+		} catch (err) {
+			if (connection) {
+				await connection.rollback();
+				connection.end();
+			}
+			if (this.logger) {
+				this.logger.logS(
+					(connection ? `SQL Query Failed:` : `Unable to Contact Database Server:`) +
+                               `\nConnection Settings: ${this.connectionSettings.user}:${this.connectionSettings.password}@${this.connectionSettings.host}:${this.connectionSettings.port}/${this.connectionSettings.database}\n${err}`,
+					LogFilter.Error,
 				);
 			}
-			brokenQuery.push(whereQuery.join(' AND '));
 		}
-		if (sqlQuery.order) {
-			brokenQuery.push(`ORDER BY`);
-			for (const order of sqlQuery.order) {
-				brokenQuery.push(`${order.column} ${order.type}`);
+		return [];
+	}
+	public async batch(sqlQuery: string | QueryOptions, values?: any): Promise<UpsertResult[]> {
+		let connection: PoolConnection | undefined;
+		try {
+			connection = await this.pool.getConnection();
+			await connection.beginTransaction();
+			const response = await connection.batch(sqlQuery, values);
+			await connection.commit();
+			if (this.logger) {
+				this.logger.logS(`SQL Batch Successful:\n${sqlQuery}`, LogFilter.Debug);
+			}
+			connection.end();
+			return response;
+		} catch (err) {
+			if (connection) {
+				await connection.rollback();
+				connection.end();
+			}
+			if (this.logger) {
+				this.logger.logS(
+					(connection ? `SQL Batch Failed:` : `Unable to Contact Database Server:`) +
+                        `\nConnection Settings: ${this.connectionSettings.user}:${this.connectionSettings.password}@${this.connectionSettings.host}:${this.connectionSettings.port}/${this.connectionSettings.database}\n${err}`,
+					LogFilter.Error,
+				);
 			}
 		}
-		if (sqlQuery.limit) {
-			brokenQuery.push(`LIMIT ${sqlQuery.limit}`);
-		}
-		brokenQuery.push(';');
-		return brokenQuery.join(' ');
-	}
-	public pool: Pool;
-	constructor(private connectionSettings: PoolConfig, private logger: Logger | null = null) {
-		this.pool = createPool(this.connectionSettings);
-		return this;
-	}
-	public query(sqlQuery: string | SqlQuery): Promise<any[]> {
-		return new Promise<any[]>(async (resolve: (result: any[]) => void, reject: (reason: Error) => void) => {
-			let connection: PoolConnection | null = null;
-			try {
-				connection = await this.pool.getConnection();
-				await connection.beginTransaction();
-				const query = Database.constructQuery(sqlQuery);
-				const rows: any[] = await connection.query(query);
-				await connection.commit();
-				// if (typeof sqlQuery !== 'string' && rows.length && !sqlQuery.meta) {
-				// rows.pop();
-				// }
-				if (this.logger) {
-					this.logger.log(`SQL Query Successful:\n${query}`, LogFilter.Debug);
-				}
-				resolve(rows);
-			} catch (err) {
-				if (connection) {
-					await connection.rollback();
-				}
-				if (this.logger) {
-					this.logger.log((connection ? `SQL Query Failed:` : `Unable to Contact Database Server:`) + `\nConnection Settings: ${this.connectionSettings.user}:${this.connectionSettings.password}@${this.connectionSettings.host}:${this.connectionSettings.port}/${this.connectionSettings.database}\n${err}`, LogFilter.Error);
-				}
-				reject(err);
-			} finally {
-				if (connection) {
-					connection.end(); // don't await
-				}
-			}
-		});
-	}
-	public batch(objects: SqlQuery[]) {
-		return;
+		return [];
 	}
 }
 export interface SqlQuery {

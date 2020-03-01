@@ -14,8 +14,7 @@ class WebServer {
 				res.sendFile(__dirname, '../../../public/index.html');
 			})
 			.get('/register', (req, res) => {
-				res.status(200)
-					.send('REGSIUTER!');
+				res.status(200).send('REGSIUTER!');
 			})
 			.get('/api/logs', (req, res) => {
 				const logFile = discordInstance.logger.logClient.returnLogFile().then(r => {
@@ -24,8 +23,6 @@ class WebServer {
 					res.status(200).send(JSON.parse(r));
 				});
 			})
-
-
 
 			.listen(port || 3000, () => console.log(`Example app listening on port ${port || 3000}!`));
 		return this;

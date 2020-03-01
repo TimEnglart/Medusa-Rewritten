@@ -1,37 +1,34 @@
-import { CommandError, CommandFile, CommandHelp, CommandRun, discord, ExtendedClient } from '../ext/index';
+import ExtendedClientCommand, { ICommandResult } from "@extensions/CommandTemplate";
+import CommandHandler from "@extensions/CommandHandler";
+import { Message } from "discord.js";
+import { CommandError } from "@extensions/errorParser";
 
-// Only Reject Promise if a Real Error Occurs
-// run Function is pretty convoluted
 
 
-const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
-	return new Promise(async (resolve: () => void, reject: (err: Error) => void) => {
-		try {
-			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
-			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
-
-			if (discordBot.settings.superUsers.includes(message.author.id)) {
-				await message.channel.send('Restarting :)');
-				process.exit(+args[0] || 0);
-			}
-			return resolve();
-		} catch (e) {
-			return reject(e);
-		}
-	});
-};
-
-const help: CommandHelp = {
-	description: '',
-	environments: ['text', 'dm'],
-	example: '',
-	expectedArgs: [{ name: 'Error Code', optional: true, example: '1' }],
-	hidden: true,
-	name: 'restart',
-	permissionRequired: 'ADMINISTRATOR', // Change nulls to 'SEND_MESSAGES'
-};
-
-module.exports = {
-	help,
-	run
-} as CommandFile;
+export default class ExitBot extends ExtendedClientCommand {
+	constructor(commandHandler: CommandHandler) {
+		super(commandHandler);
+		this.name = 'kill';
+		this.description = 'Kills the Current Bot Session';
+		this.environments = ['text', 'dm'];
+		this.expectedArguments = [{ name: 'Exit Code', optional: true, example: '1' }];
+		this.permissionRequired = 'SUPER_USER';
+		this.requiredProperties = {
+			Message: {
+				author: undefined,
+			},
+			ExtendedClient: {
+				user: undefined,
+				me: undefined,
+			},
+		};
+		this.hidden = true;
+	}
+	protected async Run(message: Message, ...args: string[]): Promise<ICommandResult | void> {
+		if (!message.author || !this.client.user) throw new CommandError('DYNAMIC_PROPERTY_CHECK_FAILED');
+		if (!message.author) throw new CommandError('NO_AUTHOR'); // If Author is Needed
+		if (!this.client.user) throw new CommandError('NO_BOT_USER'); // If Bot Instance is Needed
+		await message.channel.send('Restarting :)');
+		process.exit(+args[0] || 0);
+	}
+}

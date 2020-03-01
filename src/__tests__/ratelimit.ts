@@ -1,4 +1,4 @@
-import { RateLimiter } from './ext/rate-limiter';
+import { RateLimiter } from '../ext/rate-limiter';
 
 const a = new RateLimiter({
 	operations: 1,

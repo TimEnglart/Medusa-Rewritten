@@ -1,46 +1,46 @@
-import { CommandError, CommandFile, CommandHelp, CommandRun, discord, Embeds, ExtendedClient } from '../ext/index';
+import ExtendedClientCommand, { ICommandResult } from "@extensions/CommandTemplate";
+import CommandHandler from "@extensions/CommandHandler";
+import { Message, VoiceChannel } from "discord.js";
+import { CommandError } from "@extensions/errorParser";
+import { Utility } from "@extensions/utility";
 
-// Only Reject Promise if a Real Error Occurs
-// run Function is pretty convoluted
 
-
-const run: CommandRun = (discordBot: ExtendedClient, message: discord.Message, args: string[]) => {
-	return new Promise(async (resolve: () => void, reject: (err: Error) => void) => {
-		try {
-			if (!message.author) throw new CommandError('NO_AUTHOR'); 	// If Author is Needed
-			if (!message.member) throw new CommandError('NO_MEMBER');	// If Member is Needed
-			if (!message.guild) throw new CommandError('NO_GUILD'); 		// If Guild is Needed
-			if (!discordBot.user) throw new CommandError('NO_BOT_USER'); 	// If Bot Instance is Needed
-			let voiceChannelId = args[0];
-			if (!voiceChannelId) {
-				if (message.member.voice.channelID) voiceChannelId = message.member.voice.channelID;
-				else throw new CommandError('NO_VOICE_CHANNEL', 'Not in Voice Channel or No Voice Channel ID Provided');
-			}
-			const tempChannelMaster = await discordBot.databaseClient.query(`SELECT * FROM G_Master_Temp_Channels WHERE guild_id = ${message.guild.id} AND voice_channel_id = ${voiceChannelId}`);
-			if (tempChannelMaster.length) {
-				await discordBot.databaseClient.query(`DELETE FROM G_Master_Temp_Channels WHERE guild_id = ${message.guild.id} AND voice_channel_id = ${voiceChannelId}`);
-				const resolvedChannel = message.guild.channels.resolve(voiceChannelId);
-				await message.channel.send(Embeds.successEmbed('Successfully Removed Temporary Channel Master', `**Channel Name:** ${resolvedChannel ? resolvedChannel.name : voiceChannelId}\n**ID:** ${voiceChannelId}`));
-			}
-			else throw new CommandError('DATABASE_ENTRY_NOT_FOUND');
-			// else await message.channel.send(Embeds.errorEmbed('Selected Channel is Currently **NOT** a Temporary Channel Master', `**Channel Name:** ${message.guild.channels.get(voiceChannelId)!.name}\n**ID:** ${voiceChannelId}`));
-			return resolve();
-		} catch (e) {
-			return reject(e);
-		}
-	});
-};
-
-const help: CommandHelp = {
-	description: 'Remove an Existing Temporary Channel Master So No Temp Channels are Created Based on That Channel',
-	environments: ['text'],
-	example: 'removetemp 3213123131',
-	expectedArgs: [{ name: 'Channel Id', optional: false, example: '31263512635413' }],
-	name: 'removetemp',
-	permissionRequired: 'MANAGE_CHANNELS', // Change nulls to 'SEND_MESSAGES'
-};
-
-module.exports = {
-	help,
-	run
-} as CommandFile;
+export default class PrintWelcomeMessage extends ExtendedClientCommand {
+	constructor(commandHandler: CommandHandler) {
+		super(commandHandler);
+		this.name = 'removetemp';
+		this.description =
+            'Remove an Existing Temporary Channel Master';
+		this.environments = ['text'];
+		this.expectedArguments = [{ name: 'Channel Resolvable', optional: false, example: '31263512635413' }];
+		this.permissionRequired = 'MANAGE_CHANNELS';
+		this.requiredProperties = {
+			Message: {
+				author: undefined,
+			},
+			ExtendedClient: {
+				user: undefined,
+				me: undefined,
+			},
+		};
+	}
+	protected async Run(message: Message, ...args: string[]): Promise<ICommandResult | void> {
+		if (!message.author) throw new CommandError('NO_AUTHOR'); // If Author is Needed
+		if (!message.member) throw new CommandError('NO_MEMBER'); // If Member is Needed
+		if (!message.guild) throw new CommandError('NO_GUILD'); // If Guild is Needed
+		if (!this.client.user) throw new CommandError('NO_BOT_USER'); // If Bot Instance is Needed
+		const channelId =
+                Utility.parseChannelMentionToId(args[0]) ||
+                (message.member.voice.channel !== null ? message.member.voice.channel.id : null);
+		if (channelId) {
+			
+			const channel = message.guild.channels.resolve(channelId) as VoiceChannel;
+			
+			if (!channel) throw new CommandError('NO_CHANNEL_FOUND');
+			if (channel.type !== 'voice') throw new CommandError('INVALID_CHANNEL', 'Use This Command in a Voice Channel or Provide A Voice Channel with the Command');
+			if(this.client.TempChannelHandler.isTempChannel(channel)) throw new CommandError('ALREADY_TEMP_CHANNEL', `The Supplied Channel: ${channel.name} is a Temporary Channel`);
+			if(!this.client.TempChannelHandler.isMasterTempChannel(channel)) throw new CommandError('ALREADY_TEMP_CHANNEL_MASTER', `The Supplied Channel: ${channel.name} is Not a Temporary Channel Master`);
+			this.client.TempChannelHandler.RemoveMasterTempChannel(channel);
+		} else throw new CommandError('FAILED_CHANNEL_PARSE'); // No Channel Selected
+	}
+}

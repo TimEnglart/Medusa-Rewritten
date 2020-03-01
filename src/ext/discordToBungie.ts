@@ -1,9 +1,7 @@
-import { Database, discord, ExtendedClient, MyRequester, Settings } from '.';
-
-
+/*
 class DiscordDestinyPlayer {
 	public profileName: BNetProfile | null;
-	constructor(public user: discord.GuildMember | string, public databaseClient?: Database) {
+	constructor(public user: GuildMember | string, public databaseClient?: Database) {
 		this.profileName = this.resolveName(typeof user === 'string' ? user : user.displayName);
 		if (!this.profileName) throw new Error('NO NAME FOUND');
 	}
@@ -17,14 +15,13 @@ class DiscordDestinyPlayer {
 					path: `/Destiny2/SearchDestinyPlayer/${4}/${this.profileName.name}/`,
 					method: 'GET',
 					headers: {
-						'X-API-Key': Settings.bungie.apikey
+						'X-API-Key': Settings.bungie.apikey,
 					},
 					doNotFollowRedirect: false,
-					responseType: 'JSON'
+					responseType: 'JSON',
 				});
 				return resolve(requester.request());
-			}
-			catch (e) {
+			} catch (e) {
 				return reject(e);
 			}
 		});
@@ -36,33 +33,29 @@ class DiscordDestinyPlayer {
 		// try to resolve bNet
 		let bNetName: BNetProfile | null = null;
 		const regexResults = regexBNet();
-		if (regexResults && regexResults.length === 2) { // regex worked
+		if (regexResults && regexResults.length === 2) {
+			// regex worked
 			bNetName = {
 				name: regexResults[1],
-				tag: regexResults[2]
+				tag: regexResults[2],
 			};
-		}
-		else if (username.includes('#')) {
+		} else if (username.includes('#')) {
 			const split = username.split('#');
 			if (split.length >= 2) {
 				bNetName = {
 					name: split[0].replace(/[^\w].*$/, ''),
-					tag: split[1].replace(/[^0-9].*$/, '')
+					tag: split[1].replace(/[^0-9].*$/, ''),
 				};
-			}
-			else {
+			} else {
 				// cant resolve Bnet
 			}
-		}
-		else {
+		} else {
 			// not a Bnet
 		}
 		return bNetName;
 	}
 }
-
-
-
+*/
 interface BNetProfile {
 	name: string;
 	tag?: string;
@@ -100,24 +93,23 @@ interface DestinyCharacterResponse {
 	currencyLookups?: any;
 }
 
-
 interface IActivityDefinition {
 	displayProperties: {
 		description: string; // The Fanatic has returned. Take him down and finish the job you started.;
 		name: string; // Nightfall: The Hollowed Lair;
 		icon: string; /// common/destiny2_content/icons/f2154b781b36b19760efcb23695c66fe.png;
-		hasIcon: boolean
+		hasIcon: boolean;
 	};
 	originalDisplayProperties: {
 		description: string; // The Fanatic has returned. Take him down and finish the job you started.;
 		name: string; // Nightfall;
 		icon: string; /// img/misc/missing_icon_d2.png;
-		hasIcon: boolean
+		hasIcon: boolean;
 	};
 	selectionScreenDisplayProperties: {
 		description: string; // The Fanatic has returned. Take him down and finish the job you started.;
 		name: string; // The Hollowed Lair;
-		hasIcon: boolean
+		hasIcon: boolean;
 	};
 	releaseIcon: string; /// img/misc/missing_icon_d2.png;
 	releaseTime: number;
@@ -131,7 +123,7 @@ interface IActivityDefinition {
 	pgcrImage: string; /// img/destiny_content/pgcr/strike_taurus.jpg;
 	rewards: any[];
 	modifiers: Array<{
-		activityModifierHash: number
+		activityModifierHash: number;
 	}>;
 	isPlaylist: boolean;
 	challenges: Array<{
@@ -142,8 +134,8 @@ interface IActivityDefinition {
 			{
 				itemHash: number;
 				quantity: number;
-			}
-		]
+			},
+		];
 	}>;
 	optionalUnlockStrings: [];
 	inheritFromFreeRoam: boolean;
@@ -154,7 +146,7 @@ interface IActivityDefinition {
 		minParty: number;
 		maxParty: number;
 		maxPlayers: number;
-		requiresGuardianOath: boolean
+		requiresGuardianOath: boolean;
 	};
 	directActivityModeHash: number;
 	directActivityModeType: number;
@@ -168,7 +160,7 @@ interface IActivityDefinition {
 	redacted: boolean;
 	blacklisted: boolean;
 }
-
+/*
 // tslint:disable-next-line: max-classes-per-file
 class DestinyPlayer {
 	public static lookup(data: DestinyPlayerLookup, components?: string[]): Promise<DestinyPlayer[]> {
@@ -178,19 +170,23 @@ class DestinyPlayer {
 				const requester = new MyRequester({
 					hostname: 'www.bungie.net',
 					port: 443,
-					path: '/Platform' + (data.membershipId ? `/Destiny2/${data.membershipType}/Profile/${data.membershipId}/?components=` + (components ? `${components.join(',')}` : '100') : `/Destiny2/SearchDestinyPlayer/-1/${encodeURIComponent(data.displayName || '')}/`),
+					path:
+                        '/Platform' +
+                        (data.membershipId
+                        	? `/Destiny2/${data.membershipType}/Profile/${data.membershipId}/?components=` +
+                              (components ? `${components.join(',')}` : '100')
+                        	: `/Destiny2/SearchDestinyPlayer/-1/${encodeURIComponent(data.displayName || '')}/`),
 					method: 'GET',
 					headers: {
-						'X-API-Key': Settings.bungie.apikey
+						'X-API-Key': Settings.bungie.apikey,
 					},
 					doNotFollowRedirect: false,
-					responseType: 'JSON'
+					responseType: 'JSON',
 				});
 				if (data.membershipId) {
 					const possibleProfiles: BungieResponse<any> = await requester.request();
 					return resolve([new DestinyPlayer(possibleProfiles.Response)]);
-				}
-				else {
+				} else {
 					const possibleProfiles: BungieResponse<DestinyProfilesResponse[]> = await requester.request();
 					const profiles: DestinyPlayer[] = [];
 					for (const profile of possibleProfiles.Response) {
@@ -199,11 +195,9 @@ class DestinyPlayer {
 					}
 					return resolve(profiles);
 				}
-			}
-			catch (e) {
+			} catch (e) {
 				return reject(e);
 			}
-
 		});
 	}
 	public parsedData: DestinyProfileResponse;
@@ -214,10 +208,10 @@ class DestinyPlayer {
 			port: 443,
 			method: 'GET',
 			headers: {
-				'X-API-Key': Settings.bungie.apikey
+				'X-API-Key': Settings.bungie.apikey,
 			},
 			doNotFollowRedirect: false,
-			responseType: 'JSON'
+			responseType: 'JSON',
 		});
 		this.parsedData = data as DestinyProfileResponse;
 	}
@@ -232,10 +226,7 @@ class DestinyPlayer {
 				try {
 					const character = await DestinyCharacter.lookup(this, characterId);
 					pendingCharacterRetrieval.push(character);
-				}
-				catch (e) {
-
-				}
+				} catch (e) {}
 			}
 			return resolve(pendingCharacterRetrieval);
 		});
@@ -244,21 +235,25 @@ class DestinyPlayer {
 // tslint:disable-next-line: max-classes-per-file
 class DestinyCharacter {
 	public static lookup(profile: DestinyPlayer, characterId: string | number): Promise<DestinyCharacter> {
-		return new Promise(async (resolve: (destinyCharacter: DestinyCharacter) => void, reject: (err: Error) => void) => {
-			const requester = new MyRequester({
-				hostname: 'www.bungie.net',
-				port: 443,
-				method: 'GET',
-				headers: {
-					'X-API-Key': Settings.bungie.apikey
-				},
-				path: `/Platform/Destiny2/${profile.get('membershipType')}/Profile/${profile.get('')}/Character/${characterId}/`,
-				doNotFollowRedirect: false,
-				responseType: 'JSON'
-			});
-			const response: BungieResponse<DestinyCharacterResponse[]> = await requester.request();
-			return resolve(new DestinyCharacter({}));
-		});
+		return new Promise(
+			async (resolve: (destinyCharacter: DestinyCharacter) => void, reject: (err: Error) => void) => {
+				const requester = new MyRequester({
+					hostname: 'www.bungie.net',
+					port: 443,
+					method: 'GET',
+					headers: {
+						'X-API-Key': Settings.bungie.apikey,
+					},
+					path: `/Platform/Destiny2/${profile.get('membershipType')}/Profile/${profile.get(
+						'',
+					)}/Character/${characterId}/`,
+					doNotFollowRedirect: false,
+					responseType: 'JSON',
+				});
+				const response: BungieResponse<DestinyCharacterResponse[]> = await requester.request();
+				return resolve(new DestinyCharacter({}));
+			},
+		);
 	}
 	private requester: MyRequester;
 	private parsedData: DestinyProfileResponse;
@@ -268,10 +263,10 @@ class DestinyCharacter {
 			port: 443,
 			method: 'GET',
 			headers: {
-				'X-API-Key': Settings.bungie.apikey
+				'X-API-Key': Settings.bungie.apikey,
 			},
 			doNotFollowRedirect: false,
-			responseType: 'JSON'
+			responseType: 'JSON',
 		});
 		this.parsedData = data as DestinyProfileResponse;
 	}
@@ -280,7 +275,7 @@ class DestinyCharacter {
 		return this.data[key];
 	}
 }
-
+*/
 interface DestinyProfileResponse {
 	profile: {
 		data: {
@@ -288,11 +283,11 @@ interface DestinyProfileResponse {
 				membershipType: number | string;
 				membershipId: number | string;
 				displayName: string;
-			},
+			};
 			dateLastPlayed: string | Date;
 			versionsOwned: number | any;
 			characterIds: string[] | number[];
-		},
+		};
 		privacy: number;
 	};
 }
@@ -312,8 +307,8 @@ interface IActivityValues {
 			basic: {
 				value: number;
 				displayValue: string;
-			}
-		}
+			};
+		};
 	};
 }
 export interface IPostGameCarnageReport {
@@ -321,7 +316,7 @@ export interface IPostGameCarnageReport {
 	startingPhaseIndex: number;
 	activityDetails: IActivityDetails;
 	entries: IActivityEntry[];
-	teams: IActivityTeam[];
+	teams: any[];
 }
 export interface IActivityDetails {
 	referenceId: number;
@@ -331,7 +326,6 @@ export interface IActivityDetails {
 	isPrivate: boolean;
 	membershipType: number;
 }
-interface IActivityTeam { }
 interface IActivityEntry {
 	standing: number;
 	score: {
@@ -373,4 +367,11 @@ interface IActivityPlayer {
 	emblemHash: number;
 }
 
-export { DestinyCharacter, DestinyPlayer, DiscordDestinyPlayer, BungieResponse, IActivityDefinition, INightfallSubmission, IActivityValues, IActivityPlayer, IActivityEntry };
+export {
+	BungieResponse,
+	IActivityDefinition,
+	INightfallSubmission,
+	IActivityValues,
+	IActivityPlayer,
+	IActivityEntry,
+};

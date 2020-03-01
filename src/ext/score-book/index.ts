@@ -1,7 +1,9 @@
-import { CommandError, Database, discord, ExtendedClient, MyRequester } from '..';
-import { BungieResponse, IActivityDefinition, IActivityEntry, IPostGameCarnageReport } from '../discordToBungie';
-import { calculateExperience, giveMedal } from '../experienceHandler';
-import { LogFilter } from '../logger';
+import ExtendedClient from "@extensions/ExtendedClient";
+import { Database } from "@extensions/database";
+import { MyRequester } from "@extensions/webClient";
+import { BungieResponse, IPostGameCarnageReport, IActivityEntry, IActivityDefinition } from "@extensions/discordToBungie";
+import { TextChannel, MessageEmbed } from "discord.js";
+
 class ScoreBook {
 	public static toReadableTime(time: number) {
 		time = Number(time);
@@ -32,16 +34,18 @@ class ScoreBook {
 			responseType: 'JSON',
 		});
 		if (typeof epoch === 'string') epoch = new Date(epoch);
-		else if (typeof epoch === 'undefined') epoch = new Date(this.discordInstance.settings.lighthouse.scorebook.epoch);
+		else if (typeof epoch === 'undefined')
+			epoch = new Date(this.discordInstance.settings.lighthouse.scorebook.epoch);
 		this.epoch = epoch;
 	}
 
 	public async start(): Promise<void> {
-		if (this.minutesToNextReset <= 5) { // is absolute so there is a 10 min window
-			this.discordInstance.logger.logClient.logS(`[WORKS???] adding winners to Database`, 0);
+		if (this.minutesToNextReset <= 5) {
+			// is absolute so there is a 10 min window
+			this.discordInstance.logger.logS(`[WORKS???] adding winners to Database`, 0);
 			await this.addWinners();
 			setTimeout(() => this.start(), 1200000); // wait 20mins to avoid re submit
-		} else setTimeout(() => this.start(), 480000/*600000*/); // check every 10 mins -> now 8
+		} else setTimeout(() => this.start(), 480000 /*600000*/); // check every 10 mins -> now 8
 	}
 	public async totalWinners(): Promise<number> {
 		const allWinners = await this.databaseClient.query(`SELECT COUNT(*) FROM SB_Winners`);
@@ -142,7 +146,7 @@ class ScoreBook {
 			// Update User Statistics
 			const column = winner.type === 'SPEED' ? 'speedbreaker_wins' : 'pointbreaker_wins';
 			const medal = this.discordInstance.settings.lighthouse.medals.find(
-				medal => medal.name === (winner.type === 'SPEED' ? 'Speedbreaker' : 'Pointbreaker'),
+				_medal => _medal.name === (winner.type === 'SPEED' ? 'Speedbreaker' : 'Pointbreaker'),
 			);
 
 			const currentStatistics = await this.databaseClient.query(
@@ -151,35 +155,33 @@ class ScoreBook {
 			if (!currentStatistics.length) {
 				await this.databaseClient.query(
 					`INSERT INTO U_SB_Statistics (user_id, pointbreaker_wins, speedbreaker_wins) VALUES (${
-					winner.userId
+						winner.userId
 					}, ${winner.type === 'POINT' ? 1 : 0}, ${winner.type === 'SPEED' ? 1 : 0});`,
 				);
-			}
-			else {
+			} else {
 				await this.databaseClient.query(
 					`UPDATE U_SB_Statistics SET ${column} = ${currentStatistics[0][column] + 1} WHERE user_id = ${
-					winner.userId
+						winner.userId
 					}`,
 				);
 			}
 			// Give Medal / XP
-			if (medal) await giveMedal(winner.userId, [medal], this.databaseClient);
+			if (medal) await this.discordInstance.MedalHandler.UnlockMedals(winner.userId, [medal]);
 		}
 		// Update Winner Table
 		await this.databaseClient.query(
 			`INSERT INTO SB_Winners (week, type, pgcr_id, season) VALUES (${await this.currentWeek()}, ${'SPEED'}, ${
-			winners.speedBreakers.activity.Response.activityDetails.instanceId
+				winners.speedBreakers.activity.Response.activityDetails.instanceId
 			}, ${this.currentSeason}); ` +
-			`INSERT INTO SB_Winners (week, type, pgcr_id, season) VALUES (${await this.currentWeek()}, ${'POINT'}, ${
-			winners.pointBreakers.activity.Response.activityDetails.instanceId
-			}, ${this.currentSeason});`,
+                `INSERT INTO SB_Winners (week, type, pgcr_id, season) VALUES (${await this.currentWeek()}, ${'POINT'}, ${winners.pointBreakers.activity.Response.activityDetails.instanceId
+                }, ${this.currentSeason});`,
 		);
 
 		const guild = this.discordInstance.guilds.resolve(this.discordInstance.settings.lighthouse.discordId);
 		if (!guild) return;
 		const channel = guild.channels.resolve(
 			this.discordInstance.settings.lighthouse.scorebook.channelId,
-		) as discord.TextChannel;
+		) as TextChannel;
 		if (!channel) return;
 		const historyEmbed = await this.generateHistoryEmbed();
 		const winnerEmbed = await this.generateWinnersEmbed(winners);
@@ -205,31 +207,49 @@ class ScoreBook {
 			.sort((player1, player2) => player2.pointbreaker_wins - player1.pointbreaker_wins)
 			.map(player => `${guild.members.resolve(player.user_id)?.displayName}: ${player.speedbreaker_wins}`);
 
-		return new discord.MessageEmbed()
+		return new MessageEmbed()
 			.setTitle(`Scorebook History - Season: ${this.currentSeason}`)
 			.addField('Pointbreakers:', pointLayout)
 			.addField('Speedbreakers:', speedLayout);
-
 	}
 	private async generateWinnersEmbed(winners: IWeekWinners) {
 		if (!winners) return;
-		const speedEntDef: BungieResponse<IActivityDefinition> = await this.requester.request({ path: `/Platform/Destiny2/Manifest/${'DestinyActivityDefinition'}/${winners.speedBreakers.activity.Response.activityDetails.referenceId}/` });
-		const pointEntDef: BungieResponse<IActivityDefinition> = await this.requester.request({ path: `/Platform/Destiny2/Manifest/${'DestinyActivityDefinition'}/${winners.pointBreakers.activity.Response.activityDetails.referenceId}/` });
+		const speedEntDef: BungieResponse<IActivityDefinition> = await this.requester.request({
+			path: `/Platform/Destiny2/Manifest/${'DestinyActivityDefinition'}/${
+				winners.speedBreakers.activity.Response.activityDetails.referenceId
+			}/`,
+		});
+		const pointEntDef: BungieResponse<IActivityDefinition> = await this.requester.request({
+			path: `/Platform/Destiny2/Manifest/${'DestinyActivityDefinition'}/${
+				winners.pointBreakers.activity.Response.activityDetails.referenceId
+			}/`,
+		});
 		if (!speedEntDef || !pointEntDef) return;
 		const currentWeek = this.currentWeek();
 		const thisReset = this.lastReset.toLocaleDateString();
 		const lastReset = new Date().setDate(this.lastReset.getDate() - 7); // new Date().setDate(this.lastReset.getDate() + 7); // Add One Week to Last Reset or May need to subtract from
-		const winnerEmbed = new discord.MessageEmbed()
+		const winnerEmbed = new MessageEmbed()
 			.setTitle(`Week ${currentWeek} Winners`)
 			.setColor('#FFD662')
 			.setDescription(`**${lastReset} - ${thisReset}**`); // because the last reset should** be a few seconds ago as it has registered that it has reset
-		winnerEmbed.addField(
-			`Speedbreakers Winners - ${speedEntDef.Response.displayProperties.name}\nRun Time - ${winners.speedBreakers.activity.Response.entries[0].values.activityDurationSeconds.basic.displayValue}`,
-			`${winners.speedBreakers.activity.Response.entries.map(entry => `${entry.player.characterClass} ${entry.player.destinyUserInfo.displayName}: ${entry.player.lightLevel}`).join('\n')}`
-		)
+		winnerEmbed
+			.addField(
+				`Speedbreakers Winners - ${speedEntDef.Response.displayProperties.name}\nRun Time - ${winners.speedBreakers.activity.Response.entries[0].values.activityDurationSeconds.basic.displayValue}`,
+				`${winners.speedBreakers.activity.Response.entries
+					.map(
+						entry =>
+							`${entry.player.characterClass} ${entry.player.destinyUserInfo.displayName}: ${entry.player.lightLevel}`,
+					)
+					.join('\n')}`,
+			)
 			.addField(
 				`Pointbreaker Winners - ${pointEntDef.Response.displayProperties.name}\nRun Score - ${winners.pointBreakers.activity.Response.entries[0].values.activityDurationSeconds.basic.displayValue}`,
-				`${winners.pointBreakers.activity.Response.entries.map(entry => `${entry.player.characterClass} ${entry.player.destinyUserInfo.displayName}: ${entry.player.lightLevel}`).join('\n')}`
+				`${winners.pointBreakers.activity.Response.entries
+					.map(
+						entry =>
+							`${entry.player.characterClass} ${entry.player.destinyUserInfo.displayName}: ${entry.player.lightLevel}`,
+					)
+					.join('\n')}`,
 			);
 		/*
 		Speed Winners - {Strike Name}
@@ -250,7 +270,6 @@ class ScoreBook {
 		return winnerEmbed;
 	}
 }
-
 
 interface ISubmissionResponse {
 	pgcr_id: number;
