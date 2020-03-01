@@ -1,47 +1,14 @@
-import {
-	BitFieldResolvable,
-	Client,
-	Collection,
-	Message,
-	MessageEmbed,
-	PermissionString,
-	Role,
-	RoleResolvable,
-	Snowflake,
-	TextChannel,
-	VoiceChannel,
-	Guild,
-	GuildMember,
-	VoiceState,
-	ReactionEmoji,
-	User,
-	PartialMessage,
-	MessageReaction,
-} from 'discord.js';
-import * as fs from 'fs';
-import { inspect } from 'util';
-// import * as settings from './config/settings.json';
-import { CommandError, Database, LogFilter, Logger } from './ext/';
-import { AntiRepost } from './ext/antiRepostInitiative';
-import { ClanSync } from './ext/clanCheck';
-import * as exp from './ext/experienceHandler';
-import { ScoreBook } from './ext/score-book';
-import { WebServer } from './ext/web-server';
-import { RequestError } from './ext/webClient';
-import {
-	ITempChannelResponse,
-	ITempChannelMasterResponse,
-	IGuildPrefixResponse,
-	IDatabaseUpdateResponse,
-	IConnectedGuildsResponse,
-	UpsertResult,
-	IConnectedUserResponse,
-	IAutoRoleResponse,
-	ILogChannelResponse,
-	IReactionRoleResponse,
-} from '@extensions/DatabaseInterfaces';
-import ExtendedClient from '@extensions/ExtendedClient';
-import RichEmbedGenerator from '@extensions/RichEmbeds';
+import ExtendedClient from "@extensions/ExtendedClient";
+import { LogFilter } from "@extensions/logger";
+import { AntiRepost } from "@extensions/antiRepostInitiative";
+import { ClanSync } from "@extensions/clanCheck";
+import { Message, MessageEmbed, TextChannel, VoiceChannel, MessageReaction } from "discord.js";
+import RichEmbedGenerator from "@extensions/RichEmbeds";
+import { IGuildPrefixResponse, IConnectedUserResponse, IAutoRoleResponse, ILogChannelResponse, ITempChannelResponse, ITempChannelMasterResponse, IReactionRoleResponse } from "@extensions/DatabaseInterfaces";
+import { CommandError } from "@extensions/errorParser";
+import { inspect } from "util";
+import { UpsertResult } from "mariadb";
+
 const discordBot = new ExtendedClient({
 	fetchAllMembers: true,
 	presence: {
@@ -78,7 +45,7 @@ discordBot.on('message', async (message) => {
 	// Do Xp If in A Guild Channel
 	if (message.channel && message.channel.type !== 'dm' && message.member) {
 		// yeet await doXp(message.member);
-		const expData = await exp.giveExperience(message.author.id, null, discordBot.databaseClient);
+		const expData = await discordBot.experienceHandler.GiveExperience(message.author.id);
 		if (expData.levelUps.length) {
 			for (const levelUp of expData.levelUps) {
 				if (message.member.lastMessage) await message.member.lastMessage.react(levelUp.emoji.id);
@@ -166,7 +133,7 @@ discordBot.on('guildMemberAdd', async(member) => {
 	);
 
 	// Enable User in Xp Database
-	await exp.connectUser(member.id, discordBot.databaseClient);
+	await discordBot.experienceHandler.connectUser(member.id);
 	// Assign Default Server Role
 	const autoRole = await discordBot.databaseClient.query<IAutoRoleResponse>(
 		`SELECT * FROM G_Auto_Role WHERE guild_id = ${member.guild.id}`,
@@ -201,7 +168,7 @@ discordBot.on('guildMemberAdd', async(member) => {
 discordBot.on('guildMemberRemove', async (member) => {
 	if (!member.guild || !member.user) return; // wtf is this master update
 	// Disable User in Xp Database
-	await exp.disconnectUser(member.id, discordBot.databaseClient);
+	await discordBot.experienceHandler.disconnectUser(member.id);
 	// Send User Left Message to Moderator Channel
 
 	const eventChannel = await discordBot.databaseClient.query(
@@ -264,8 +231,8 @@ discordBot.on('voiceStateUpdate', async (previousVoiceState, newVoiceState) => {
 		// Check If User is **NOT** Getting Xp
 		if (!discordBot.experienceHandler.VoiceChannelOccupants[newVoiceState.member.id]) {
 			// Start Xp Tick and Add to Tracking List
-			discordBot.usersEarningExperience[newVoiceState.member.id] = newUserChannel.id;
-			await exp.voiceChannelXp(newVoiceState.member || undefined, 25, discordBot);
+			discordBot.experienceHandler.VoiceChannelOccupants[newVoiceState.member.id] = {channelId: newUserChannel.id, time: Date.now() };
+			//await exp.voiceChannelXp(newVoiceState.member || undefined, 25, discordBot);
 		}
 		// See If Channel Joined is a Tempory Channel Master
 		const isTempChannelMaster = (
@@ -339,28 +306,9 @@ discordBot.on('messageReactionAdd', async (reaction, user) => {
 	}
 });
 
-discordBot.on('messageReactionRemove', async (reaction: MessageReaction, user) => {
+discordBot.on('messageReactionRemove', async (reaction, user) => {
 
-	if (reaction.message.guild) {
-		const response = await discordBot.databaseClient.query<IReactionRoleResponse>(
-			`SELECT role_id FROM G_Reaction_Roles WHERE guild_id = ${reaction.message.guild.id} AND channel_id = ${
-				reaction.message.channel.id
-			} AND message_id = ${reaction.message.id} AND reaction_id ${reaction.emoji.id ? `=` : `IS`} ${
-				reaction.emoji.id
-			} AND reaction_name = '${reaction.emoji.name}'`,
-		);
-		if (response.length) {
-			// Assign Role Based on React
-			const member = await reaction.message.guild.members.fetch(user.id);
-			await member.roles.remove(response[0].role_id, 'Linked React Button');
-			discordBot.logger.logS(
-				`Reaction Role Assignment Triggered:\nUser:${member.user.username}\nReaction:${
-					reaction.emoji.name
-				}(${reaction.emoji.id})`,
-				LogFilter.Debug,
-			);
-		}
-	}
+	discordBot.ReactionRoleHandler.OnReactionRemove(reaction, user)
 	
 });
 

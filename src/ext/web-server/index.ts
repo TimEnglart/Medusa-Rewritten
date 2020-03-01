@@ -3,7 +3,7 @@ import * as express from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as serveStatic from 'serve-static';
-import { ExtendedClient } from '..';
+import ExtendedClient from '@extensions/ExtendedClient';
 class WebServer {
 	private app: express.Express;
 	constructor(discordInstance: ExtendedClient, port?: number) {
@@ -17,7 +17,7 @@ class WebServer {
 				res.status(200).send('REGSIUTER!');
 			})
 			.get('/api/logs', (req, res) => {
-				const logFile = discordInstance.logger.logClient.returnLogFile().then(r => {
+				const logFile = discordInstance.logger.returnLogFile().then((r: any) => {
 					res.set('Access-Control-Expose-Headers', 'Access-Control-Allow-Origin');
 					res.set('Access-Control-Allow-Origin', '*');
 					res.status(200).send(JSON.parse(r));

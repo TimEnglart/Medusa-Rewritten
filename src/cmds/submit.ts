@@ -2,7 +2,7 @@ import ExtendedClientCommand, { ICommandResult } from "@extensions/CommandTempla
 import CommandHandler from "@extensions/CommandHandler";
 import { Message, MessageEmbed, MessageReaction, User } from "discord.js";
 import { CommandError } from "@extensions/errorParser";
-import { DestinyPlayer, INightfallSubmission, IActivityDefinition } from "@extensions/discordToBungie";
+import { INightfallSubmission, IActivityDefinition } from "@extensions/discordToBungie";
 import { ScoreBook } from "@extensions/score-book";
 import RichEmbedGenerator from "@extensions/RichEmbeds";
 
@@ -56,41 +56,42 @@ export default class ExitBot extends ExtendedClientCommand {
 					'DATABASE_ENTRY_NOT_FOUND',
 					'You Can use The `register` to enable usage of this command\nYou Can Manually Input Your Nightfall Using a Bungie.Net Link:\nExample:https://www.bungie.net/en/PGCR/<activityId>/\n<activityId>',
 				);
-			const destinyProfiles = await DestinyPlayer.lookup({
-				membershipId: destinyData[0].destiny_id,
-				membershipType: destinyData[0].membership_id,
-			});
+			//const destinyProfiles = await DestinyPlayer.lookup({
+			//	membershipId: destinyData[0].destiny_id,
+			//	membershipType: destinyData[0].membership_id,
+			//});
+
 			// if (destinyProfiles.length !== 1) {
 			// 	await message.author.send('An Error Has Occurred During the Player Lookup Process. This has been logged');
 			// 	discordBot.logger.log(`Multiple Destiny Accounts Have Been Found on the Credentials\nDestiny Id: ${destinyData[0].destiny_id}\nMembership Type: ${destinyData[0].membership_id}`, LogFilter.Error);
 			// 	return resolve();
 			// }
-			const destinyProfile = destinyProfiles[0];
-			let mostRecentNightfall: INightfallSubmission | undefined;
-			for (const characterId of destinyProfile.parsedData.profile.data.characterIds) {
-				const charactersLastNightfall = await this.client.bungieApiRequester.SendRequest<any>(
-					`/Platform/Destiny2/${destinyProfile.parsedData.profile.data.userInfo.membershipType}/Account/${destinyProfile.parsedData.profile.data.userInfo.membershipId}/Character/${characterId}/Stats/Activities/?mode=46&count=1`,
-				);
-				if(!charactersLastNightfall) continue;
+			// const destinyProfile = destinyProfiles[0];
+			// let mostRecentNightfall: INightfallSubmission | undefined;
+			// for (const characterId of destinyProfile.parsedData.profile.data.characterIds) {
+			// 	const charactersLastNightfall = await this.client.bungieApiRequester.SendRequest<any>(
+			// 		`/Platform/Destiny2/${destinyProfile.parsedData.profile.data.userInfo.membershipType}/Account/${destinyProfile.parsedData.profile.data.userInfo.membershipId}/Character/${characterId}/Stats/Activities/?mode=46&count=1`,
+			// 	);
+			// 	if(!charactersLastNightfall) continue;
 				
-				for (const activity of charactersLastNightfall.Response.activities) {
-					const timeCompleted = new Date(activity.period);
-					if (
-						!mostRecentNightfall ||
-                        (mostRecentNightfall &&
-                            mostRecentNightfall.completed &&
-                            mostRecentNightfall.completed < timeCompleted)
-					) {
-						mostRecentNightfall = {
-							completed: timeCompleted,
-							nightfallData: activity,
-						};
-					}
-				}
-			}
-			if (!mostRecentNightfall) throw new CommandError('FAILED_NIGHTFALL_SELECTION');
-			// console.log(JSON.stringify(mostRecentNightfall));
-			activityId = mostRecentNightfall.nightfallData.activityDetails.instanceId;
+			// 	for (const activity of charactersLastNightfall.Response.activities) {
+			// 		const timeCompleted = new Date(activity.period);
+			// 		if (
+			// 			!mostRecentNightfall ||
+			//             (mostRecentNightfall &&
+			//                 mostRecentNightfall.completed &&
+			//                 mostRecentNightfall.completed < timeCompleted)
+			// 		) {
+			// 			mostRecentNightfall = {
+			// 				completed: timeCompleted,
+			// 				nightfallData: activity,
+			// 			};
+			// 		}
+			// 	}
+			// }
+			// if (!mostRecentNightfall) throw new CommandError('FAILED_NIGHTFALL_SELECTION');
+			// // console.log(JSON.stringify(mostRecentNightfall));
+			// activityId = mostRecentNightfall.nightfallData.activityDetails.instanceId;
 			// destinyProfile.
 		}
 		// console.log(activityId);

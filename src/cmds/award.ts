@@ -4,7 +4,7 @@ import { Message, GuildMember, MessageReaction, User } from "discord.js";
 import { CommandError } from "@extensions/errorParser";
 import { Utility } from "@extensions/utility";
 import RichEmbedGenerator from "@extensions/RichEmbeds";
-import { MedalData } from "@extensions/experienceHandler";
+import { IMedalData } from "@extensions/settingsInterfaces";
 
 export default class AwardCommand extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {
@@ -41,7 +41,7 @@ export default class AwardCommand extends ExtendedClientCommand {
 		const [userResolvable, medalName] = Utility.quotedWords(args.join(' '));
 		const user: GuildMember | null = Utility.LookupMember(message.guild, userResolvable);
 		if (!user) throw new CommandError('NO_USER_FOUND');
-		let myMedal: MedalData | undefined = this.client.settings.lighthouse.medals.find(
+		let myMedal: IMedalData | undefined = this.client.settings.lighthouse.medals.find(
 			(medal) => medal.name.toLowerCase() === medalName.toLowerCase(),
 		);
 		if (!myMedal) {

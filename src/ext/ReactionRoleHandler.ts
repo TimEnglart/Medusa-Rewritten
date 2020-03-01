@@ -1,5 +1,5 @@
 import ExtendedClient from "./ExtendedClient";
-import { MessageReaction, User, Message, Role, Emoji, EmojiResolvable, GuildEmoji, ReactionEmoji } from "discord.js";
+import { MessageReaction, User, Message, Role, Emoji, EmojiResolvable, GuildEmoji, ReactionEmoji, PartialUser } from "discord.js";
 import { UpsertResult } from "mariadb";
 import { CommandError } from "./errorParser";
 import { IReactionRoleResponse } from "./DatabaseInterfaces";
@@ -7,7 +7,7 @@ import { LogFilter } from "./logger";
 
 export default class ReactionRoleHandler {
 	constructor(private readonly client: ExtendedClient) {}
-	public async OnReactionAdd(messageReaction: MessageReaction, user: User): Promise<void> {
+	public async OnReactionAdd(messageReaction: MessageReaction, user: User | PartialUser): Promise<void> {
 		if (!messageReaction.message.guild) return; // Roles Only Assignable In Guilds
 		const member = await messageReaction.message.guild.members.fetch(user.id);
 		if (!member) return; // Unable To Find Member
@@ -30,7 +30,7 @@ export default class ReactionRoleHandler {
 		
 	}
 
-	public async OnReactionRemove(messageReaction: MessageReaction, user: User): Promise<void> {
+	public async OnReactionRemove(messageReaction: MessageReaction, user: User | PartialUser): Promise<void> {
 		if (!messageReaction.message.guild) return; // Roles Only Assignable In Guilds
 		const member = await messageReaction.message.guild.members.fetch(user.id);
 		if (!member) return; // Unable To Find Member
