@@ -1,8 +1,9 @@
-import ExtendedClient from "@extensions/ExtendedClient";
-import { Database } from "@extensions/database";
-import { MyRequester } from "@extensions/webClient";
-import { BungieResponse, IPostGameCarnageReport, IActivityEntry, IActivityDefinition } from "@extensions/discordToBungie";
+import ExtendedClient from "../ExtendedClient";
+import { Database } from "../database";
+import { MyRequester } from "../webClient";
+import { BungieResponse, IPostGameCarnageReport, IActivityEntry, IActivityDefinition } from "../discordToBungie";
 import { TextChannel, MessageEmbed } from "discord.js";
+
 
 class ScoreBook {
 	public static toReadableTime(time: number) {

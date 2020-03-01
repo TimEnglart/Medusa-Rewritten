@@ -10,13 +10,6 @@
 		"removeComments": true,
 		"strict": true,
 		"baseUrl": "src",
-		"paths": {
-			"@extensions/*": ["ext/*"],
-			"@commands/*": ["cmds/*"],
-			"@configuration/*": ["config/*"],
-			"@vue-client/*": ["../client/*"],
-			"@vue-public/*": ["../public/*"]
-		}
 	},
 	"include": ["src/**/*"],
 	"exclude": ["node_modules"],

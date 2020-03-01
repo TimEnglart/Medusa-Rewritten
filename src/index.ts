@@ -1,11 +1,11 @@
-import ExtendedClient from "@extensions/ExtendedClient";
-import { LogFilter } from "@extensions/logger";
-import { AntiRepost } from "@extensions/antiRepostInitiative";
-import { ClanSync } from "@extensions/clanCheck";
+import ExtendedClient from "./ext/ExtendedClient";
+import { LogFilter } from "./ext/logger";
+import { AntiRepost } from "./ext/antiRepostInitiative";
+import { ClanSync } from "./ext/clanCheck";
 import { Message, MessageEmbed, TextChannel, VoiceChannel, MessageReaction } from "discord.js";
-import RichEmbedGenerator from "@extensions/RichEmbeds";
-import { IGuildPrefixResponse, IConnectedUserResponse, IAutoRoleResponse, ILogChannelResponse, ITempChannelResponse, ITempChannelMasterResponse, IReactionRoleResponse } from "@extensions/DatabaseInterfaces";
-import { CommandError } from "@extensions/errorParser";
+import RichEmbedGenerator from "./ext/RichEmbeds";
+import { IGuildPrefixResponse, IConnectedUserResponse, IAutoRoleResponse, ILogChannelResponse, ITempChannelResponse, ITempChannelMasterResponse, IReactionRoleResponse } from "./ext/DatabaseInterfaces";
+import { CommandError } from "./ext/errorParser";
 import { inspect } from "util";
 import { UpsertResult } from "mariadb";
 
@@ -19,6 +19,7 @@ const discordBot = new ExtendedClient({
 		},
 	},
 });
+
 process
 	.on('unhandledRejection', (reason, p) => {
 		discordBot.logger.logS(
@@ -284,31 +285,12 @@ discordBot.on('voiceStateUpdate', async (previousVoiceState, newVoiceState) => {
 
 discordBot.on('messageReactionAdd', async (reaction, user) => {
 	
-	if (reaction.message.guild) {
-		const response = await discordBot.databaseClient.query<IReactionRoleResponse>(
-			`SELECT role_id FROM G_Reaction_Roles WHERE guild_id = ${reaction.message.guild.id} AND channel_id = ${
-				reaction.message.channel.id
-			} AND message_id = ${reaction.message.id} AND reaction_id ${reaction.emoji.id ? `=` : `IS`} ${
-				reaction.emoji.id
-			} AND reaction_name = '${reaction.emoji.name}'`,
-		);
-		if (response.length) {
-			// Assign Role Based on React
-			const member = await reaction.message.guild.members.fetch(user.id);
-			await member.roles.add(response[0].role_id, 'Linked React Button');
-			discordBot.logger.logS(
-				`Reaction Role Assignment Triggered:\nUser:${member.user.username}\nReaction:${
-					reaction.emoji.name
-				}(${reaction.emoji.id})`,
-				LogFilter.Debug,
-			);
-		}
-	}
+	await discordBot.ReactionRoleHandler.OnReactionAdd(reaction, user);
 });
 
 discordBot.on('messageReactionRemove', async (reaction, user) => {
 
-	discordBot.ReactionRoleHandler.OnReactionRemove(reaction, user)
+	await discordBot.ReactionRoleHandler.OnReactionRemove(reaction, user)
 	
 });
 
@@ -320,6 +302,7 @@ discordBot.on('ready', async () => {
 	await discordBot.PrimeDatabase();
 	await discordBot.CacheAndCleanUp();
 	// Cache All Messages That Have Reaction Roles Linked to Them
+	discordBot.LoadCommands();
 	
 	if (!discordBot.settings.debug) {
 		discordBot.RandomPresence(); // Cycles Through Set Presences (in 'discordBot.activites')
@@ -327,7 +310,6 @@ discordBot.on('ready', async () => {
 	} else {
 		discordBot.logger.logS('DEBUG MODE ENABLED');
 	}
-
 
 	await discordBot.user.setActivity(`READY`, { type: 'CUSTOM_STATUS' });
 	discordBot.logger.logS(`COMPLETED ALL BOOT SEQUENCES`);

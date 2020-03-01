@@ -1,8 +1,9 @@
 import { Collection, Message } from 'discord.js';
-import ExtendedClientCommand, { ICommandResult } from '@extensions/CommandTemplate';
-import { CommandError } from '@extensions/errorParser';
+
 import { IDisabledCommandsResponse } from './DatabaseInterfaces';
 import ExtendedClient from './ExtendedClient';
+import ExtendedClientCommand, { ICommandResult } from './CommandTemplate';
+import { CommandError } from './errorParser';
 
 interface IDisabledCommand {
 	[commandName: string]: string; // reason
@@ -17,9 +18,10 @@ export default class CommandHandler {
 		Object.assign(this.DisabledCommands, this.client.settings.disabledCommands); // Apply Fixed Disabled Commands
 		
 	}
-	public AddCommand(command: ExtendedClientCommand | typeof ExtendedClientCommand): void {
-		if (!(command instanceof ExtendedClientCommand)) command = new command(this); // is not Instanced
-		if (command.name) this.Commands.set(command.name, command);
+	public AddCommand(command: /*ExtendedClientCommand |*/ typeof ExtendedClientCommand): void {
+		/*if (!(command instanceof ExtendedClientCommand))*/ 
+		const constructedCommand = new command(this); // is not Instanced
+		if (constructedCommand.name) this.Commands.set(constructedCommand.name, constructedCommand);
 	}
 	public RemoveCommand(command: ExtendedClientCommand | string): void {
 		if (typeof command === 'string') this.Commands.delete(command);

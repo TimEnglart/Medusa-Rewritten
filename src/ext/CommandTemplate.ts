@@ -1,6 +1,6 @@
 import { Message, Permissions, PermissionString, GuildMember, User } from 'discord.js';
-import { CommandError } from '@extensions/errorParser';
-import CommandHandler from '@extensions/CommandHandler';
+import { CommandError } from '../ext/errorParser';
+import CommandHandler from '../ext/CommandHandler';
 import ExtendedClient from './ExtendedClient';
 
 interface IRequiredProperties {

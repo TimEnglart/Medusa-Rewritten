@@ -1,11 +1,10 @@
-import ExtendedClientCommand, { ICommandResult } from "@extensions/CommandTemplate";
-
-import CommandHandler from "@extensions/CommandHandler";
-
+import ExtendedClientCommand, { ICommandResult } from "../ext/CommandTemplate";
+import CommandHandler from "../ext/CommandHandler";
 import { Message } from "discord.js";
-import RichEmbedGenerator from "@extensions/RichEmbeds";
-import { CommandError } from "@extensions/errorParser";
-import { Utility } from "@extensions/utility";
+import { CommandError } from "../ext/errorParser";
+import { Utility } from "../ext/utility";
+import RichEmbedGenerator from "../ext/RichEmbeds";
+
 
 export default class SetLogChannel extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {

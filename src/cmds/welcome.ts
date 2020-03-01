@@ -1,10 +1,7 @@
-import ExtendedClientCommand, { ICommandResult } from "@extensions/CommandTemplate";
-import CommandHandler from "@extensions/CommandHandler";
+import ExtendedClientCommand, { ICommandResult } from "../ext/CommandTemplate";
+import CommandHandler from "../ext/CommandHandler";
 import { Message } from "discord.js";
-import { CommandError } from "@extensions/errorParser";
-
-// Only Reject Promise if a Real Error Occurs
-// run Function is pretty convoluted
+import { CommandError } from "../ext/errorParser";
 
 export default class PrintWelcomeMessage extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {

@@ -1,7 +1,7 @@
-import ExtendedClientCommand, { ICommandResult } from "@extensions/CommandTemplate";
+import ExtendedClientCommand, { ICommandResult } from "../ext/CommandTemplate";
 import { Message } from "discord.js";
-import CommandHandler from "@extensions/CommandHandler";
-import RichEmbedGenerator from "@extensions/RichEmbeds";
+import CommandHandler from "../ext/CommandHandler";
+import RichEmbedGenerator from "../ext/RichEmbeds";
 
 export default class EnableCommand extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {

@@ -1,9 +1,9 @@
-import ExtendedClientCommand, { ICommandResult } from "@extensions/CommandTemplate";
-import CommandHandler from "@extensions/CommandHandler";
+import ExtendedClientCommand, { ICommandResult } from "../ext/CommandTemplate";
+import CommandHandler from "../ext/CommandHandler";
 import { Message, MessageEmbed } from "discord.js";
-import { CommandError } from "@extensions/errorParser";
-import { IGuildPrefixResponse } from "@extensions/DatabaseInterfaces";
-import RichEmbedGenerator from "@extensions/RichEmbeds";
+import { CommandError } from "../ext/errorParser";
+import { IGuildPrefixResponse } from "../ext/DatabaseInterfaces";
+import RichEmbedGenerator from "../ext/RichEmbeds";
 
 export default class HelpCommand extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {

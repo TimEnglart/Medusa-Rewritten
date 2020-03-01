@@ -1,13 +1,13 @@
 import { Client, ClientOptions, User, GuildMember, Channel, PartialChannel, GuildEmoji, Guild, PartialUser, PartialGuildMember, Collection, Snowflake, Speaking, Invite, Message, PartialMessage, MessageReaction, Presence, RateLimitData, Role, VoiceState, TextChannel, VoiceChannel } from "discord.js";
-import CommandHandler from "@extensions/CommandHandler";
+import CommandHandler from "./CommandHandler";
 import { ISettingsTemplate } from "./settingsInterfaces";
 import { ExperienceHandler} from "./experienceHandler";
-import BungieAPIRequester from '@extensions/BungieAPIRequester';
+import BungieAPIRequester from './BungieAPIRequester';
 import { Logger, LogFilter } from "./logger";
 import { Database } from "./database";
 import { WebServer } from "./web-server";
 import { ScoreBook } from "./score-book";
-import { existsSync, readdir } from "fs";
+import { existsSync, readdir, readdirSync } from "fs";
 import ExtendedClientCommand from "./CommandTemplate";
 import { ITempChannelResponse, IReactionRoleResponse } from "./DatabaseInterfaces";
 import MedalHandler from "./MedalHandler";
@@ -32,10 +32,9 @@ export default class ExtendedClient extends Client {
 	public ReactionRoleHandler: ReactionRoleHandler;
 	constructor(options?: ClientOptions) {
 		super(options);
-
 		// Extended Client Stuff Here
 		if (!existsSync('./config/settings.json')) throw new Error('No Settings Provided For Bot');
-		this.settings = require('./config/settings.json');
+		this.settings = require('../config/settings.json');
 		this.logger = new Logger('./logs', [LogFilter.Info, LogFilter.Debug, LogFilter.Error], true);
 		this.databaseClient = new Database(
 			{
@@ -67,23 +66,14 @@ export default class ExtendedClient extends Client {
 
 	public LoadCommands(commandFolder?: string): void {
 		if (!commandFolder) commandFolder = this.settings.commandDir;
-		readdir(commandFolder, (err, files) => {
-			if (err) {
-				this.logger.logS(`Unknown Error Occurred with fs:\n${err}`, LogFilter.Error);
-				throw err;
-			}
-			const commandFiles = files.filter((f) => f.split('.').pop() === 'js');
-			if (commandFiles.length <= 0) {
-				this.logger.logS(`No Command Files Found in ${commandFolder}`, LogFilter.Error);
-				return;
-			}
-			commandFiles.forEach((fileName, i) => {
-				// eslint-disable-next-line @typescript-eslint/no-var-requires
-				const commandFile: typeof ExtendedClientCommand = require(`${commandFolder}${fileName}`);
-				this.commandHandler.AddCommand(commandFile);
-				this.logger.logS(`${fileName} loaded! ${i + 1}/${commandFiles.length}`);
-			});
-		});
+		this.logger.logS(`Command Directory: .${commandFolder}`);
+		for(const fileName of readdirSync(commandFolder).filter((f) => f.split('.').pop() === 'js')) {
+			this.logger.logS(`Loading Command File: .${commandFolder}/${fileName}`);
+			// eslint-disable-next-line @typescript-eslint/no-var-requires
+			const commandFile = require(`.${commandFolder}/${fileName}`);
+			this.commandHandler.AddCommand(commandFile.default);
+			this.logger.logS(`${fileName} loaded!`);
+		}
 	}
 	public RandomPresence(): void {
 		// ONLY CALL ONCE
@@ -107,13 +97,13 @@ export default class ExtendedClient extends Client {
 			this.logger.logS('Started Database Prime', LogFilter.Debug);
 			// Add All Missing Guilds & Users
 
-			await this.databaseClient.batch(`INSERT IGNROE INTO G_Connected_Guilds VALUES(?)`, [
-				this.guilds.cache.map((guild) => [guild.id]),
+			await this.databaseClient.batch(`INSERT IGNORE INTO G_Connected_Guilds VALUES (?)`, [
+				[this.guilds.cache.map((guild) => [guild.id])],
 			]);
 			for (const [guildId, guild] of this.guilds.cache) {
-				await this.databaseClient.batch(`INSERT IGNROE INTO U_Connected_Users VALUES(?)`, [
+				await this.databaseClient.batch(`INSERT IGNORE INTO U_Connected_Users VALUES (?)`, [[
 					guild.members.cache.map((user) => [user.id]),
-				]);
+				]]);
 			}
 			const disabledCommands = await this.commandHandler.GetRemoteDisabledCommands();
 			this.logger.logS(
@@ -127,18 +117,23 @@ export default class ExtendedClient extends Client {
 	public async CacheAndCleanUp(): Promise<void> {
 		const allReactionRoles = await this.databaseClient.query<IReactionRoleResponse>(`SELECT * FROM G_Reaction_Roles`);
 		for (const reactionRole of allReactionRoles) {
-			const resolvedGuild = this.guilds.resolve(reactionRole.guild_id);
-			if (resolvedGuild) {
-				const resolvedTextChannel = resolvedGuild.channels.resolve(reactionRole.channel_id) as TextChannel | null;
-				if (resolvedTextChannel) await resolvedTextChannel.messages.fetch(reactionRole.message_id, true);
-				else {
+			try{
+				const resolvedGuild = this.guilds.resolve(reactionRole.guild_id);
+				if (resolvedGuild) {
+					const resolvedTextChannel = resolvedGuild.channels.resolve(reactionRole.channel_id) as TextChannel | null;
+					if (resolvedTextChannel) await resolvedTextChannel.messages.fetch(reactionRole.message_id, true);
+					else {
 					// Cant Find Text Channel But Bot IS IN Guild
 					// this.logger.logS(``);
+					}
 				}
-			}
-			else {
+				else {
 				// Cant Find Text Channel Because Bot ISN'T IN Guild
 				// this.logger.logS(``);
+				}
+			}
+			catch(e) {
+				// Error
 			}
 		}
 		this.logger.logS(`Cached All Message Reactions`, LogFilter.Debug);
@@ -179,9 +174,34 @@ export default class ExtendedClient extends Client {
 		else if (typeof user === 'string') return this.settings.superUsers.includes(user);
 		return false;
 	}
-	private passListener(event: string, listener: Function, eventFunction: Function): this {
-		this.logger.logS(`Adding Listener (${eventFunction.name}) For Discord Event: ${event}`);
-		eventFunction(event, (...args: any[]) => {
+	private passOn(event: string, listener: (...args: any[]) => void): this {
+		this.logger.logS(`Adding Listener For Discord Event: ${event}`);
+		super.on(event, (...args: any[]) => {
+			const eventReceived = Date.now();
+			const eventStatus: {
+				message: string;
+				error?: Error;
+			} = {
+				message: 'NO_MESSAGE'
+			};
+			try {
+				listener(...args);
+				eventStatus.message = `Event (${event}) Completed Successfully`;
+			} catch (e) {
+				eventStatus.message = `Event (${event}) Failed to Complete`;
+				eventStatus.error = new Error(`${event}`);
+			}
+			const eventTime = Date.now() - eventReceived;
+			this.logger.logS(
+				`[EVENT] Time To Execute: ${eventTime}\n${eventStatus.message}\n${JSON.stringify(eventStatus.error || '')}`,
+				eventStatus.error ? 2 : 1,
+			);
+		});
+		return this;
+	}
+	private passOnce(event: string, listener: (...args: any[]) => void): this {
+		this.logger.logS(`Adding Listener For Discord Event: ${event}`);
+		super.on(event, (...args: any[]) => {
 			const eventReceived = Date.now();
 			const eventStatus: {
 				message: string;
@@ -205,7 +225,7 @@ export default class ExtendedClient extends Client {
 		return this;
 	}
 
-
+	
 	// Overloads Don't Get Inherited as The Base Function is being Overridden
 	public on(
 		event: 'channelCreate' | 'channelDelete',
@@ -304,9 +324,9 @@ export default class ExtendedClient extends Client {
 	public on(event: 'shardReconnecting', listener: (id: number) => void): this;
 	public on(event: 'shardReady', listener: (id: number) => void): this;
 	public on(event: 'shardResume', listener: (id: number, replayed: number) => void): this;
-	public on(event: string, listener: Function): this;
-	public on(event: string, listener: Function): this {
-		return this.passListener(event, listener, super.on);
+	public on(event: string, listener: (...args: any[]) => void): this;
+	public on(event: string, listener: (...args: any[]) => void): this {
+		return this.passOn(event, listener);
 	}
 
 	public once(
@@ -404,8 +424,8 @@ export default class ExtendedClient extends Client {
 	public once(event: 'shardReconnecting', listener: (id: number) => void): this;
 	public once(event: 'shardReady', listener: (id: number) => void): this;
 	public once(event: 'shardResume', listener: (id: number, replayed: number) => void): this;
-	public once(event: string, listener: Function): this;
-	public once(event: string, listener: Function): this {
-		return this.passListener(event, listener, super.once);
+	public once(event: string, listener: (...args: any[]) => void): this;
+	public once(event: string, listener: (...args: any[]) => void): this {
+		return this.passOnce(event, listener);
 	}
 }

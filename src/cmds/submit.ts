@@ -1,10 +1,10 @@
-import ExtendedClientCommand, { ICommandResult } from "@extensions/CommandTemplate";
-import CommandHandler from "@extensions/CommandHandler";
+import ExtendedClientCommand, { ICommandResult } from "../ext/CommandTemplate";
+import CommandHandler from "../ext/CommandHandler";
 import { Message, MessageEmbed, MessageReaction, User } from "discord.js";
-import { CommandError } from "@extensions/errorParser";
-import { INightfallSubmission, IActivityDefinition } from "@extensions/discordToBungie";
-import { ScoreBook } from "@extensions/score-book";
-import RichEmbedGenerator from "@extensions/RichEmbeds";
+import { CommandError } from "../ext/errorParser";
+import { IActivityDefinition } from "../ext/discordToBungie";
+import { ScoreBook } from "../ext/score-book";
+import RichEmbedGenerator from "../ext/RichEmbeds";
 
 export default class ExitBot extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {
@@ -178,7 +178,7 @@ export default class ExitBot extends ExtendedClientCommand {
 							`Strike: ${
 								entityDef.Response.selectionScreenDisplayProperties.name
 							}\nPlayers: ${pgcr.Response.entries
-								.map((entry) => entry.player.destinyUserInfo.displayName)
+								.map((entry: any) => entry.player.destinyUserInfo.displayName)
 								.join(', ')}\nScore: ${pgcr.Response.entries[0].values.teamScore.basic.value}\nTime: ${
 								pgcr.Response.entries[0].values.activityDurationSeconds.basic.displayValue
 							}`,

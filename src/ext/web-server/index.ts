@@ -2,8 +2,7 @@
 import * as express from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as serveStatic from 'serve-static';
-import ExtendedClient from '@extensions/ExtendedClient';
+import ExtendedClient from '../ExtendedClient';
 class WebServer {
 	private app: express.Express;
 	constructor(discordInstance: ExtendedClient, port?: number) {

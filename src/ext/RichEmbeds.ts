@@ -1,5 +1,5 @@
 import { MessageEmbedOptions, MessageEmbed } from "discord.js";
-import ExtendedClientCommand from "@extensions/CommandTemplate";
+import ExtendedClientCommand from "./CommandTemplate";
 
 export default class RichEmbedGenerator {
 	public static permissionEmbed(

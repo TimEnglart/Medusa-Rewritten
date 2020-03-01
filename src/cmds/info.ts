@@ -1,8 +1,9 @@
-import ExtendedClientCommand, { ICommandResult } from "@extensions/CommandTemplate";
-import CommandHandler from "@extensions/CommandHandler";
+import ExtendedClientCommand, { ICommandResult } from "../ext/CommandTemplate";
+import CommandHandler from "../ext/CommandHandler";
 import { Message, MessageEmbed } from "discord.js";
-import { CommandError } from "@extensions/errorParser";
-import { Utility } from "@extensions/utility";
+import { CommandError } from "../ext/errorParser";
+import { Utility } from "../ext/utility";
+
 
 export default class ExitBot extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {

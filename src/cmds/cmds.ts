@@ -1,8 +1,8 @@
-import ExtendedClientCommand, { ICommandResult } from "@extensions/CommandTemplate";
-import CommandHandler from "@extensions/CommandHandler";
+import ExtendedClientCommand, { ICommandResult } from "../ext/CommandTemplate";
+import CommandHandler from '../ext/CommandHandler';
 import { Message, PermissionString, MessageEmbed } from "discord.js";
-import { CommandError } from "@extensions/errorParser";
-import RichEmbedGenerator from "@extensions/RichEmbeds";
+import { CommandError } from '../ext/errorParser';
+import RichEmbedGenerator from '../ext/RichEmbeds';
 
 export default class AwardCommand extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {

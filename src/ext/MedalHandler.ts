@@ -1,9 +1,10 @@
 import { IMedalData } from "./settingsInterfaces";
 import { Database } from "./database";
-import { GuildMember, User } from "discord.js";
+import { IKeyBasedObject } from "ext";
 import ExtendedClient from "./ExtendedClient";
-import { IKeyBasedObject } from ".";
-import BungieAPIRequester, { IBungieResponse } from '@extensions/BungieAPIRequester'
+import { GuildMember, User } from "discord.js";
+import { IBungieResponse } from "./BungieAPIRequester";
+
 interface ICategorizedMedals {
 	[medalCategory: string]: IMedalData[];
 }
