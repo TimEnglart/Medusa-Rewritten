@@ -21,7 +21,7 @@ export default class CommandHandler {
 	public AddCommand(command: /*ExtendedClientCommand |*/ typeof ExtendedClientCommand): void {
 		/*if (!(command instanceof ExtendedClientCommand))*/ 
 		const constructedCommand = new command(this); // is not Instanced
-		if (constructedCommand.name) this.Commands.set(constructedCommand.name, constructedCommand);
+		if (constructedCommand.name) this.Commands.set(constructedCommand.name.toLowerCase(), constructedCommand);
 	}
 	public RemoveCommand(command: ExtendedClientCommand | string): void {
 		if (typeof command === 'string') this.Commands.delete(command);
