@@ -82,9 +82,12 @@ discordBot.on('message', async (message) => {
 	if (!commandName) return;
 	// Attempt to Run Supplied Command
 	message.channel.startTyping();
-	const commandFile = await discordBot.commandHandler.ExecuteCommand(commandName.toLowerCase(), message);
+	const commandFile = await discordBot.commandHandler.ExecuteCommand(commandName.toLowerCase(), message, ...args);
 	if (commandFile.error) {
 		if (commandFile.error instanceof CommandError) {
+			discordBot.logger.logS(
+				`Command: ${commandName} Failed to Execute.\nExecuting User: ${message.author.username}\nReason: ${commandFile.error.name} -> ${commandFile.error?.reason}\nStack Trace: ${commandFile.error.stack}`, 2
+			);
 			message.channel.send(
 				RichEmbedGenerator.errorEmbed(
 					`An Error Occurred When Running the Command ${commandName}`,
@@ -93,6 +96,8 @@ discordBot.on('message', async (message) => {
 			);
 		}
 		else {
+			discordBot.logger.logS(
+				`Command: ${commandName} Failed to Execute.\nExecuting User: ${message.author.username}\nReason: ${commandFile.error.name}\nStack Trace: ${commandFile.error.stack}`, 2);
 			message.channel.send(
 				RichEmbedGenerator.errorEmbed(
 					`An Error Occurred When Running the Command ${commandName}`,

@@ -19,7 +19,6 @@ export default class HelpCommand extends ExtendedClientCommand {
 			},
 			ExtendedClient: {
 				user: undefined,
-				me: undefined,
 			},
 		};
 	}

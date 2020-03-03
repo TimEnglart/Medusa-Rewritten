@@ -20,7 +20,6 @@ export default class SetLogChannel extends ExtendedClientCommand {
 			},
 			ExtendedClient: {
 				user: undefined,
-				me: undefined,
 			},
 		};
 	}

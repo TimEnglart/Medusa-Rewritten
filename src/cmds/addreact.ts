@@ -26,7 +26,7 @@ export default class DisableCommand extends ExtendedClientCommand {
 			},
 			ExtendedClient: {
 				user: undefined,
-				me: undefined
+				
 			}
 		};
 	}

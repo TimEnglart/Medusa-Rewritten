@@ -26,7 +26,6 @@ export default class AwardCommand extends ExtendedClientCommand {
 			},
 			ExtendedClient: {
 				user: undefined,
-				me: undefined,
 			},
 		};
 	}

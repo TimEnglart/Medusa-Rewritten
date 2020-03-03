@@ -126,9 +126,23 @@ class ExtendedClientCommand {
 			for (const propertyName in requiredProperties) {
 				const propertyToCheck = requiredProperties[propertyName];
 				if (typeof propertyToCheck === 'object') {
-					if (!this.recursivePropertyCheck(obj[propertyName], propertyToCheck)) return false;
+					if (!this.recursivePropertyCheck(obj[propertyName], propertyToCheck)) {
+						this.client.logger.logS(
+							`Object: ${JSON.stringify(obj)}\n Checking Object ${
+								obj[propertyName]
+							}\nAgainst: ${propertyToCheck}`,
+						);
+						return false;
+					}
 				} else {
-					if (!this.propertyIsDefined(obj, propertyName, propertyToCheck)) return false;
+					if (!this.propertyIsDefined(obj, propertyName, propertyToCheck)) {
+						this.client.logger.logS(
+							`Object: ${JSON.stringify(
+								obj,
+							)}\n Checking PropertyName ${propertyName}\nAgainst: ${propertyToCheck}`,
+						);
+						return false;
+					}
 				}
 			}
 			return true;
@@ -152,7 +166,7 @@ class ExtendedClientCommand {
 		return this.environments.includes(message.channel.type);
 	}
 	private verifyArguments(...args: string[]): boolean {
-		return args.length >= this.expectedArguments.filter((arg) => arg.optional).length;
+		return args.length >= this.expectedArguments.filter((arg) => !arg.optional).length;
 	}
 	public ReadableEnvironments(): string[] {
 		const lookupTable: { [environment: string]: string } = {

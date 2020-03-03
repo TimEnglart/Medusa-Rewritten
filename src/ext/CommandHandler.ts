@@ -27,7 +27,7 @@ export default class CommandHandler {
 		if (typeof command === 'string') this.Commands.delete(command);
 		else this.Commands.delete(command.name);
 	}
-	public async ExecuteCommand(commandName: string, message: Message): Promise<ICommandResult> {
+	public async ExecuteCommand(commandName: string, message: Message, ...args: string[]): Promise<ICommandResult> {
 		const command = this.Commands.get(commandName);
 		if (!command)
 			return {
@@ -43,7 +43,7 @@ export default class CommandHandler {
 				),
 			};
 		}
-		return await command.Execute(message);
+		return await command.Execute(message, ...args);
 	}
 	public async DisableCommand(commandName: string, reason: string): Promise<void> {
 		this.DisabledCommands[commandName] = reason; // Override Reason if there is One

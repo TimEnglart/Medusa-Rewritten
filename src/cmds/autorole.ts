@@ -22,7 +22,6 @@ export default class AutoRoleCommand extends ExtendedClientCommand {
 			},
 			ExtendedClient: {
 				user: undefined,
-				me: undefined,
 			},
 		};
 	}

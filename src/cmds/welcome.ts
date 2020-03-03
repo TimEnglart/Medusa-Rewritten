@@ -17,7 +17,6 @@ export default class PrintWelcomeMessage extends ExtendedClientCommand {
 			},
 			ExtendedClient: {
 				user: undefined,
-				me: undefined,
 			},
 		};
 	}
