@@ -19,8 +19,7 @@ export default class ExitBot extends ExtendedClientCommand {
 				author: undefined,
 			},
 			ExtendedClient: {
-				user: undefined,
-				me: undefined,
+				user: undefined
 			},
 		};
 	}
