@@ -175,7 +175,7 @@ export default class ExtendedClient extends Client {
 		return false;
 	}
 	private passOn(event: string, listener: (...args: any[]) => void): this {
-		this.logger.logS(`Adding Listener For Discord Event: ${event}`);
+		this.logger.logS(`Adding (On) Listener For Discord Event: ${event}`);
 		super.on(event, (...args: any[]) => {
 			const eventReceived = Date.now();
 			const eventStatus: {
@@ -200,7 +200,7 @@ export default class ExtendedClient extends Client {
 		return this;
 	}
 	private passOnce(event: string, listener: (...args: any[]) => void): this {
-		this.logger.logS(`Adding Listener For Discord Event: ${event}`);
+		this.logger.logS(`Adding (Once) Listener For Discord Event: ${event}`);
 		super.on(event, (...args: any[]) => {
 			const eventReceived = Date.now();
 			const eventStatus: {

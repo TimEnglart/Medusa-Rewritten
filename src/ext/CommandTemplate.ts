@@ -31,15 +31,7 @@ class ExtendedClientCommand {
 	constructor(protected readonly CommandHandler: CommandHandler) {
 		this.client = this.CommandHandler.client;
 		this.description = 'NO_DESC';
-		this.environments = [
-			'text',
-			'dm',
-			'voice',
-			'category',
-			'news',
-			'store',
-			'unknown',
-		];
+		this.environments = ['text', 'dm', 'voice', 'category', 'news', 'store', 'unknown'];
 		this.expectedArguments = [];
 		this.name = '';
 		this.permissionRequired = '';
@@ -154,12 +146,13 @@ class ExtendedClientCommand {
 		return false;
 	}
 	private validPermissions(message: Message): boolean {
+		if (this.client.isSuperUser(message.author)) return true;
 		if (message.member) {
 			if (this.propertyIsDefined(Permissions.FLAGS, this.permissionRequired))
-				return message.member.hasPermission(this.permissionRequired as PermissionString);
+				if (message.member.hasPermission(this.permissionRequired as PermissionString)) return true;
 		} else if (message.author) {
 			if (this.permissionRequired === 'SEND_MESSAGES') return true;
-		} else if (this.client.isSuperUser(message.author)) return true;
+		}
 		return this.ExtendedPermissionCheck(message);
 	}
 	private validChannel(message: Message): boolean {

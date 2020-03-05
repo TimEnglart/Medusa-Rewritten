@@ -75,7 +75,7 @@ class CommandError extends Error {
 				return 'Failed HTTP Request (Server Error) -> The Server Requested is Having Issues At This Time';
 
 			default:
-				return 'UNKNOWN_ERROR';
+				return this.message;
 		}
 	}
 }

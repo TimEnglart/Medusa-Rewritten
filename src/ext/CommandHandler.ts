@@ -32,7 +32,7 @@ export default class CommandHandler {
 		if (!command)
 			return {
 				success: false,
-				error: new CommandError('NO_COMMAND'),
+				error: new CommandError('NO_COMMAND', `The Command: ${commandName} Doesn't Exist`),
 			};
 		if (this.DisabledCommands[commandName]) {
 			return {
