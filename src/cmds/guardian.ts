@@ -107,7 +107,7 @@ export default class ExitBot extends ExtendedClientCommand {
 			);
 			return;
 		}
-		const score: string | number = 'registration required';
+		const score: string | number = 'Broken At The Moment';
 		//const destinyProfiles: {
 		//	[key: string]: DestinyPlayer;
 		//} = {};
