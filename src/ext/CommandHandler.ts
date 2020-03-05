@@ -55,7 +55,7 @@ export default class CommandHandler {
 		if (!this.DisabledCommands[commandName]) return;
 		delete this.DisabledCommands[commandName];
 		await this.client.databaseClient.query(
-			`DELETE IGNORE FROM G_Disabled_Commands WHERE name = "${commandName}");`,
+			`DELETE IGNORE FROM G_Disabled_Commands WHERE name = "${commandName}";`,
 		);
 	}
 	public async GetRemoteDisabledCommands(): Promise<IDisabledCommandsResponse[]> {
