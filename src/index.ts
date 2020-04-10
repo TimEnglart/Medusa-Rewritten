@@ -60,8 +60,10 @@ discordBot.on('message', async (message) => {
 				);
 			}
 		}
+
+		await memeChecker.run(message);
 	}
-	await memeChecker.run(message);
+	
 	// Determine The Guild/Channel Prefix for Commands
 	const guildPrefix = await discordBot.databaseClient.query<IGuildPrefixResponse>(
 		`SELECT prefix FROM G_Prefix WHERE guild_id = ${message.guild ? message.guild.id : message.author.id}`,
@@ -79,7 +81,7 @@ discordBot.on('message', async (message) => {
 
 	// Separate Command And Arguments
 	const commandName = args.shift();
-	if (!commandName) return;
+	if (!commandName || /^[a-zA-Z]+$/.test(commandName)) return;
 	// Attempt to Run Supplied Command
 	message.channel.startTyping();
 	const commandFile = await discordBot.commandHandler.ExecuteCommand(commandName.toLowerCase(), message, ...args);
@@ -88,12 +90,13 @@ discordBot.on('message', async (message) => {
 			discordBot.logger.logS(
 				`Command: ${commandName} Failed to Execute.\nExecuting User: ${message.author.username}\nReason: ${commandFile.error.name} -> ${commandFile.error?.reason}\nStack Trace: ${commandFile.error.stack}`, 2
 			);
-			message.channel.send(
-				RichEmbedGenerator.errorEmbed(
-					`An Error Occurred When Running the Command ${commandName}`,
-					`Provided Reason: ${commandFile.error.reason}`,
-				),
-			);
+			if (commandFile.error.message !== 'NO_COMMAND')
+				message.channel.send(
+					RichEmbedGenerator.errorEmbed(
+						`An Error Occurred When Running the Command ${commandName}`,
+						`Provided Reason: ${commandFile.error.reason}`,
+					),
+				);
 		}
 		else {
 			discordBot.logger.logS(
@@ -200,7 +203,14 @@ discordBot.on('guildMemberRemove', async (member) => {
 });
 
 discordBot.on('voiceStateUpdate', async (previousVoiceState, newVoiceState) => {
-
+	if(newVoiceState.channel)
+		if(discordBot.TempChannelHandler.isMasterTempChannel(newVoiceState.channel)) {
+			const tempChannel = await discordBot.TempChannelHandler.AddTempChannel(newVoiceState.channel);
+			await newVoiceState.setChannel(tempChannel);
+		}
+	if(previousVoiceState.channel)
+		if(discordBot.TempChannelHandler.isTempChannel(previousVoiceState.channel))
+			discordBot.TempChannelHandler.RemoveTempChannel(previousVoiceState.channel);
 	const attemptDeleteChannel = async (channel: VoiceChannel | null): Promise<void> => {
 		// If New Temp Channel is Empty
 		if (channel && !channel.members.size) {

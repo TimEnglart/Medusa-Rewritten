@@ -35,7 +35,7 @@ export default class BungieAPIRequester {
 			returnTokenOnCompletion: false,
 		});
 	}
-	public async SendRequest<T>(path: string, overrideOptions?: ExtendedRequestOptions, data?: any): Promise<IBungieResponse<T> | undefined> {
+	public async SendRequest<T = any>(path: string, overrideOptions?: ExtendedRequestOptions, data?: any): Promise<IBungieResponse<T> | undefined> {
 		try {
 			const response = await this.RateLimiter.add<IBungieResponse<T>>(this.requestToRateLimitFunc, Object.assign(overrideOptions || {}, { path: path }), data);
 			return response.returnValue;

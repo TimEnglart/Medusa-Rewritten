@@ -1,3 +1,6 @@
+import { MyRequester } from "./webClient";
+import BungieAPIRequester from "./BungieAPIRequester";
+
 /*
 class DiscordDestinyPlayer {
 	public profileName: BNetProfile | null;
@@ -163,31 +166,26 @@ interface IActivityDefinition {
 /*
 // tslint:disable-next-line: max-classes-per-file
 class DestinyPlayer {
+	private static requester: BungieAPIRequester = new BungieAPIRequester();
 	public static lookup(data: DestinyPlayerLookup, components?: string[]): Promise<DestinyPlayer[]> {
 		return new Promise(async (resolve: (destinyPlayer: DestinyPlayer[]) => void, reject: (err: Error) => void) => {
 			try {
 				if (!data.membershipId && !data.displayName) throw new Error('No Data');
-				const requester = new MyRequester({
-					hostname: 'www.bungie.net',
-					port: 443,
-					path:
-                        '/Platform' +
+				if (data.membershipId) {
+					const possibleProfiles: BungieResponse<any> | undefined = await this.requester.SendRequest('/Platform' +
                         (data.membershipId
                         	? `/Destiny2/${data.membershipType}/Profile/${data.membershipId}/?components=` +
                               (components ? `${components.join(',')}` : '100')
-                        	: `/Destiny2/SearchDestinyPlayer/-1/${encodeURIComponent(data.displayName || '')}/`),
-					method: 'GET',
-					headers: {
-						'X-API-Key': Settings.bungie.apikey,
-					},
-					doNotFollowRedirect: false,
-					responseType: 'JSON',
-				});
-				if (data.membershipId) {
-					const possibleProfiles: BungieResponse<any> = await requester.request();
+                        	: `/Destiny2/SearchDestinyPlayer/-1/${encodeURIComponent(data.displayName || '')}/`));
+					if(!possibleProfiles) return;
 					return resolve([new DestinyPlayer(possibleProfiles.Response)]);
 				} else {
-					const possibleProfiles: BungieResponse<DestinyProfilesResponse[]> = await requester.request();
+					const possibleProfiles: BungieResponse<DestinyProfilesResponse[]> | undefined = await this.requester.SendRequest('/Platform' +
+                        (data.membershipId
+                        	? `/Destiny2/${data.membershipType}/Profile/${data.membershipId}/?components=` +
+                              (components ? `${components.join(',')}` : '100')
+                        	: `/Destiny2/SearchDestinyPlayer/-1/${encodeURIComponent(data.displayName || '')}/`));
+					if(!possibleProfiles) return;
 					const profiles: DestinyPlayer[] = [];
 					for (const profile of possibleProfiles.Response) {
 						const player = await DestinyPlayer.lookup(profile, components);
@@ -201,18 +199,7 @@ class DestinyPlayer {
 		});
 	}
 	public parsedData: DestinyProfileResponse;
-	private requester: MyRequester;
 	constructor(public data: any) {
-		this.requester = new MyRequester({
-			hostname: 'www.bungie.net',
-			port: 443,
-			method: 'GET',
-			headers: {
-				'X-API-Key': Settings.bungie.apikey,
-			},
-			doNotFollowRedirect: false,
-			responseType: 'JSON',
-		});
 		this.parsedData = data as DestinyProfileResponse;
 	}
 	public get(key: string) {
@@ -234,40 +221,21 @@ class DestinyPlayer {
 }
 // tslint:disable-next-line: max-classes-per-file
 class DestinyCharacter {
+	private static requester: BungieAPIRequester = new BungieAPIRequester();
 	public static lookup(profile: DestinyPlayer, characterId: string | number): Promise<DestinyCharacter> {
 		return new Promise(
 			async (resolve: (destinyCharacter: DestinyCharacter) => void, reject: (err: Error) => void) => {
-				const requester = new MyRequester({
-					hostname: 'www.bungie.net',
-					port: 443,
-					method: 'GET',
-					headers: {
-						'X-API-Key': Settings.bungie.apikey,
-					},
-					path: `/Platform/Destiny2/${profile.get('membershipType')}/Profile/${profile.get(
-						'',
-					)}/Character/${characterId}/`,
-					doNotFollowRedirect: false,
-					responseType: 'JSON',
-				});
-				const response: BungieResponse<DestinyCharacterResponse[]> = await requester.request();
+				
+				const response: BungieResponse<DestinyCharacterResponse[]> | undefined = await this.requester.SendRequest(`/Platform/Destiny2/${profile.get('membershipType')}/Profile/${profile.get(
+					'',
+				)}/Character/${characterId}/`);
+				if(!response) return;
 				return resolve(new DestinyCharacter({}));
 			},
 		);
 	}
-	private requester: MyRequester;
 	private parsedData: DestinyProfileResponse;
 	constructor(private data: any) {
-		this.requester = new MyRequester({
-			hostname: 'www.bungie.net',
-			port: 443,
-			method: 'GET',
-			headers: {
-				'X-API-Key': Settings.bungie.apikey,
-			},
-			doNotFollowRedirect: false,
-			responseType: 'JSON',
-		});
 		this.parsedData = data as DestinyProfileResponse;
 	}
 	public get(key: string) {

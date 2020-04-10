@@ -123,9 +123,10 @@ export default class ExitBot extends ExtendedClientCommand {
 			// 	score = `Zoinks is that a Bnet Account Linked to Your Discord Account.\nUse the \`register\` Command to Link Another Platform`;
 			// }
 			// else {
-			/* FIX THIS
+			//FIX THIS
+			/*
 			for (const profile of destinyProfilesData) {
-				const lookupResults = await destiny.DestinyPlayer.lookup(
+				const lookupResults = await DestinyPlayer.lookup(
 					{
 						membershipId: profile.destiny_id || undefined,
 						// displayName: Utility.,

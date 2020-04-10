@@ -39,7 +39,7 @@ export default class CommandHandler {
 				success: false,
 				error: new CommandError(
 					'COMMAND_DISABLED',
-					`Command **${commandName}** is Disabled - Reason: ${this.DisabledCommands[commandName]}`,
+					`${this.DisabledCommands[commandName]}`,
 				),
 			};
 		}
