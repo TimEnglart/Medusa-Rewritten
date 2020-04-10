@@ -67,7 +67,7 @@ export default class ExtendedClient extends Client {
 	public LoadCommands(commandFolder?: string): void {
 		if (!commandFolder) commandFolder = this.settings.commandDir;
 		this.logger.logS(`Command Directory: .${commandFolder}`);
-		for(const fileName of readdirSync(commandFolder).filter((f) => f.split('.').pop() === 'js')) {
+		for (const fileName of readdirSync(commandFolder).filter((f) => f.split('.').pop() === 'js')) {
 			this.logger.logS(`Loading Command File: .${commandFolder}/${fileName}`);
 			// eslint-disable-next-line @typescript-eslint/no-var-requires
 			const commandFile = require(`.${commandFolder}/${fileName}`);
@@ -101,9 +101,9 @@ export default class ExtendedClient extends Client {
 				[this.guilds.cache.map((guild) => [guild.id])],
 			]);
 			for (const [guildId, guild] of this.guilds.cache) {
-				await this.databaseClient.batch(`INSERT IGNORE INTO U_Connected_Users VALUES (?)`, [[
-					guild.members.cache.map((user) => [user.id]),
-				]]);
+				await this.databaseClient.batch(`INSERT IGNORE INTO U_Connected_Users VALUES (?)`, [
+					[guild.members.cache.map((user) => [user.id])],
+				]);
 			}
 			const disabledCommands = await this.commandHandler.GetRemoteDisabledCommands();
 			this.logger.logS(
@@ -115,53 +115,57 @@ export default class ExtendedClient extends Client {
 		}
 	}
 	public async CacheAndCleanUp(): Promise<void> {
-		const allReactionRoles = await this.databaseClient.query<IReactionRoleResponse>(`SELECT * FROM G_Reaction_Roles`);
+		const allReactionRoles = await this.databaseClient.query<IReactionRoleResponse>(
+			`SELECT * FROM G_Reaction_Roles`,
+		);
 		for (const reactionRole of allReactionRoles) {
-			try{
+			try {
 				const resolvedGuild = this.guilds.resolve(reactionRole.guild_id);
 				if (resolvedGuild) {
-					const resolvedTextChannel = resolvedGuild.channels.resolve(reactionRole.channel_id) as TextChannel | null;
-					if (resolvedTextChannel) await resolvedTextChannel.messages.fetch(reactionRole.message_id, true);
+					const resolvedTextChannel = resolvedGuild.channels.resolve(
+						reactionRole.channel_id,
+					) as TextChannel | null;
+					if (resolvedTextChannel)
+						await resolvedTextChannel.messages.fetch(reactionRole.message_id, true);
 					else {
-					// Cant Find Text Channel But Bot IS IN Guild
-					// this.logger.logS(``);
+						// Cant Find Text Channel But Bot IS IN Guild
+						// this.logger.logS(``);
 					}
+				} else {
+					// Cant Find Text Channel Because Bot ISN'T IN Guild
+					// this.logger.logS(``);
 				}
-				else {
-				// Cant Find Text Channel Because Bot ISN'T IN Guild
-				// this.logger.logS(``);
-				}
-			}
-			catch(e) {
+			} catch (e) {
 				// Error
 			}
 		}
 		this.logger.logS(`Cached All Message Reactions`, LogFilter.Debug);
 
-		const existingTempChannels = await this.databaseClient.query<ITempChannelResponse>(`SELECT * FROM G_Temp_Channels`);
+		const existingTempChannels = await this.databaseClient.query<ITempChannelResponse>(
+			`SELECT * FROM G_Temp_Channels`,
+		);
 		// Check All Existing Temporary Channels & Delete if Empty
 		for (const tempChannel of existingTempChannels) {
 			const resolvedGuild = this.guilds.resolve(tempChannel.guild_id);
 			if (resolvedGuild) {
-				const resolvedVoiceChannel = resolvedGuild.channels.resolve(tempChannel.voice_channel_id) as VoiceChannel | null;
+				const resolvedVoiceChannel = resolvedGuild.channels.resolve(
+					tempChannel.voice_channel_id,
+				) as VoiceChannel | null;
 				if (resolvedVoiceChannel) {
 					if (!resolvedVoiceChannel.members.size) {
 						await this.databaseClient.query<ITempChannelResponse>(
 							`DELETE FROM G_Temp_Channels WHERE guild_id = ${tempChannel.guild_id} AND channel_id = ${tempChannel.voice_channel_id}`,
 						);
 						await resolvedVoiceChannel.delete('Remove Temp Channel');
-					}
-					else {
+					} else {
 						// There are People in The Temp Voice Channel
 						// this.logger.logS(``);
 					}
-				}
-				else {
+				} else {
 					// Cant Find Voice Channel But Bot IS IN Guild
 					// this.logger.logS(``);
 				}
-			}
-			else {
+			} else {
 				// Not In Server
 				// this.logger.logS(``, LogFilter.Error);
 			}
@@ -177,55 +181,40 @@ export default class ExtendedClient extends Client {
 	private passOn(event: string, listener: (...args: any[]) => void): this {
 		this.logger.logS(`Adding (On) Listener For Discord Event: ${event}`);
 		super.on(event, (...args: any[]) => {
-			const eventReceived = Date.now();
-			const eventStatus: {
-				message: string;
-				error?: Error;
-			} = {
-				message: 'NO_MESSAGE'
-			};
-			try {
-				listener(...args);
-				eventStatus.message = `Event (${event}) Completed Successfully`;
-			} catch (e) {
-				eventStatus.message = `Event (${event}) Failed to Complete`;
-				eventStatus.error = new Error(`${event}`);
-			}
-			const eventTime = Date.now() - eventReceived;
-			this.logger.logS(
-				`[EVENT] Time To Execute: ${eventTime}\n${eventStatus.message}\n${JSON.stringify(eventStatus.error || '')}`,
-				eventStatus.error ? 2 : 1,
-			);
+			this.handleEvent(listener, ...args);
 		});
 		return this;
 	}
 	private passOnce(event: string, listener: (...args: any[]) => void): this {
 		this.logger.logS(`Adding (Once) Listener For Discord Event: ${event}`);
-		super.on(event, (...args: any[]) => {
-			const eventReceived = Date.now();
-			const eventStatus: {
-				message: string;
-				error?: Error;
-			} = {
-				message: 'NO_MESSAGE'
-			};
-			try {
-				listener(...args);
-				eventStatus.message = `Event (${event}) Completed Successfully`;
-			} catch (e) {
-				eventStatus.message = `Event (${event}) Failed to Complete`;
-				eventStatus.error = new Error(`${event}`);
-			}
-			const eventTime = Date.now() - eventReceived;
-			this.logger.logS(
-				`[EVENT] Time To Execute: ${eventTime}\n${eventStatus.message}\n${JSON.stringify(eventStatus.error || '')}`,
-				eventStatus.error ? 2 : 1,
-			);
+		super.once(event, (...args: any[]) => {
+			this.handleEvent(listener, ...args);
 		});
 		return this;
 	}
 
-	
+	private handleEvent(listener: (...args: any[]) => void, ...args: any[]): void {
+		const eventReceived = Date.now();
+		const eventStatus: {
+			message: string;
+			error?: Error;
+		} = {
+			message: 'NO_MESSAGE',
+		};
+		try {
+			listener(...args);
+			eventStatus.message = `Event (${event}) Completed Successfully`;
+		} catch (e) {
+			eventStatus.message = `Event (${event}) Failed to Complete`;
+			eventStatus.error = new Error(`${event}`);
+		}
+		const eventTime = Date.now() - eventReceived;
+		this.logger.logS(
+			`[EVENT] Time To Execute: ${eventTime}\n${eventStatus.message}\n${eventStatus.error ? JSON.stringify(eventStatus.error) : ''}`,
+			eventStatus.error ? 2 : 1,
+		);
+	}
+
 	// Overloads Don't Get Inherited as The Base Function is being Overridden
 	public on(
 		event: 'channelCreate' | 'channelDelete',

@@ -93,7 +93,8 @@ export class Logger {
 			writeLine(`[${formattedMessage.type}] ${formattedMessage.message}`);
 		}
 		this.rateLimiter.add(async () => {
-			await this.startLog(formattedMessage);
+			await this.v2Log(formattedMessage);
+			//await this.startLog(formattedMessage);
 		});
 	}
 	public logS(message: string, filter: LogFilter = LogFilter.Info): void {
@@ -118,6 +119,18 @@ export class Logger {
 					return resolve(logFileContent.join(''));
 				});
 		});
+	}
+	private logCache: Array<IFormattedLogMessage> = [];
+	private timeout: NodeJS.Timeout | undefined;
+	private async v2Log(formattedMessage: IFormattedLogMessage): Promise<void> {
+		this.logCache.push(formattedMessage);
+		if (this.timeout) clearTimeout(this.timeout);
+		this.timeout = setTimeout(async () => {
+			fs.createWriteStream(this.logFile, { encoding: 'utf8' }).write(JSON.stringify(this.logCache), (err) => {
+				if (err) writeLine(`[LOG ERROR] Write Stream ERROR: ${err}`);
+				return;
+			});
+		}, 5000);
 	}
 
 	private async startLog(formattedMessage: IFormattedLogMessage): Promise<void> {
