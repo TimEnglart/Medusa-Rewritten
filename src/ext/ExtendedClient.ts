@@ -1,4 +1,4 @@
-import { Client, ClientOptions, User, GuildMember, Channel, PartialChannel, GuildEmoji, Guild, PartialUser, PartialGuildMember, Collection, Snowflake, Speaking, Invite, Message, PartialMessage, MessageReaction, Presence, RateLimitData, Role, VoiceState, TextChannel, VoiceChannel } from "discord.js";
+import { Client, ClientOptions, User, GuildMember, TextChannel, VoiceChannel, ClientEvents } from "discord.js";
 import CommandHandler from "./CommandHandler";
 import { ISettingsTemplate } from "./settingsInterfaces";
 import { ExperienceHandler} from "./experienceHandler";
@@ -7,8 +7,7 @@ import { Logger, LogFilter } from "./logger";
 import { Database } from "./database";
 import { WebServer } from "./web-server";
 import { ScoreBook } from "./score-book";
-import { existsSync, readdir, readdirSync } from "fs";
-import ExtendedClientCommand from "./CommandTemplate";
+import { existsSync, readdirSync } from "fs";
 import { ITempChannelResponse, IReactionRoleResponse } from "./DatabaseInterfaces";
 import MedalHandler from "./MedalHandler";
 import TempChannelHandler from "./TempChannelHandler";
@@ -100,7 +99,7 @@ export default class ExtendedClient extends Client {
 			await this.databaseClient.batch(`INSERT IGNORE INTO G_Connected_Guilds VALUES (?)`, [
 				[this.guilds.cache.map((guild) => [guild.id])],
 			]);
-			for (const [guildId, guild] of this.guilds.cache) {
+			for (const [, guild] of this.guilds.cache) {
 				await this.databaseClient.batch(`INSERT IGNORE INTO U_Connected_Users VALUES (?)`, [
 					[guild.members.cache.map((user) => [user.id])],
 				]);
@@ -178,22 +177,8 @@ export default class ExtendedClient extends Client {
 		else if (typeof user === 'string') return this.settings.superUsers.includes(user);
 		return false;
 	}
-	private passOn(event: string, listener: (...args: any[]) => void): this {
-		this.logger.logS(`Adding (On) Listener For Discord Event: ${event}`);
-		super.on(event, (...args: any[]) => {
-			this.handleEvent(listener, ...args);
-		});
-		return this;
-	}
-	private passOnce(event: string, listener: (...args: any[]) => void): this {
-		this.logger.logS(`Adding (Once) Listener For Discord Event: ${event}`);
-		super.once(event, (...args: any[]) => {
-			this.handleEvent(listener, ...args);
-		});
-		return this;
-	}
 
-	private handleEvent(listener: (...args: any[]) => void, ...args: any[]): void {
+	private handleEvent<K extends keyof ClientEvents>(listener: (...args: ClientEvents[K]) => void,...args: ClientEvents[K]): void {
 		const eventReceived = Date.now();
 		const eventStatus: {
 			message: string;
@@ -210,211 +195,33 @@ export default class ExtendedClient extends Client {
 		}
 		const eventTime = Date.now() - eventReceived;
 		this.logger.logS(
-			`[EVENT] Time To Execute: ${eventTime}\n${eventStatus.message}\n${eventStatus.error ? JSON.stringify(eventStatus.error) : ''}`,
+			`[EVENT] Time To Execute: ${eventTime}\n${eventStatus.message}\n${
+				eventStatus.error ? JSON.stringify(eventStatus.error) : ''
+			}`,
 			eventStatus.error ? 2 : 1,
 		);
 	}
 
-	// Overloads Don't Get Inherited as The Base Function is being Overridden
-	public on(
-		event: 'channelCreate' | 'channelDelete',
-		listener: (channel: Channel | PartialChannel) => void,
-	): this;
-	public on(
-		event: 'channelPinsUpdate',
-		listener: (channel: Channel | PartialChannel, time: Date) => void,
-	): this;
-	public on(
-		event: 'channelUpdate',
-		listener: (oldChannel: Channel | PartialChannel, newChannel: Channel | PartialChannel) => void,
-	): this;
-	public on(event: 'debug' | 'warn', listener: (info: string) => void): this;
-	public on(event: 'disconnect', listener: (event: any, shardID: number) => void): this;
-	public on(event: 'emojiCreate' | 'emojiDelete', listener: (emoji: GuildEmoji) => void): this;
-	public on(
-		event: 'emojiUpdate',
-		listener: (oldEmoji: GuildEmoji, newEmoji: GuildEmoji) => void,
-	): this;
-	public on(event: 'error', listener: (error: Error) => void): this;
-	public on(
-		event: 'guildBanAdd' | 'guildBanRemove',
-		listener: (guild: Guild, user: User | PartialUser) => void,
-	): this;
-	public on(
-		event: 'guildCreate' | 'guildDelete' | 'guildUnavailable',
-		listener: (guild: Guild) => void,
-	): this;
-	public on(
-		event: 'guildMemberAdd' | 'guildMemberAvailable' | 'guildMemberRemove',
-		listener: (member: GuildMember | PartialGuildMember) => void,
-	): this;
-	public on(
-		event: 'guildMembersChunk',
-		listener: (
-			members: Collection<Snowflake, GuildMember | PartialGuildMember>,
-			guild: Guild,
-		) => void,
-	): this;
-	public on(
-		event: 'guildMemberSpeaking',
-		listener: (member: GuildMember | PartialGuildMember, speaking: Readonly<Speaking>) => void,
-	): this;
-	public on(
-		event: 'guildMemberUpdate',
-		listener: (
-			oldMember: GuildMember | PartialGuildMember,
-			newMember: GuildMember | PartialGuildMember,
-		) => void,
-	): this;
-	public on(event: 'guildUpdate', listener: (oldGuild: Guild, newGuild: Guild) => void): this;
-	public on(event: 'inviteCreate' | 'inviteDelete', listener: (invite: Invite) => void): this;
-	public on(event: 'guildIntegrationsUpdate', listener: (guild: Guild) => void): this;
-	public on(
-		event: 'message' | 'messageDelete' | 'messageReactionRemoveAll',
-		listener: (message: Message | PartialMessage) => void,
-	): this;
-	public on(event: 'messageReactionRemoveEmoji', listener: (reaction: MessageReaction) => void): this;
-	public on(
-		event: 'messageDeleteBulk',
-		listener: (messages: Collection<Snowflake, Message | PartialMessage>) => void,
-	): this;
-	public on(
-		event: 'messageReactionAdd' | 'messageReactionRemove',
-		listener: (messageReaction: MessageReaction, user: User | PartialUser) => void,
-	): this;
-	public on(
-		event: 'messageUpdate',
-		listener: (oldMessage: Message | PartialMessage, newMessage: Message | PartialMessage) => void,
-	): this;
-	public on(
-		event: 'presenceUpdate',
-		listener: (oldPresence: Presence | undefined, newPresence: Presence) => void,
-	): this;
-	public on(event: 'rateLimit', listener: (rateLimitData: RateLimitData) => void): this;
-	public on(event: 'ready', listener: () => void): this;
-	public on(event: 'roleCreate' | 'roleDelete', listener: (role: Role) => void): this;
-	public on(event: 'roleUpdate', listener: (oldRole: Role, newRole: Role) => void): this;
-	public on(
-		event: 'typingStart' | 'typingStop',
-		listener: (channel: Channel | PartialChannel, user: User | PartialUser) => void,
-	): this;
-	public on(
-		event: 'userUpdate',
-		listener: (oldUser: User | PartialUser, newUser: User | PartialUser) => void,
-	): this;
-	public on(
-		event: 'voiceStateUpdate',
-		listener: (oldState: VoiceState, newState: VoiceState) => void,
-	): this;
-	public on(event: 'webhookUpdate', listener: (channel: TextChannel) => void): this;
-	public on(event: 'invalidated', listener: () => void): this;
-	public on(event: 'shardDisconnect', listener: (event: CloseEvent, id: number) => void): this;
-	public on(event: 'shardError', listener: (error: Error, id: number) => void): this;
-	public on(event: 'shardReconnecting', listener: (id: number) => void): this;
-	public on(event: 'shardReady', listener: (id: number) => void): this;
-	public on(event: 'shardResume', listener: (id: number, replayed: number) => void): this;
-	public on(event: string, listener: (...args: any[]) => void): this;
-	public on(event: string, listener: (...args: any[]) => void): this {
+	private passOn<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this {
+		this.logger.logS(`Adding (On) Listener For Discord Event: ${event}`);
+		super.on(event, (...args: ClientEvents[K]) => {
+			this.handleEvent(listener, ...args);
+		});
+		return this;
+	}
+	private passOnce<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this {
+		this.logger.logS(`Adding (Once) Listener For Discord Event: ${event}`);
+		super.once(event, (...args: ClientEvents[K]) => {
+			this.handleEvent(listener, ...args);
+		});
+		return this;
+	}
+	public on<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this;
+	public on<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this {
 		return this.passOn(event, listener);
 	}
-
-	public once(
-		event: 'channelCreate' | 'channelDelete',
-		listener: (channel: Channel | PartialChannel) => void,
-	): this;
-	public once(
-		event: 'channelPinsUpdate',
-		listener: (channel: Channel | PartialChannel, time: Date) => void,
-	): this;
-	public once(
-		event: 'channelUpdate',
-		listener: (oldChannel: Channel | PartialChannel, newChannel: Channel | PartialChannel) => void,
-	): this;
-	public once(event: 'debug' | 'warn', listener: (info: string) => void): this;
-	public once(event: 'disconnect', listener: (event: any, shardID: number) => void): this;
-	public once(event: 'emojiCreate' | 'emojiDelete', listener: (emoji: GuildEmoji) => void): this;
-	public once(
-		event: 'emojiUpdate',
-		listener: (oldEmoji: GuildEmoji, newEmoji: GuildEmoji) => void,
-	): this;
-	public once(event: 'error', listener: (error: Error) => void): this;
-	public once(
-		event: 'guildBanAdd' | 'guildBanRemove',
-		listener: (guild: Guild, user: User | PartialUser) => void,
-	): this;
-	public once(
-		event: 'guildCreate' | 'guildDelete' | 'guildUnavailable',
-		listener: (guild: Guild) => void,
-	): this;
-	public once(
-		event: 'guildMemberAdd' | 'guildMemberAvailable' | 'guildMemberRemove',
-		listener: (member: GuildMember | PartialGuildMember) => void,
-	): this;
-	public once(
-		event: 'guildMembersChunk',
-		listener: (
-			members: Collection<Snowflake, GuildMember | PartialGuildMember>,
-			guild: Guild,
-		) => void,
-	): this;
-	public once(
-		event: 'guildMemberSpeaking',
-		listener: (member: GuildMember | PartialGuildMember, speaking: Readonly<Speaking>) => void,
-	): this;
-	public once(
-		event: 'guildMemberUpdate',
-		listener: (
-			oldMember: GuildMember | PartialGuildMember,
-			newMember: GuildMember | PartialGuildMember,
-		) => void,
-	): this;
-	public once(event: 'guildUpdate', listener: (oldGuild: Guild, newGuild: Guild) => void): this;
-	public once(event: 'guildIntegrationsUpdate', listener: (guild: Guild) => void): this;
-	public once(
-		event: 'message' | 'messageDelete' | 'messageReactionRemoveAll',
-		listener: (message: Message | PartialMessage) => void,
-	): this;
-	public once(
-		event: 'messageDeleteBulk',
-		listener: (messages: Collection<Snowflake, Message | PartialMessage>) => void,
-	): this;
-	public once(
-		event: 'messageReactionAdd' | 'messageReactionRemove',
-		listener: (messageReaction: MessageReaction, user: User | PartialUser) => void,
-	): this;
-	public once(
-		event: 'messageUpdate',
-		listener: (oldMessage: Message | PartialMessage, newMessage: Message | PartialMessage) => void,
-	): this;
-	public once(
-		event: 'presenceUpdate',
-		listener: (oldPresence: Presence | undefined, newPresence: Presence) => void,
-	): this;
-	public once(event: 'rateLimit', listener: (rateLimitData: RateLimitData) => void): this;
-	public once(event: 'ready', listener: () => void): this;
-	public once(event: 'roleCreate' | 'roleDelete', listener: (role: Role) => void): this;
-	public once(event: 'roleUpdate', listener: (oldRole: Role, newRole: Role) => void): this;
-	public once(
-		event: 'typingStart' | 'typingStop',
-		listener: (channel: Channel | PartialChannel, user: User | PartialUser) => void,
-	): this;
-	public once(
-		event: 'userUpdate',
-		listener: (oldUser: User | PartialUser, newUser: User | PartialUser) => void,
-	): this;
-	public once(
-		event: 'voiceStateUpdate',
-		listener: (oldState: VoiceState, newState: VoiceState) => void,
-	): this;
-	public once(event: 'webhookUpdate', listener: (channel: TextChannel) => void): this;
-	public once(event: 'invalidated', listener: () => void): this;
-	public once(event: 'shardDisconnect', listener: (event: CloseEvent, id: number) => void): this;
-	public once(event: 'shardError', listener: (error: Error, id: number) => void): this;
-	public once(event: 'shardReconnecting', listener: (id: number) => void): this;
-	public once(event: 'shardReady', listener: (id: number) => void): this;
-	public once(event: 'shardResume', listener: (id: number, replayed: number) => void): this;
-	public once(event: string, listener: (...args: any[]) => void): this;
-	public once(event: string, listener: (...args: any[]) => void): this {
+	public once<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this;
+	public once<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this {
 		return this.passOnce(event, listener);
 	}
 }
