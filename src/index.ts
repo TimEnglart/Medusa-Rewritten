@@ -81,7 +81,7 @@ discordBot.on('message', async (message) => {
 
 	// Separate Command And Arguments
 	const commandName = args.shift();
-	if (!commandName || /^[a-zA-Z]+$/.test(commandName)) return;
+	if (!commandName || !/^[a-zA-Z]+$/.test(commandName)) return;
 	// Attempt to Run Supplied Command
 	message.channel.startTyping();
 	const commandFile = await discordBot.commandHandler.ExecuteCommand(commandName.toLowerCase(), message, ...args);
@@ -312,7 +312,6 @@ discordBot.on('messageReactionRemove', async (reaction, user) => {
 discordBot.on('ready', async () => {
 	if (!discordBot.user) return;
 	await discordBot.user.setActivity(`BOOT SEQUENCE INITIALIZATION`, { type: 'CUSTOM_STATUS' });
-	discordBot.logger.logS(`${discordBot.user.username} is online!`);
 
 	await discordBot.PrimeDatabase();
 	await discordBot.CacheAndCleanUp();
@@ -323,11 +322,12 @@ discordBot.on('ready', async () => {
 		discordBot.RandomPresence(); // Cycles Through Set Presences (in 'discordBot.activites')
 		discordBot.scoreBook.start(); // Starts The Automated Score Book Process
 	} else {
-		discordBot.logger.logS('DEBUG MODE ENABLED');
+		discordBot.logger.logS('DEBUG MODE ENABLED', 1);
 	}
 
 	await discordBot.user.setActivity(`READY`, { type: 'CUSTOM_STATUS' });
 	discordBot.logger.logS(`COMPLETED ALL BOOT SEQUENCES`);
+	discordBot.logger.logS(`${discordBot.user.username} is Online!`)
 });
 
 discordBot.login(

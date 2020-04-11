@@ -2,6 +2,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import RateLimiter from 'limited-rate-limiter';
+import * as Colors from './Colors';
 const writeLine = console.log;
 
 export enum LogFilter {
@@ -76,6 +77,13 @@ export class Logger {
 		this.logS('Logging Process Started', LogFilter.Debug);
 		return this;
 	}
+	private resolveColor(type: LogFilter): string {
+		switch(type) {
+			case LogFilter.Error: return Colors.default.FgRed;
+			case LogFilter.Debug: return Colors.default.FgYellow;
+			case LogFilter.Info: return Colors.default.Reset;
+		}
+	}
 	public async log(message: string, filter: LogFilter = LogFilter.Info): Promise<void> {
 		// New Message
 
@@ -90,7 +98,7 @@ export class Logger {
 		}
 		
 		if (this.filters && this.filters.includes(filter)) {
-			writeLine(`[${formattedMessage.type}] ${formattedMessage.message}`);
+			writeLine(`${this.resolveColor(filter)}[${formattedMessage.type}] ${formattedMessage.message}${Colors.default.Reset}`);
 		}
 		this.rateLimiter.add(async () => {
 			await this.v2Log(formattedMessage);
@@ -99,7 +107,9 @@ export class Logger {
 	}
 	public logS(message: string, filter: LogFilter = LogFilter.Info): void {
 		// tslint:disable-next-line: no-floating-promises
+		writeLine('---------------------------');
 		this.log(message, filter);
+		writeLine('---------------------------');
 	}
 	public logDirectory() {
 		return path.relative(process.cwd(), this.logFileLocation);
@@ -127,7 +137,9 @@ export class Logger {
 		if (this.timeout) clearTimeout(this.timeout);
 		this.timeout = setTimeout(async () => {
 			fs.createWriteStream(this.logFile, { encoding: 'utf8' }).write(JSON.stringify(this.logCache), (err) => {
-				if (err) writeLine(`[LOG ERROR] Write Stream ERROR: ${err}`);
+				if (err) {
+					this.logS(`[LOG ERROR] Write Stream ERROR: ${err}`, 2);
+				}
 				return;
 			});
 		}, 5000);

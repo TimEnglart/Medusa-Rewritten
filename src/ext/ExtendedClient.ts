@@ -12,8 +12,21 @@ import { ITempChannelResponse, IReactionRoleResponse } from "./DatabaseInterface
 import MedalHandler from "./MedalHandler";
 import TempChannelHandler from "./TempChannelHandler";
 import ReactionRoleHandler from "./ReactionRoleHandler";
+import ExtendedClientCommand from "./CommandTemplate";
+import * as path from 'path';
 
-
+interface IExtendedClientStaticPaths {
+	SettingsFile: string;
+	PackageFile: string;
+	WorkingPath: string;
+}
+interface IExtendedClientDynamicPaths {
+	CommandFolder: {
+		Relative: string;
+		Absolute: string;
+	};
+	LoggingFolder: string;
+}
 	
 
 	
@@ -29,12 +42,20 @@ export default class ExtendedClient extends Client {
 	public MedalHandler: MedalHandler;
 	public TempChannelHandler: TempChannelHandler;
 	public ReactionRoleHandler: ReactionRoleHandler;
+	private BasePaths: IExtendedClientStaticPaths;
+	private DynamicPaths: IExtendedClientDynamicPaths;
 	constructor(options?: ClientOptions) {
 		super(options);
 		// Extended Client Stuff Here
-		if (!existsSync('./config/settings.json')) throw new Error('No Settings Provided For Bot');
-		this.settings = require('../config/settings.json');
-		this.logger = new Logger('./logs', [LogFilter.Info, LogFilter.Debug, LogFilter.Error], true);
+		if (!require.main) throw new Error("Unable to Resolve Working Directory");
+		this.BasePaths = this.ResolveBasePaths();
+		if (!existsSync(this.BasePaths.SettingsFile)) throw new Error('No Settings Provided For Bot');
+		this.settings = require(this.BasePaths.SettingsFile);
+		this.DynamicPaths = this.ResolveDynamicPaths({
+			commandDirectory: this.settings.commandDir,
+			LogDirectory: 'logs' // Change Config File For Different Path
+		});
+		this.logger = new Logger(this.DynamicPaths.LoggingFolder, [LogFilter.Info, LogFilter.Debug, LogFilter.Error], true);
 		this.databaseClient = new Database(
 			{
 				database: this.settings.database.database,
@@ -63,16 +84,45 @@ export default class ExtendedClient extends Client {
 		this.ReactionRoleHandler = new ReactionRoleHandler(this);
 	}
 
-	public LoadCommands(commandFolder?: string): void {
-		if (!commandFolder) commandFolder = this.settings.commandDir;
-		this.logger.logS(`Command Directory: .${commandFolder}`);
-		for (const fileName of readdirSync(commandFolder).filter((f) => f.split('.').pop() === 'js')) {
-			this.logger.logS(`Loading Command File: .${commandFolder}/${fileName}`);
-			// eslint-disable-next-line @typescript-eslint/no-var-requires
-			const commandFile = require(`.${commandFolder}/${fileName}`);
-			this.commandHandler.AddCommand(commandFile.default);
-			this.logger.logS(`${fileName} loaded!`);
+	private ResolveBasePaths(): IExtendedClientStaticPaths {
+		if (!require.main) throw new Error('Unable to Resolve Working Directory');
+		const workingDirectory = path.dirname(require.main.filename);
+		return {
+			WorkingPath: workingDirectory,
+			PackageFile: path.resolve(workingDirectory, 'package.json'),
+			SettingsFile: path.resolve(workingDirectory, 'config', 'settings.json'),
+		};
+	}
+	private ResolveDynamicPaths(overrides?: {
+		commandDirectory?: string;
+		LogDirectory?: string;
+	}): IExtendedClientDynamicPaths {
+		if (!this.BasePaths.WorkingPath) throw new Error('Unable to Resolve Working Directory');
+		return {
+			CommandFolder: {
+				Relative: overrides?.commandDirectory || 'cmds',
+				Absolute: path.resolve(this.BasePaths.WorkingPath, overrides?.commandDirectory || 'cmds'),
+			},
+			LoggingFolder: path.join(this.BasePaths.WorkingPath, overrides?.LogDirectory || 'logs'),
+		};
+	}
+				
+
+	public LoadCommands(): void {
+		this.logger.logS(`Command Directory: ${this.DynamicPaths.CommandFolder.Absolute}`, 1);
+		const commandFiles = readdirSync(this.DynamicPaths.CommandFolder.Absolute).filter((f) => f.split('.').pop() === 'js');
+		for (const fileName of commandFiles) {
+			try{
+				this.logger.logS(`Loading Command File: ${path.join(this.DynamicPaths.CommandFolder.Relative, fileName)}`, 1);
+				// eslint-disable-next-line @typescript-eslint/no-var-requires
+				const commandFile: typeof ExtendedClientCommand = require(`${path.join(this.DynamicPaths.CommandFolder.Absolute, fileName)}`).default;
+				this.commandHandler.AddCommand(commandFile);
+			}
+			catch(e) {
+				this.logger.logS(`Failed to Load Command File: ${path.join(this.DynamicPaths.CommandFolder.Absolute, fileName)}`, 2);
+			}	
 		}
+		this.logger.logS(`${commandFiles.length} Command Files Loaded Successfully`);
 	}
 	public RandomPresence(): void {
 		// ONLY CALL ONCE
@@ -82,12 +132,12 @@ export default class ExtendedClient extends Client {
 					name: this.settings.statuses[
 						Math.floor(Math.random() * this.settings.statuses.length)
 					],
-					type: 'CUSTOM_STATUS',
+					type: 'PLAYING',
 				},
 				status: 'online',
 			});
 		}
-		setTimeout(this.RandomPresence, 600000);
+		setTimeout(() => this.RandomPresence(), 600000);
 	}
 
 	public async PrimeDatabase(): Promise<void> {
@@ -178,7 +228,7 @@ export default class ExtendedClient extends Client {
 		return false;
 	}
 
-	private handleEvent<K extends keyof ClientEvents>(listener: (...args: ClientEvents[K]) => void,...args: ClientEvents[K]): void {
+	private handleEvent<K extends keyof ClientEvents>(eventName: K, listener: (...args: ClientEvents[K]) => void, ...args: ClientEvents[K]): void {
 		const eventReceived = Date.now();
 		const eventStatus: {
 			message: string;
@@ -188,39 +238,37 @@ export default class ExtendedClient extends Client {
 		};
 		try {
 			listener(...args);
-			eventStatus.message = `Event (${event}) Completed Successfully`;
+			eventStatus.message = `${eventName} Completed Successfully`;
 		} catch (e) {
-			eventStatus.message = `Event (${event}) Failed to Complete`;
-			eventStatus.error = new Error(`${event}`);
+			eventStatus.message = `${eventName} Failed to Complete`;
+			eventStatus.error = new Error(`${eventName}`);
 		}
 		const eventTime = Date.now() - eventReceived;
 		this.logger.logS(
-			`[EVENT] Time To Execute: ${eventTime}\n${eventStatus.message}\n${
-				eventStatus.error ? JSON.stringify(eventStatus.error) : ''
+			`[EVENT] Time To Execute: ${eventTime}ms\n${eventStatus.message}${
+				eventStatus.error ? `\n${JSON.stringify(eventStatus.error)}` : ''
 			}`,
 			eventStatus.error ? 2 : 1,
 		);
 	}
 
 	private passOn<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this {
-		this.logger.logS(`Adding (On) Listener For Discord Event: ${event}`);
+		this.logger.logS(`Adding (On) Listener For Discord Event: ${event}`, 1);
 		super.on(event, (...args: ClientEvents[K]) => {
-			this.handleEvent(listener, ...args);
+			this.handleEvent(event, listener, ...args);
 		});
 		return this;
 	}
 	private passOnce<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this {
-		this.logger.logS(`Adding (Once) Listener For Discord Event: ${event}`);
+		this.logger.logS(`Adding (Once) Listener For Discord Event: ${event}`, 1);
 		super.once(event, (...args: ClientEvents[K]) => {
-			this.handleEvent(listener, ...args);
+			this.handleEvent(event, listener, ...args);
 		});
 		return this;
 	}
-	public on<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this;
 	public on<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this {
 		return this.passOn(event, listener);
 	}
-	public once<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this;
 	public once<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this {
 		return this.passOnce(event, listener);
 	}
