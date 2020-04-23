@@ -16,8 +16,8 @@ export default class AddTemporaryChannel extends ExtendedClientCommand {
 		this.requiredProperties = {
 			Message: {
 				author: undefined,
-				member: undefined,
 				guild: undefined,
+				member: undefined
 			},
 			ExtendedClient: {
 				user: undefined,
