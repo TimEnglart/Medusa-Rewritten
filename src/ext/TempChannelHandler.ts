@@ -64,7 +64,7 @@ export default class TempChannelHandler {
 
 		// Wait 10 Seconds. Allow for Latency as If User Doesnt Successfully Join Channel VoiceState Doesnt Trigger
 		setTimeout(async () => {
-			await this.RemoveTempChannel(clonedChannel);
+			await this.DeleteEmptyChannel(clonedChannel);
 		}, 10000);
 
 		return clonedChannel;
@@ -108,7 +108,7 @@ export default class TempChannelHandler {
 	}
 	private RemoveChannelEntry(map: Map<string, string[]>, key: string, value: string): void {
 		const guildTempChannels = map.get(key);
-		if (!guildTempChannels) return undefined; // No Temp Channels
+		if (!guildTempChannels) return; // No Temp Channels
 
 		const index = guildTempChannels.indexOf(value);
 		if (index > -1) guildTempChannels.splice(index, 1);
@@ -151,7 +151,7 @@ export default class TempChannelHandler {
 			`DELETE IGNORE FROM G_Master_Temp_Channels WHERE guild_id = '${voiceChannel.guild.id}' AND voice_channel_id = '${voiceChannel.id})'`,
 		);
 	}
-	private async DeleteEmptyChannel(voiceChannel: VoiceChannel): Promise<void> {
-		if (!voiceChannel.members.size && voiceChannel.deletable) await voiceChannel.delete();
+	public async DeleteEmptyChannel(voiceChannel: VoiceChannel): Promise<void> {
+		if (!voiceChannel.members.size && voiceChannel.deletable) await this.RemoveTempChannel(voiceChannel);
 	}
 }

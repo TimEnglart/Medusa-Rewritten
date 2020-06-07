@@ -1,7 +1,13 @@
-import { MessageEmbedOptions, MessageEmbed } from "discord.js";
+import { MessageEmbedOptions, MessageEmbed, EmbedFieldData } from "discord.js";
 import ExtendedClientCommand from "./CommandTemplate";
 
 export default class RichEmbedGenerator {
+	public static addBlankField(embed: MessageEmbed, inline = false): MessageEmbed {
+		return embed.addField('\u200B', '\u200B', inline);
+	}
+	public static getBlankFieldObject(inline = false): EmbedFieldData {
+		return { name: '\u200B', value: '\u200B', inline };
+	}
 	public static permissionEmbed(
 		permissionTitle: string,
 		permissionDescription: string,
@@ -19,7 +25,9 @@ export default class RichEmbedGenerator {
 	public static generateUsage(command: ExtendedClientCommand, prefix?: string): string {
 		return `${prefix}${command.name} ${
 			command.expectedArguments.length
-				? command.expectedArguments.map((arg) => (arg.optional ? `[${arg.name}]` : `<${arg.name}>`)).join(' ')
+				? command.expectedArguments
+					.map((arg) => (arg.optional ? `[${arg.name}]` : `<${arg.name}>`))
+					.join(' ')
 				: ``
 		}`;
 	}
@@ -41,17 +49,25 @@ export default class RichEmbedGenerator {
 		const basicEmbed: MessageEmbedOptions = {
 			color: '#00dde0',
 			fields: [
-				{ name: 'Usage', value: `\`\`\`${ RichEmbedGenerator.generateUsage(command, prefix) || '<Empty>'}\`\`\`\n`, inline: false },
+				{
+					name: 'Usage',
+					value: `\`\`\`${RichEmbedGenerator.generateUsage(command, prefix) ||
+                                       '<Empty>'}\`\`\`\n`,
+					inline: false,
+				},
 				{ name: 'Description', value: `${command.description || '<Empty>'}\n`, inline: false },
 				{
 					name: 'Example',
-					value: `\`\`\`${RichEmbedGenerator.generateExample(command, prefix) || '<Empty>'}\`\`\`\n`,
+					value: `\`\`\`${RichEmbedGenerator.generateExample(command, prefix) ||
+                                       '<Empty>'}\`\`\`\n`,
 					inline: false,
 				},
 				{
 					name: 'Allowed Channels',
-					value: `${command.environments.length ? command.ReadableEnvironments().join(', ') : 'None'}\n`,
-					inline: false
+					value: `${
+						command.environments.length ? command.ReadableEnvironments().join(', ') : 'None'
+					}\n`,
+					inline: false,
 				},
 				{ name: 'Required Permissions', value: `${command.permissionRequired}`, inline: false },
 			],
@@ -117,6 +133,33 @@ export default class RichEmbedGenerator {
 				url: 'https://i.imgur.com/GDvNXqa.png',
 			},
 			title: 'You have Become Legend!',
+		};
+		if (overrideOptions) Object.assign(basicEmbed, overrideOptions);
+		return new MessageEmbed(basicEmbed);
+	}
+
+	public static GenericCommandSuccessEmbed(
+		commandName: string,
+		description: string,
+		overrideOptions?: MessageEmbedOptions,
+	): MessageEmbed {
+		const basicEmbed: MessageEmbedOptions = {
+			color: '#3bcc45',
+			fields: [{ name: 'Command', value: description, inline: false }],
+			title: `Successfully Executed ${commandName}`,
+		};
+		if (overrideOptions) Object.assign(basicEmbed, overrideOptions);
+		return new MessageEmbed(basicEmbed);
+	}
+	public static GenericCommandFailureEmbed(
+		commandName: string,
+		description: string,
+		overrideOptions?: MessageEmbedOptions,
+	): MessageEmbed {
+		const basicEmbed: MessageEmbedOptions = {
+			color: '#ba0526',
+			fields: [{ name: 'Command', value: description, inline: false }],
+			title: `Failed to Execute ${commandName}`,
 		};
 		if (overrideOptions) Object.assign(basicEmbed, overrideOptions);
 		return new MessageEmbed(basicEmbed);

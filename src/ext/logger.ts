@@ -9,6 +9,7 @@ export enum LogFilter {
 	Info,
 	Debug,
 	Error,
+	Success
 }
 interface ILogMessage {
 	type: LogFilter;
@@ -73,7 +74,7 @@ export class Logger {
 			fs.mkdirSync(logFileLocation);
 		}
 		this.logFile = logFileLocation + '/' + Date.now() + (!this.json ? '.log' : '.json');
-		fs.writeFileSync(this.logFile, this.json ? '{"logs":[]}' : ''); // Initialize File
+		fs.writeFileSync(this.logFile, this.json ? '{}' : ''); // Initialize File
 		this.logS('Logging Process Started', LogFilter.Debug);
 		return this;
 	}
@@ -82,7 +83,20 @@ export class Logger {
 			case LogFilter.Error: return Colors.default.FgRed;
 			case LogFilter.Debug: return Colors.default.FgYellow;
 			case LogFilter.Info: return Colors.default.Reset;
+			case LogFilter.Success: return Colors.default.FgGreen;
+			default: return Colors.default.Reset;
 		}
+	}
+	private colorMessage(message: IFormattedLogMessage): string {
+		let startColor;
+		switch(message.type.toUpperCase()) {
+			case 'ERROR': startColor = Colors.default.FgRed; break;
+			case 'DEBUG': startColor = Colors.default.FgYellow; break;
+			case 'INFO': startColor = Colors.default.Reset; break;
+			case 'SUCCESS': startColor = Colors.default.FgGreen; break;
+			default: startColor = Colors.default.Reset; break;
+		}
+		return `${startColor}[${message.type}] ${message.message}${Colors.default.Reset}`;
 	}
 	public async log(message: string, filter: LogFilter = LogFilter.Info): Promise<void> {
 		// New Message
@@ -98,7 +112,9 @@ export class Logger {
 		}
 		
 		if (this.filters && this.filters.includes(filter)) {
-			writeLine(`${this.resolveColor(filter)}[${formattedMessage.type}] ${formattedMessage.message}${Colors.default.Reset}`);
+			writeLine('---------------------------');
+			writeLine(this.colorMessage(formattedMessage));
+			writeLine('---------------------------');
 		}
 		this.rateLimiter.add(async () => {
 			await this.v2Log(formattedMessage);
@@ -107,9 +123,7 @@ export class Logger {
 	}
 	public logS(message: string, filter: LogFilter = LogFilter.Info): void {
 		// tslint:disable-next-line: no-floating-promises
-		writeLine('---------------------------');
 		this.log(message, filter);
-		writeLine('---------------------------');
 	}
 	public logDirectory() {
 		return path.relative(process.cwd(), this.logFileLocation);

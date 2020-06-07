@@ -2,6 +2,10 @@ import { Message, Permissions, PermissionString, GuildMember, User } from 'disco
 import { CommandError } from '../ext/errorParser';
 import CommandHandler from '../ext/CommandHandler';
 import ExtendedClient from './ExtendedClient';
+import { LogFilter } from './logger';
+import { isNullOrUndefined } from 'util';
+
+// TODO: Add Additional Debugging to Property Checks
 
 interface IRequiredProperties {
 	[baseObject: string]: IRecursiveProperty;
@@ -51,21 +55,24 @@ class ExtendedClientCommand {
 	}
 	public async Execute(message: Message, ...args: string[]): Promise<ICommandResult> {
 		// Pre Run
-
-		if (!this.checkProperties(message) || !this.checkProperties(this.client) || !this.ExtendedPropertyCheck()) {
-			return {
-				success: false,
-				error: new CommandError('MISSING_PROPERTIES'),
-			};
-		}
-
 		if (!this.validChannel(message)) {
 			return {
 				success: false,
 				error: new CommandError('INVALID_CHANNEL'),
 			};
 		}
-
+		if (!this.verifyArguments(...args)) {
+			return {
+				success: false,
+				error: new CommandError('INVALID_ARGUMENT_LENGTH'),
+			};
+		}
+		if (!this.checkProperties(message) || !this.checkProperties(this.client) || !this.ExtendedPropertyCheck()) {
+			return {
+				success: false,
+				error: new CommandError('MISSING_PROPERTIES'),
+			};
+		}
 		if (!this.validPermissions(message)) {
 			return {
 				success: false,
@@ -73,13 +80,7 @@ class ExtendedClientCommand {
 			};
 		}
 
-		if (!this.verifyArguments(...args)) {
-			return {
-				success: false,
-				error: new CommandError('INVALID_ARGUMENT_LENGTH'),
-			};
-		}
-
+		this.client.logger.logS(`Command - ${this.name} Executed by ${message.author.tag}(${message.author.id})`, 3);
 		try {
 			const exitCode = await this.Run(message, ...args);
 			return exitCode || { success: true };
@@ -100,11 +101,10 @@ class ExtendedClientCommand {
 	}
 
 	private propertyIsDefined(obj: Record<string, any>, property: string, requiredValue?: any): boolean {
-		if (!obj) return false;
-		const objectProperty = Object.entries(obj).find(([prop]) => prop === property); // No Need for Filter as there can only be 1 or 0 Properties
-		if (!objectProperty) return false;
-		if (!objectProperty[1]) return false;
-		if (requiredValue && objectProperty[1] !== requiredValue) return false;
+		if (!obj) return false; // If No Base Object
+		const objectProperty = obj[property];
+		if (isNullOrUndefined(objectProperty)) return false; // If Property has no value
+		if (!isNullOrUndefined(requiredValue) && objectProperty !== requiredValue) return false; // if we are checking if it has an required value which isnt null or undef
 		return true;
 	}
 	private checkProperties(obj: Record<string, any>): boolean {
@@ -118,23 +118,10 @@ class ExtendedClientCommand {
 			for (const propertyName in requiredProperties) {
 				const propertyToCheck = requiredProperties[propertyName];
 				if (typeof propertyToCheck === 'object') {
-					if (!this.recursivePropertyCheck(obj[propertyName], propertyToCheck)) {
-						this.client.logger.logS(
-							`Object: ${JSON.stringify(obj)}\n Checking Object ${
-								obj[propertyName]
-							}\nAgainst: ${propertyToCheck}`,
-						);
-						return false;
-					}
+					if (!this.recursivePropertyCheck(obj[propertyName], propertyToCheck)) return false;
+					
 				} else {
-					if (!this.propertyIsDefined(obj, propertyName, propertyToCheck)) {
-						this.client.logger.logS(
-							`Object: ${JSON.stringify(
-								obj,
-							)}\n Checking PropertyName ${propertyName}\nAgainst: ${propertyToCheck}`,
-						);
-						return false;
-					}
+					if (!this.propertyIsDefined(obj, propertyName, propertyToCheck)) return false;
 				}
 			}
 			return true;

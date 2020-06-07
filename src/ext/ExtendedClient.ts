@@ -55,7 +55,7 @@ export default class ExtendedClient extends Client {
 			commandDirectory: this.settings.commandDir,
 			LogDirectory: 'logs' // Change Config File For Different Path
 		});
-		this.logger = new Logger(this.DynamicPaths.LoggingFolder, [LogFilter.Info, LogFilter.Debug, LogFilter.Error], true);
+		this.logger = new Logger(this.DynamicPaths.LoggingFolder, [LogFilter.Info, LogFilter.Debug, LogFilter.Error, LogFilter.Success], true);
 		this.databaseClient = new Database(
 			{
 				database: this.settings.database.database,
@@ -115,14 +115,18 @@ export default class ExtendedClient extends Client {
 			try{
 				this.logger.logS(`Loading Command File: ${path.join(this.DynamicPaths.CommandFolder.Relative, fileName)}`, 1);
 				// eslint-disable-next-line @typescript-eslint/no-var-requires
-				const commandFile: typeof ExtendedClientCommand = require(`${path.join(this.DynamicPaths.CommandFolder.Absolute, fileName)}`).default;
-				this.commandHandler.AddCommand(commandFile);
+				const commandFile: typeof ExtendedClientCommand | typeof ExtendedClientCommand[] = require(`${path.join(this.DynamicPaths.CommandFolder.Absolute, fileName)}`).default;
+				if(Array.isArray(commandFile))
+					for(const command of commandFile) {
+						this.commandHandler.AddCommand(command);
+					}
+				else this.commandHandler.AddCommand(commandFile);
 			}
 			catch(e) {
 				this.logger.logS(`Failed to Load Command File: ${path.join(this.DynamicPaths.CommandFolder.Absolute, fileName)}`, 2);
 			}	
 		}
-		this.logger.logS(`${commandFiles.length} Command Files Loaded Successfully`);
+		this.logger.logS(`${commandFiles.length} Command Files Loaded`, 3);
 	}
 	public RandomPresence(): void {
 		// ONLY CALL ONCE
@@ -230,46 +234,30 @@ export default class ExtendedClient extends Client {
 
 	private handleEvent<K extends keyof ClientEvents>(eventName: K, listener: (...args: ClientEvents[K]) => void, ...args: ClientEvents[K]): void {
 		const eventReceived = Date.now();
-		const eventStatus: {
-			message: string;
-			error?: Error;
-		} = {
-			message: 'NO_MESSAGE',
-		};
+		let eventError: Error | null = null;
 		try {
 			listener(...args);
-			eventStatus.message = `${eventName} Completed Successfully`;
 		} catch (e) {
-			eventStatus.message = `${eventName} Failed to Complete`;
-			eventStatus.error = new Error(`${eventName}`);
+			eventError = new Error(`${eventName}`);
 		}
 		const eventTime = Date.now() - eventReceived;
 		this.logger.logS(
-			`[EVENT] Time To Execute: ${eventTime}ms\n${eventStatus.message}${
-				eventStatus.error ? `\n${JSON.stringify(eventStatus.error)}` : ''
+			`[EVENT - ${eventName.toUpperCase()}] Time To Execute: ${eventTime}ms${
+				eventError ? `\n${JSON.stringify(eventError)}` : ''
 			}`,
-			eventStatus.error ? 2 : 1,
+			eventError ? 2 : 1,
 		);
 	}
-
-	private passOn<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this {
-		this.logger.logS(`Adding (On) Listener For Discord Event: ${event}`, 1);
-		super.on(event, (...args: ClientEvents[K]) => {
-			this.handleEvent(event, listener, ...args);
-		});
-		return this;
-	}
-	private passOnce<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this {
-		this.logger.logS(`Adding (Once) Listener For Discord Event: ${event}`, 1);
-		super.once(event, (...args: ClientEvents[K]) => {
-			this.handleEvent(event, listener, ...args);
-		});
-		return this;
-	}
 	public on<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this {
-		return this.passOn(event, listener);
+		this.logger.logS(`[LISTENER - On] Added Listener For Event: ${event}`, 1);
+		return super.on(event, (...args: ClientEvents[K]) => {
+			this.handleEvent(event, listener, ...args);
+		});
 	}
 	public once<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this {
-		return this.passOnce(event, listener);
+		this.logger.logS(`[LISTENER - Once] Added Listener For Event: ${event}`, 1);
+		return super.once(event, (...args: ClientEvents[K]) => {
+			this.handleEvent(event, listener, ...args);
+		});
 	}
 }

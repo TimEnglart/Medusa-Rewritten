@@ -15,12 +15,11 @@ class WebServer {
 			.get('/register', (req, res) => {
 				res.status(200).send('REGSIUTER!');
 			})
-			.get('/api/logs', (req, res) => {
-				const logFile = discordInstance.logger.returnLogFile().then((r: any) => {
-					res.set('Access-Control-Expose-Headers', 'Access-Control-Allow-Origin');
-					res.set('Access-Control-Allow-Origin', '*');
-					res.status(200).send(JSON.parse(r));
-				});
+			.get('/api/logs', async (req, res) => {
+				const logFile = await discordInstance.logger.returnLogFile();
+				res.set('Access-Control-Expose-Headers', 'Access-Control-Allow-Origin');
+				res.set('Access-Control-Allow-Origin', '*');
+				res.status(200).send(JSON.parse(logFile));
 			})
 
 			.listen(port || 3000, () => console.log(`Example app listening on port ${port || 3000}!`));

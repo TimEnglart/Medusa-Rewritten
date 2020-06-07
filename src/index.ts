@@ -45,7 +45,6 @@ discordBot.on('message', async (message) => {
 
 	// Do Xp If in A Guild Channel
 	if (message.channel && message.channel.type !== 'dm' && message.member) {
-		// yeet await doXp(message.member);
 		const expData = await discordBot.experienceHandler.GiveExperience(message.author.id);
 		if (expData.levelUps.length) {
 			for (const levelUp of expData.levelUps) {
@@ -161,7 +160,7 @@ discordBot.on('guildMemberAdd', async(member) => {
 			.setThumbnail(member.user.avatarURL() || '')
 			.setColor('#00dde0')
 			.addFields(
-				{ name: 'Name', value: `${member.user.tag} | ${member.displayName}`, inline: true },
+				{ name: 'Name', value: `${member.user.tag} | ${member.displayName} (${member.id})`, inline: true },
 				{ name: 'Created', value: `${member.user.createdAt}`, inline: false });
 		const channel = member.guild.channels.resolve(eventChannel[0].text_channel_id) as TextChannel | null;
 		if(channel) await channel.send(`**Guardian ${member.user} has joined ${member.guild}!**`, botEmbed);
@@ -189,8 +188,9 @@ discordBot.on('guildMemberRemove', async (member) => {
 			.setThumbnail(member.user.avatarURL() || '')
 			.setColor('#ba0526')
 			.addFields(
-				{ name: 'Name', value: `${member.user.tag} | ${member.displayName}`, inline: true },
-				{ name: 'First Joined', value:`${member.joinedAt}`, inline: false })
+				{ name: 'Name', value: `${member.user.tag} | ${member.displayName} (${member.id})`, inline: true },
+				{ name: 'First Joined', value: `${member.joinedAt}`, inline: false },
+			);
 		const channel = member.guild.channels.resolve(eventChannel[0].text_channel_id) as TextChannel | null;
 		if(channel) await channel.send(`**Guardian ${member.user} has left ${member.guild}!**`, botEmbed);
 	}
@@ -204,98 +204,17 @@ discordBot.on('guildMemberRemove', async (member) => {
 
 discordBot.on('voiceStateUpdate', async (previousVoiceState, newVoiceState) => {
 	if(newVoiceState.channel)
-		if(discordBot.TempChannelHandler.isMasterTempChannel(newVoiceState.channel)) {
+	{
+		if (discordBot.TempChannelHandler.isMasterTempChannel(newVoiceState.channel)) { // Do Temp Channel
 			const tempChannel = await discordBot.TempChannelHandler.AddTempChannel(newVoiceState.channel);
 			await newVoiceState.setChannel(tempChannel);
 		}
+		discordBot.experienceHandler
+	}
+		
 	if(previousVoiceState.channel)
-		if(discordBot.TempChannelHandler.isTempChannel(previousVoiceState.channel))
-			discordBot.TempChannelHandler.RemoveTempChannel(previousVoiceState.channel);
-	const attemptDeleteChannel = async (channel: VoiceChannel | null): Promise<void> => {
-		// If New Temp Channel is Empty
-		if (channel && !channel.members.size) {
-			// See if Channel is a Temp Channel
-			const tempChannels = await discordBot.databaseClient.query<ITempChannelResponse>(
-				`SELECT * FROM G_Temp_Channels WHERE voice_channel_id = ${channel.id} AND guild_id = ${channel.guild.id}`,
-			);
-				// If Channel is In Database
-			if (tempChannels.length) {
-				await discordBot.databaseClient.query<ITempChannelResponse>(
-					`DELETE FROM G_Temp_Channels WHERE voice_channel_id = ${channel.id} AND guild_id = ${channel.guild.id}`,
-				);
-				// Ensure Right Channel is Deleted
-				const tempChannel = channel.guild.channels.resolve(
-					tempChannels[0].voice_channel_id,
-				) as VoiceChannel | null;
-				if (tempChannel) {
-					await tempChannel.delete('Dynamic Channel Destroyed');
-					discordBot.logger.logS(
-						`Deleting Temporary Channel: ${tempChannel.name}(${tempChannel.id})`,
-						LogFilter.Debug,
-					);
-				}
-			}
-		}
-	};
-
-	const newUserChannel = newVoiceState.channel;
-
-	if (!newVoiceState.member) return; //
-
-	// If User has Joined A Channel
-	if (newUserChannel) {
-		// Check If User is **NOT** Getting Xp
-		if (!discordBot.experienceHandler.VoiceChannelOccupants[newVoiceState.member.id]) {
-			// Start Xp Tick and Add to Tracking List
-			discordBot.experienceHandler.VoiceChannelOccupants[newVoiceState.member.id] = {channelId: newUserChannel.id, time: Date.now() };
-			//await exp.voiceChannelXp(newVoiceState.member || undefined, 25, discordBot);
-		}
-		// See If Channel Joined is a Tempory Channel Master
-		const isTempChannelMaster = (
-			await discordBot.databaseClient.query<ITempChannelMasterResponse>(
-				`SELECT * FROM G_Master_Temp_Channels WHERE voice_channel_id = ${newUserChannel.id} AND guild_id = ${newVoiceState.guild.id}`,
-			)
-		).length;
-		if (isTempChannelMaster) {
-			// Channel is A Tempory Master
-
-			// Regex to Check if String is an Emoji
-			// let emojidetection = /(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff]|[\u0023-\u0039]\ufe0f?\u20e3|\u3299|\u3297|\u303d|\u3030|\u24c2|\ud83c[\udd70-\udd71]|\ud83c[\udd7e-\udd7f]|\ud83c\udd8e|\ud83c[\udd91-\udd9a]|\ud83c[\udde6-\uddff]|[\ud83c[\ude01-\ude02]|\ud83c\ude1a|\ud83c\ude2f|[\ud83c[\ude32-\ude3a]|[\ud83c[\ude50-\ude51]|\u203c|\u2049|[\u25aa-\u25ab]|\u25b6|\u25c0|[\u25fb-\u25fe]|\u00a9|\u00ae|\u2122|\u2139|\ud83c\udc04|[\u2600-\u26FF]|\u2b05|\u2b06|\u2b07|\u2b1b|\u2b1c|\u2b50|\u2b55|\u231a|\u231b|\u2328|\u23cf|[\u23e9-\u23f3]|[\u23f8-\u23fa]|\ud83c\udccf|\u2934|\u2935|[\u2190-\u21ff])/g; // var emojidetection2 = /[\u{1f300}-\u{1f5ff}\u{1f900}-\u{1f9ff}\u{1f600}-\u{1f64f}\u{1f680}-\u{1f6ff}\u{2600}-\u{26ff}\u{2700}-\u{27bf}\u{1f1e6}-\u{1f1ff}\u{1f191}-\u{1f251}\u{1f004}\u{1f0cf}\u{1f170}-\u{1f171}\u{1f17e}-\u{1f17f}\u{1f18e}\u{3030}\u{2b50}\u{2b55}\u{2934}-\u{2935}\u{2b05}-\u{2b07}\u{2b1b}-\u{2b1c}\u{3297}\u{3299}\u{303d}\u{00a9}\u{00ae}\u{2122}\u{23f3}\u{24c2}\u{23e9}-\u{23ef}\u{25b6}\u{23f8}-\u{23fa}]/gu
-			// Get Last Letter of Channel Name
-			// let lastLetter = newUserChannel.name.substr(-2); // Dont Know Why 2.. maybe some blank or newline char
-			// ^^^^^Can Probably Remove as Emoji isnt Very Important...
-
-			// Clone Current Voice Channel as a Temporary Channel
-			const clonedChannel = await newUserChannel.clone({
-				name: `${newVoiceState.member!.displayName}`,
-				reason: 'Dynamic Channel Created',
-			});
-
-			// Set Members Voice Channel to New Temp Channel
-			await newVoiceState.setChannel(clonedChannel, 'Moving to Temp Channel');
-
-			discordBot.logger.logS(
-				`Created Temporary Channel: ${clonedChannel.name}(${clonedChannel.id})\nUser:${
-					newVoiceState.member!.id
-				}`,
-				LogFilter.Debug,
-			);
-			// Add Clone to Current Temp Channel List
-			await discordBot.databaseClient.query(
-				`INSERT IGNORE INTO G_Temp_Channels VALUES (${clonedChannel.guild.id}, ${clonedChannel.id})`,
-			);
-
-			// Wait 10 Seconds. Allow for Latency as If User Doesnt Successfully Join Channel VoiceState Doesnt Trigger
-			setTimeout(async () => {
-				await attemptDeleteChannel(clonedChannel);
-			}, 10000);
-		}
-	}
-
-	// If User Has Left a Voice Channel
-	if (previousVoiceState) {
-		await attemptDeleteChannel(previousVoiceState.channel);
-	}
+		if(discordBot.TempChannelHandler.isTempChannel(previousVoiceState.channel) && previousVoiceState.channel.members.size === 0)
+			discordBot.TempChannelHandler.DeleteEmptyChannel(previousVoiceState.channel);
 });
 
 discordBot.on('messageReactionAdd', async (reaction, user) => {
@@ -311,7 +230,7 @@ discordBot.on('messageReactionRemove', async (reaction, user) => {
 
 discordBot.on('ready', async () => {
 	if (!discordBot.user) return;
-	await discordBot.user.setActivity(`BOOT SEQUENCE INITIALIZATION`, { type: 'CUSTOM_STATUS' });
+	await discordBot.user.setActivity(`BOOT SEQUENCE INITIALIZATION`, { type: 'WATCHING' });
 
 	await discordBot.PrimeDatabase();
 	await discordBot.CacheAndCleanUp();
@@ -325,7 +244,7 @@ discordBot.on('ready', async () => {
 		discordBot.logger.logS('DEBUG MODE ENABLED', 1);
 	}
 
-	await discordBot.user.setActivity(`READY`, { type: 'CUSTOM_STATUS' });
+	await discordBot.user.setActivity(`READY`, { type: 'PLAYING' });
 	discordBot.logger.logS(`COMPLETED ALL BOOT SEQUENCES`);
 	discordBot.logger.logS(`${discordBot.user.username} is Online!`)
 });
