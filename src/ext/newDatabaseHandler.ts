@@ -23,14 +23,14 @@ class MongoDBHandler {
 	public async connect(db?: string): Promise<Db> {
 		// hold an active connection for 3 mins?? to prevent reconnect overhead
 		try {
-			if (!this.client.isConnected() || !this.connectionTimeout) {
+			if (!this.client.isConnected() /* || !this.connectionTimeout*/) {
 				await this.client.connect();
 				this.logger.logS('Connected To MongoDB', LogFilter.Debug);
 				// eslint-disable-next-line @typescript-eslint/no-this-alias
-				const selfRef = this;
-				this.connectionTimeout = setTimeout(() => {
-					selfRef.disconnect();
-				}, 180000);
+				// const selfRef = this;
+				// this.connectionTimeout = setTimeout(() => {
+				// 	selfRef.disconnect();
+				// }, 180000);
 			}
 			if (db && !this.activeConnections[db]) {
 				this.activeConnections[db] = {
@@ -41,7 +41,7 @@ class MongoDBHandler {
 		} catch (e) {
 			// Failed to Connect
 			// Log or something
-			this.disconnect(true);
+			// this.disconnect(true);
 			throw new Error('FAILED_DB_CONNECT');
 		}
 	}
