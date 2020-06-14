@@ -218,6 +218,8 @@ export default class ExtendedClient extends Client {
 		}
 		this.logger.logS(`Cached All Message Reactions`, LogFilter.Debug);
 
+		await this.TempChannelHandler.UpdateFromDatabase();
+		
 		const tempChannelCollection = await this.nextDBClient.getCollection('temporaryChannels');
 		// Check All Existing Temporary Channels & Delete if Empty
 		for await (const tempChannel of tempChannelCollection.find()) {

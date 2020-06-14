@@ -67,7 +67,7 @@ export default class DisableCommand extends ExtendedClientCommand {
 		if (foundMessageChannel && foundMessage) {
 			const emoji = message.guild.emojis.resolve(emojiInfo.id || emojiInfo.name);
 			if (!emoji) return;
-			if (this.client.ReactionRoleHandler.SetupReactionRole(message, role, emoji)) 
+			if (this.client.ReactionRoleHandler.SetupReactionRole(foundMessage, role, emoji)) 
 				await statusMessage.edit('', RichEmbedGenerator.successEmbed('Successfully Linked Reaction Role to Message', `...`));
 			else
 				await statusMessage.edit('', RichEmbedGenerator.notifyEmbed('Reaction Role Already Linked to Message', `...`));

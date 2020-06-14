@@ -8,7 +8,7 @@ import RichEmbedGenerator from "../ext/RichEmbeds";
 export default class PrintWelcomeMessage extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {
 		super(commandHandler);
-		this.name = 'welcome';
+		this.name = 'setprefix';
 		this.description = 'Sets the Guilds Bot Command Prefix';
 		this.environments = ['text', 'dm'];
 		this.expectedArguments = [{ name: 'prefix', optional: false, example: '*' }];
