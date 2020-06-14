@@ -14,6 +14,7 @@ import TempChannelHandler from "./TempChannelHandler";
 import ReactionRoleHandler from "./ReactionRoleHandler";
 import ExtendedClientCommand from "./CommandTemplate";
 import * as path from 'path';
+import { MongoDBHandler } from "./newDatabaseHandler";
 
 interface IExtendedClientStaticPaths {
 	SettingsFile: string;
@@ -35,7 +36,7 @@ export default class ExtendedClient extends Client {
 	public settings: ISettingsTemplate;
 	public experienceHandler: ExperienceHandler;
 	public logger: Logger;
-	public databaseClient: Database;
+	public nextDBClient: MongoDBHandler;
 	public webServer: WebServer;
 	public scoreBook: ScoreBook;
 	public bungieApiRequester: BungieAPIRequester;
@@ -47,29 +48,20 @@ export default class ExtendedClient extends Client {
 	constructor(options?: ClientOptions) {
 		super(options);
 		// Extended Client Stuff Here
-		if (!require.main) throw new Error("Unable to Resolve Working Directory");
+		if (!require.main) throw new Error('Unable to Resolve Working Directory');
 		this.BasePaths = this.ResolveBasePaths();
 		if (!existsSync(this.BasePaths.SettingsFile)) throw new Error('No Settings Provided For Bot');
 		this.settings = require(this.BasePaths.SettingsFile);
 		this.DynamicPaths = this.ResolveDynamicPaths({
 			commandDirectory: this.settings.commandDir,
-			LogDirectory: 'logs' // Change Config File For Different Path
+			LogDirectory: 'logs', // Change Config File For Different Path
 		});
-		this.logger = new Logger(this.DynamicPaths.LoggingFolder, [LogFilter.Info, LogFilter.Debug, LogFilter.Error, LogFilter.Success], true);
-		this.databaseClient = new Database(
-			{
-				database: this.settings.database.database,
-				host: this.settings.database.hostname,
-				user: this.settings.database.username,
-				password: this.settings.database.password,
-				port: this.settings.database.port,
-				connectionLimit: 20,
-				supportBigNumbers: true,
-				bigNumberStrings: true,
-				compress: true,
-			},
-			this.logger,
+		this.logger = new Logger(
+			this.DynamicPaths.LoggingFolder,
+			[LogFilter.Info, LogFilter.Debug, LogFilter.Error, LogFilter.Success],
+			true,
 		);
+		this.nextDBClient = new MongoDBHandler(this.logger, this.settings.database.mongo.uri);
 		this.commandHandler = new CommandHandler(this);
 		this.experienceHandler = new ExperienceHandler(this);
 		this.webServer = new WebServer(this);
@@ -101,30 +93,50 @@ export default class ExtendedClient extends Client {
 		return {
 			CommandFolder: {
 				Relative: overrides?.commandDirectory || 'cmds',
-				Absolute: path.resolve(this.BasePaths.WorkingPath, overrides?.commandDirectory || 'cmds'),
+				Absolute: path.resolve(
+					this.BasePaths.WorkingPath,
+                                   overrides?.commandDirectory || 'cmds',
+				),
 			},
 			LoggingFolder: path.join(this.BasePaths.WorkingPath, overrides?.LogDirectory || 'logs'),
 		};
 	}
-				
 
 	public LoadCommands(): void {
 		this.logger.logS(`Command Directory: ${this.DynamicPaths.CommandFolder.Absolute}`, 1);
-		const commandFiles = readdirSync(this.DynamicPaths.CommandFolder.Absolute).filter((f) => f.split('.').pop() === 'js');
+		const commandFiles = readdirSync(this.DynamicPaths.CommandFolder.Absolute).filter(
+			(f) => f.split('.').pop() === 'js',
+		);
 		for (const fileName of commandFiles) {
-			try{
-				this.logger.logS(`Loading Command File: ${path.join(this.DynamicPaths.CommandFolder.Relative, fileName)}`, 1);
+			try {
+				this.logger.logS(
+					`Loading Command File: ${path.join(
+						this.DynamicPaths.CommandFolder.Relative,
+						fileName,
+					)}`,
+					1,
+				);
 				// eslint-disable-next-line @typescript-eslint/no-var-requires
-				const commandFile: typeof ExtendedClientCommand | typeof ExtendedClientCommand[] = require(`${path.join(this.DynamicPaths.CommandFolder.Absolute, fileName)}`).default;
-				if(Array.isArray(commandFile))
-					for(const command of commandFile) {
+				const commandFile:
+				| typeof ExtendedClientCommand
+				| typeof ExtendedClientCommand[] = require(`${path.join(
+					this.DynamicPaths.CommandFolder.Absolute,
+					fileName,
+				)}`).default;
+				if (Array.isArray(commandFile))
+					for (const command of commandFile) {
 						this.commandHandler.AddCommand(command);
 					}
 				else this.commandHandler.AddCommand(commandFile);
+			} catch (e) {
+				this.logger.logS(
+					`Failed to Load Command File: ${path.join(
+						this.DynamicPaths.CommandFolder.Absolute,
+						fileName,
+					)}`,
+					2,
+				);
 			}
-			catch(e) {
-				this.logger.logS(`Failed to Load Command File: ${path.join(this.DynamicPaths.CommandFolder.Absolute, fileName)}`, 2);
-			}	
 		}
 		this.logger.logS(`${commandFiles.length} Command Files Loaded`, 3);
 	}
@@ -150,15 +162,29 @@ export default class ExtendedClient extends Client {
 			this.logger.logS('Started Database Prime', LogFilter.Debug);
 			// Add All Missing Guilds & Users
 
-			await this.databaseClient.batch(`INSERT IGNORE INTO G_Connected_Guilds VALUES (?)`, [
-				[this.guilds.cache.map((guild) => [guild.id])],
-			]);
+			const guildCollection = await this.nextDBClient.getCollection('guilds');
+			await guildCollection.insertMany(this.guilds.cache.map((guild) => { return { _id: guild.id } }), {ordered: false});
+			const userCollection = await this.nextDBClient.getCollection('users');
 			for (const [, guild] of this.guilds.cache) {
-				await this.databaseClient.batch(`INSERT IGNORE INTO U_Connected_Users VALUES (?)`, [
-					[guild.members.cache.map((user) => [user.id])],
-				]);
+				try {
+					await userCollection.insertMany(
+						guild.members.cache.map((user) => {
+							return {
+								_id: user.id,
+								$addToSet: {
+									connectedGuilds: guild.id,
+								},
+							};
+						}),
+						{ ordered: true },
+					);
+				}
+				catch (e) {
+					// may fail due to multiple keys
+					this.logger.logS(`Failed to Add Record in Database Prime: ${e}`, LogFilter.Error);
+				}
 			}
-			const disabledCommands = await this.commandHandler.GetRemoteDisabledCommands();
+			const disabledCommands = Object.keys(this.commandHandler.DisabledCommands);
 			this.logger.logS(
 				`Finished Database Prime\n# Guilds: ${this.guilds.cache.size}\n# Disabled Commands: ${disabledCommands.length}`,
 				LogFilter.Debug,
@@ -167,19 +193,17 @@ export default class ExtendedClient extends Client {
 			this.logger.logS(`Database Prime Failed\n${e}`, LogFilter.Error);
 		}
 	}
-	public async CacheAndCleanUp(): Promise<void> {
-		const allReactionRoles = await this.databaseClient.query<IReactionRoleResponse>(
-			`SELECT * FROM G_Reaction_Roles`,
-		);
-		for (const reactionRole of allReactionRoles) {
+	public async CacheAndCleanUp(): Promise<void> { // move this to dedicated Classes
+		const reactionRoleCollection = await this.nextDBClient.getCollection('roleReactions');
+		for await (const reactionRole of reactionRoleCollection.find()) {
 			try {
-				const resolvedGuild = this.guilds.resolve(reactionRole.guild_id);
+				const resolvedGuild = this.guilds.resolve(reactionRole.guildId);
 				if (resolvedGuild) {
 					const resolvedTextChannel = resolvedGuild.channels.resolve(
-						reactionRole.channel_id,
+						reactionRole.channelId,
 					) as TextChannel | null;
 					if (resolvedTextChannel)
-						await resolvedTextChannel.messages.fetch(reactionRole.message_id, true);
+						await resolvedTextChannel.messages.fetch(reactionRole.messageId, true);
 					else {
 						// Cant Find Text Channel But Bot IS IN Guild
 						// this.logger.logS(``);
@@ -194,21 +218,20 @@ export default class ExtendedClient extends Client {
 		}
 		this.logger.logS(`Cached All Message Reactions`, LogFilter.Debug);
 
-		const existingTempChannels = await this.databaseClient.query<ITempChannelResponse>(
-			`SELECT * FROM G_Temp_Channels`,
-		);
+		const tempChannelCollection = await this.nextDBClient.getCollection('temporaryChannels');
 		// Check All Existing Temporary Channels & Delete if Empty
-		for (const tempChannel of existingTempChannels) {
-			const resolvedGuild = this.guilds.resolve(tempChannel.guild_id);
+		for await (const tempChannel of tempChannelCollection.find()) {
+			const resolvedGuild = this.guilds.resolve(tempChannel.guildId);
 			if (resolvedGuild) {
 				const resolvedVoiceChannel = resolvedGuild.channels.resolve(
-					tempChannel.voice_channel_id,
+					tempChannel.voiceChannelId,
 				) as VoiceChannel | null;
 				if (resolvedVoiceChannel) {
 					if (!resolvedVoiceChannel.members.size) {
-						await this.databaseClient.query<ITempChannelResponse>(
-							`DELETE FROM G_Temp_Channels WHERE guild_id = ${tempChannel.guild_id} AND channel_id = ${tempChannel.voice_channel_id}`,
-						);
+						await tempChannelCollection.deleteOne({
+							guildId: tempChannel.guildId,
+							voiceChannelId: tempChannel.voiceChannelId,
+						});
 						await resolvedVoiceChannel.delete('Remove Temp Channel');
 					} else {
 						// There are People in The Temp Voice Channel
@@ -232,7 +255,11 @@ export default class ExtendedClient extends Client {
 		return false;
 	}
 
-	private handleEvent<K extends keyof ClientEvents>(eventName: K, listener: (...args: ClientEvents[K]) => void, ...args: ClientEvents[K]): void {
+	private handleEvent<K extends keyof ClientEvents>(
+		eventName: K,
+		listener: (...args: ClientEvents[K]) => void,
+		...args: ClientEvents[K]
+	): void {
 		const eventReceived = Date.now();
 		let eventError: Error | null = null;
 		try {
@@ -248,13 +275,19 @@ export default class ExtendedClient extends Client {
 			eventError ? 2 : 1,
 		);
 	}
-	public on<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this {
+	public on<K extends keyof ClientEvents>(
+		event: K,
+		listener: (...args: ClientEvents[K]) => void,
+	): this {
 		this.logger.logS(`[LISTENER - On] Added Listener For Event: ${event}`, 1);
 		return super.on(event, (...args: ClientEvents[K]) => {
 			this.handleEvent(event, listener, ...args);
 		});
 	}
-	public once<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this {
+	public once<K extends keyof ClientEvents>(
+		event: K,
+		listener: (...args: ClientEvents[K]) => void,
+	): this {
 		this.logger.logS(`[LISTENER - Once] Added Listener For Event: ${event}`, 1);
 		return super.once(event, (...args: ClientEvents[K]) => {
 			this.handleEvent(event, listener, ...args);

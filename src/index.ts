@@ -45,7 +45,7 @@ discordBot.on('message', async (message) => {
 
 	// Do Xp If in A Guild Channel
 	if (message.channel && message.channel.type !== 'dm' && message.member) {
-		const expData = await discordBot.experienceHandler.GiveExperience(message.author.id);
+		const expData = await discordBot.experienceHandler.GiveExperience(message.author);
 		if (expData.levelUps.length) {
 			for (const levelUp of expData.levelUps) {
 				if (message.member.lastMessage) await message.member.lastMessage.react(levelUp.emoji.id);
@@ -64,10 +64,9 @@ discordBot.on('message', async (message) => {
 	}
 	
 	// Determine The Guild/Channel Prefix for Commands
-	const guildPrefix = await discordBot.databaseClient.query<IGuildPrefixResponse>(
-		`SELECT prefix FROM G_Prefix WHERE guild_id = ${message.guild ? message.guild.id : message.author.id}`,
-	);
-	const prefix = guildPrefix.length ? guildPrefix[0].prefix : discordBot.settings.defaultPrefix;
+	const guildCollection = await discordBot.nextDBClient.getCollection('guilds');
+	const guildPrefix = await guildCollection.findOne({ _id: message.guild ? message.guild.id : message.author.id });
+	const prefix = guildPrefix.prefix || discordBot.settings.defaultPrefix;
 
 	// Check if Sent Message Starts With the Servers Prefix
 	if (!message.content.startsWith(prefix)) return;
@@ -126,44 +125,53 @@ discordBot.on('warn' || 'debug', async info =>
 );
 
 discordBot.on('guildCreate', async (guild) => {
-	await discordBot.databaseClient.query<UpsertResult>(`INSERT IGNORE INTO G_Connected_Guilds VALUES(${guild.id})`);
+	const guildCollection = await discordBot.nextDBClient.getCollection('guilds');
+	await guildCollection.updateOne({ _id: guild.id }, { $set: { _id: guild.id } }, { upsert: true });
 	discordBot.logger.logS(
 		`Joined Guild: ${guild.name}(${guild.id})`,
 		LogFilter.Debug,
 	);
 });
 
-discordBot.on('guildMemberAdd', async(member) => {
+discordBot.on('guildMemberAdd', async (member) => {
 	if (!member.guild || !member.user) return; // wtf is this master update
 	
-	await discordBot.databaseClient.query<IConnectedUserResponse>(
-		`INSERT IGNORE INTO U_Connected_Users VALUES(${member.id})`,
+	const userCollection = await discordBot.nextDBClient.getCollection('users');
+	await userCollection.updateOne(
+		{ _id: member.id },
+		{
+			_id: member.id,
+			$addToSet: {
+				connectedGuilds: member.guild.id,
+			},
+		},
+		{ upsert: true },
 	);
 
 	// Enable User in Xp Database
-	await discordBot.experienceHandler.connectUser(member.id);
+	await discordBot.experienceHandler.connectUser(member);
 	// Assign Default Server Role
-	const autoRole = await discordBot.databaseClient.query<IAutoRoleResponse>(
-		`SELECT * FROM G_Auto_Role WHERE guild_id = ${member.guild.id}`,
-	);
-	if (autoRole.length && member.roles) {
-		const role = member.guild.roles.resolve(autoRole[0].role_id);
+	const guildCollection = await discordBot.nextDBClient.getCollection('guilds');
+	const guild = await guildCollection.findOne({
+		_id: member.guild.id
+	});
+
+	if (guild && guild.autoRoleId && member.roles) {
+		const role = member.guild.roles.resolve(guild.autoRoleId);
 		if (role) await member.roles.add(role);
 	}
 	// Send User Joined Message to Moderator Channel
-	const eventChannel = await discordBot.databaseClient.query<ILogChannelResponse>(
-		`SELECT text_channel_id FROM G_Event_Log_Channel WHERE guild_id = ${member.guild.id}`,
-	);
-	if (eventChannel.length) {
+	if (guild && guild.eventChannelId) {
 		const botEmbed = new MessageEmbed()
 			.setTitle('Displaying New User Profile')
 			.setThumbnail(member.user.avatarURL() || '')
 			.setColor('#00dde0')
 			.addFields(
 				{ name: 'Name', value: `${member.user.tag} | ${member.displayName} (${member.id})`, inline: true },
-				{ name: 'Created', value: `${member.user.createdAt}`, inline: false });
-		const channel = member.guild.channels.resolve(eventChannel[0].text_channel_id) as TextChannel | null;
-		if(channel) await channel.send(`**Guardian ${member.user} has joined ${member.guild}!**`, botEmbed);
+				{ name: 'Created', value: `${member.user.createdAt}`, inline: false },
+			);
+		const channel = member.guild.channels.resolve(guild.eventChannelId) as TextChannel | null;
+		if (channel) await channel.send(`**Guardian ${member.user} has joined ${member.guild}!**`, botEmbed);
 	}
 	discordBot.logger.logS(
 		`User: ${member.user.username}(${member.user.id}) Joined Guild: ${member.guild.name}(${
@@ -176,13 +184,13 @@ discordBot.on('guildMemberAdd', async(member) => {
 discordBot.on('guildMemberRemove', async (member) => {
 	if (!member.guild || !member.user) return; // wtf is this master update
 	// Disable User in Xp Database
-	await discordBot.experienceHandler.disconnectUser(member.id);
+	await discordBot.experienceHandler.disconnectUser(member);
 	// Send User Left Message to Moderator Channel
-
-	const eventChannel = await discordBot.databaseClient.query(
-		`SELECT text_channel_id FROM G_Event_Log_Channel WHERE guild_id = ${member.guild.id}`,
-	);
-	if (eventChannel.length) {
+	const guildCollection = await discordBot.nextDBClient.getCollection('guilds');
+	const guild = await guildCollection.findOne({
+		_id: member.guild.id,
+	});
+	if (guild && guild.eventChannelId) {
 		const botEmbed = new MessageEmbed()
 			.setTitle('Guardian Down! <:down:513403773272457231>')
 			.setThumbnail(member.user.avatarURL() || '')
@@ -191,8 +199,8 @@ discordBot.on('guildMemberRemove', async (member) => {
 				{ name: 'Name', value: `${member.user.tag} | ${member.displayName} (${member.id})`, inline: true },
 				{ name: 'First Joined', value: `${member.joinedAt}`, inline: false },
 			);
-		const channel = member.guild.channels.resolve(eventChannel[0].text_channel_id) as TextChannel | null;
-		if(channel) await channel.send(`**Guardian ${member.user} has left ${member.guild}!**`, botEmbed);
+		const channel = member.guild.channels.resolve(guild.eventChannelId) as TextChannel | null;
+		if (channel) await channel.send(`**Guardian ${member.user} has left ${member.guild}!**`, botEmbed);
 	}
 	discordBot.logger.logS(
 		`User: ${member.user.username}(${member.user.id}) Left Guild: ${member.guild.name}(${
@@ -209,7 +217,6 @@ discordBot.on('voiceStateUpdate', async (previousVoiceState, newVoiceState) => {
 			const tempChannel = await discordBot.TempChannelHandler.AddTempChannel(newVoiceState.channel);
 			await newVoiceState.setChannel(tempChannel);
 		}
-		discordBot.experienceHandler
 	}
 		
 	if(previousVoiceState.channel)

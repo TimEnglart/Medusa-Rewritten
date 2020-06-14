@@ -24,7 +24,7 @@ export default class DisableCommand extends ExtendedClientCommand {
 		if (args.length) subject = Utility.LookupMember(message.guild, args.join(' ')) || message.member;
 		const statusMessage = await message.channel.send(`Currently Checking Medals for ${subject.displayName}`);
 		const awardedMedals = await this.client.MedalHandler.checkAllMedals(subject, true);
-		await this.client.MedalHandler.UnlockMedals(subject.id, awardedMedals);
+		await this.client.MedalHandler.UnlockMedals(subject.user, awardedMedals);
 		await statusMessage.edit(
 			awardedMedals.length
 				? `Successfully Added Medals for ${subject.displayName}:\n- ${awardedMedals.map((x) => x.name).join('\n- ')}`

@@ -1,33 +1,31 @@
-import { MyRequester } from "./webClient";
-import BungieAPIRequester from "./BungieAPIRequester";
+import { MyRequester } from './webClient';
+import BungieAPIRequester from './BungieAPIRequester';
+import { GuildMember } from 'discord.js';
+import { Database } from './database';
 
-/*
+class DestinyAPIConnector {
+	/* Singleton Requester */
+	private static apiRequester: BungieAPIRequester;
+	private static getRequester(): BungieAPIRequester {
+		if (!DestinyAPIConnector.apiRequester) DestinyAPIConnector.apiRequester = new BungieAPIRequester();
+		return DestinyAPIConnector.apiRequester;
+	}
+
+	//public requestResource<T = any>(path: string): T {}
+	//public sendResource<T = any, K = any>(path: string, data: K): T {}
+}
+
 class DiscordDestinyPlayer {
 	public profileName: BNetProfile | null;
+	private apiRequester: BungieAPIRequester;
 	constructor(public user: GuildMember | string, public databaseClient?: Database) {
+		this.apiRequester = new BungieAPIRequester();
 		this.profileName = this.resolveName(typeof user === 'string' ? user : user.displayName);
 		if (!this.profileName) throw new Error('NO NAME FOUND');
 	}
-	public getBungieAccount() {
-		return new Promise(async (resolve, reject) => {
-			try {
-				if (!this.profileName) throw new Error('No Name');
-				const requester = new MyRequester({
-					hostname: 'www.bungie.net',
-					port: 443,
-					path: `/Destiny2/SearchDestinyPlayer/${4}/${this.profileName.name}/`,
-					method: 'GET',
-					headers: {
-						'X-API-Key': Settings.bungie.apikey,
-					},
-					doNotFollowRedirect: false,
-					responseType: 'JSON',
-				});
-				return resolve(requester.request());
-			} catch (e) {
-				return reject(e);
-			}
-		});
+	public async getBungieAccount() {
+		if (!this.profileName) throw new Error('No Name');
+		return this.apiRequester.SendRequest(`/Destiny2/SearchDestinyPlayer/${4}/${this.profileName.name}/`);
 	}
 	private resolveName(username: string) {
 		const regexBNet = (): RegExpExecArray | null => {
@@ -58,7 +56,7 @@ class DiscordDestinyPlayer {
 		return bNetName;
 	}
 }
-*/
+
 interface BNetProfile {
 	name: string;
 	tag?: string;
@@ -163,76 +161,18 @@ interface IActivityDefinition {
 	redacted: boolean;
 	blacklisted: boolean;
 }
-/*
-// tslint:disable-next-line: max-classes-per-file
-class DestinyPlayer {
-	private static requester: BungieAPIRequester = new BungieAPIRequester();
-	public static lookup(data: DestinyPlayerLookup, components?: string[]): Promise<DestinyPlayer[]> {
-		return new Promise(async (resolve: (destinyPlayer: DestinyPlayer[]) => void, reject: (err: Error) => void) => {
-			try {
-				if (!data.membershipId && !data.displayName) throw new Error('No Data');
-				if (data.membershipId) {
-					const possibleProfiles: BungieResponse<any> | undefined = await this.requester.SendRequest('/Platform' +
-                        (data.membershipId
-                        	? `/Destiny2/${data.membershipType}/Profile/${data.membershipId}/?components=` +
-                              (components ? `${components.join(',')}` : '100')
-                        	: `/Destiny2/SearchDestinyPlayer/-1/${encodeURIComponent(data.displayName || '')}/`));
-					if(!possibleProfiles) return;
-					return resolve([new DestinyPlayer(possibleProfiles.Response)]);
-				} else {
-					const possibleProfiles: BungieResponse<DestinyProfilesResponse[]> | undefined = await this.requester.SendRequest('/Platform' +
-                        (data.membershipId
-                        	? `/Destiny2/${data.membershipType}/Profile/${data.membershipId}/?components=` +
-                              (components ? `${components.join(',')}` : '100')
-                        	: `/Destiny2/SearchDestinyPlayer/-1/${encodeURIComponent(data.displayName || '')}/`));
-					if(!possibleProfiles) return;
-					const profiles: DestinyPlayer[] = [];
-					for (const profile of possibleProfiles.Response) {
-						const player = await DestinyPlayer.lookup(profile, components);
-						if (player) profiles.push(player[0]);
-					}
-					return resolve(profiles);
-				}
-			} catch (e) {
-				return reject(e);
-			}
-		});
-	}
-	public parsedData: DestinyProfileResponse;
-	constructor(public data: any) {
-		this.parsedData = data as DestinyProfileResponse;
-	}
-	public get(key: string) {
-		// tslint:disable-next-line: no-string-literal
-		return this.data[key];
-	}
-	public characters(): Promise<DestinyCharacter[]> {
-		return new Promise(async (resolve: (destinyCharacters: DestinyCharacter[]) => void, reject) => {
-			const pendingCharacterRetrieval: DestinyCharacter[] = [];
-			for (const characterId of this.parsedData.profile.data.characterIds) {
-				try {
-					const character = await DestinyCharacter.lookup(this, characterId);
-					pendingCharacterRetrieval.push(character);
-				} catch (e) {}
-			}
-			return resolve(pendingCharacterRetrieval);
-		});
-	}
-}
 // tslint:disable-next-line: max-classes-per-file
 class DestinyCharacter {
 	private static requester: BungieAPIRequester = new BungieAPIRequester();
-	public static lookup(profile: DestinyPlayer, characterId: string | number): Promise<DestinyCharacter> {
-		return new Promise(
-			async (resolve: (destinyCharacter: DestinyCharacter) => void, reject: (err: Error) => void) => {
-				
-				const response: BungieResponse<DestinyCharacterResponse[]> | undefined = await this.requester.SendRequest(`/Platform/Destiny2/${profile.get('membershipType')}/Profile/${profile.get(
-					'',
-				)}/Character/${characterId}/`);
-				if(!response) return;
-				return resolve(new DestinyCharacter({}));
-			},
+	public static async lookup(
+		profile: DestinyPlayer,
+		characterId: string | number,
+	): Promise<DestinyCharacter | undefined> {
+		const response: BungieResponse<DestinyCharacterResponse[]> | undefined = await this.requester.SendRequest(
+			`/Platform/Destiny2/${profile.get('membershipType')}/Profile/${profile.get('')}/Character/${characterId}/`,
 		);
+		if (!response) return;
+		return new DestinyCharacter({});
 	}
 	private parsedData: DestinyProfileResponse;
 	constructor(private data: any) {
@@ -243,7 +183,66 @@ class DestinyCharacter {
 		return this.data[key];
 	}
 }
-*/
+// tslint:disable-next-line: max-classes-per-file
+class DestinyPlayer {
+	private static requester: BungieAPIRequester = new BungieAPIRequester();
+	public static async lookup(data: DestinyPlayerLookup, components?: string[]): Promise<DestinyPlayer[] | undefined> {
+		try {
+			if (!data.membershipId && !data.displayName) throw new Error('No Data');
+			if (data.membershipId) {
+				const possibleProfiles: BungieResponse<any> | undefined = await this.requester.SendRequest(
+					'/Platform' +
+                        (data.membershipId
+                        	? `/Destiny2/${data.membershipType}/Profile/${data.membershipId}/?components=` +
+                              (components ? `${components.join(',')}` : '100')
+                        	: `/Destiny2/SearchDestinyPlayer/-1/${encodeURIComponent(data.displayName || '')}/`),
+				);
+				if (!possibleProfiles) return;
+				return [new DestinyPlayer(possibleProfiles.Response)];
+			} else {
+				const possibleProfiles:
+				| BungieResponse<DestinyProfilesResponse[]>
+				| undefined = await this.requester.SendRequest(
+					'/Platform' +
+                        (data.membershipId
+                        	? `/Destiny2/${data.membershipType}/Profile/${data.membershipId}/?components=` +
+                              (components ? `${components.join(',')}` : '100')
+                        	: `/Destiny2/SearchDestinyPlayer/-1/${encodeURIComponent(data.displayName || '')}/`),
+				);
+				if (!possibleProfiles) return undefined;
+				const profiles: DestinyPlayer[] = [];
+				for (const profile of possibleProfiles.Response) {
+					const player = await DestinyPlayer.lookup(profile, components);
+					if (player) profiles.push(player[0]);
+				}
+				return profiles;
+			}
+		} catch (e) {
+			return e;
+		}
+	}
+	public parsedData: DestinyProfileResponse;
+	constructor(public data: any) {
+		this.parsedData = data as DestinyProfileResponse;
+	}
+	public get(key: string) {
+		// tslint:disable-next-line: no-string-literal
+		return this.data[key];
+	}
+	public async characters(): Promise<DestinyCharacter[] | undefined> {
+		const pendingCharacterRetrieval: DestinyCharacter[] = [];
+		for (const characterId of this.parsedData.profile.data.characterIds) {
+			try {
+				const character = await DestinyCharacter.lookup(this, characterId);
+				if (character) pendingCharacterRetrieval.push(character);
+			} catch (e) {
+				return undefined;
+			}
+		}
+		return pendingCharacterRetrieval;
+	}
+}
+
 interface DestinyProfileResponse {
 	profile: {
 		data: {
@@ -335,11 +334,4 @@ interface IActivityPlayer {
 	emblemHash: number;
 }
 
-export {
-	BungieResponse,
-	IActivityDefinition,
-	INightfallSubmission,
-	IActivityValues,
-	IActivityPlayer,
-	IActivityEntry,
-};
+export { BungieResponse, IActivityDefinition, INightfallSubmission, IActivityValues, IActivityPlayer, IActivityEntry };

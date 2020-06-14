@@ -60,12 +60,13 @@ class AntiRepost {
 			client.logger.logS(
 				`Content: ${message.content}\nAttachments: ${JSON.stringify(message.attachments)}\nHash: ${hex}`,
 			);
+			/*
 			const query = await client.databaseClient.query(`SELECT * FROM C_Meme_Lookup WHERE hash = '${hex}';`);
 			if (!query.length) {
 				await client.databaseClient.query(`INSERT INTO C_Meme_Lookup (hash, data) VALUES ('${hex}', NULL);`);
 			} else {
 				await message.reply('That was a Possible Repost');
-			}
+			}*/
 		}
 	}
 

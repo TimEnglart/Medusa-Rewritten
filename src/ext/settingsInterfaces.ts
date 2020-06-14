@@ -45,6 +45,9 @@ interface ISettingsTemplate {
 		database: string;
 		username: string;
 		password: string;
+		mongo: {
+			uri: string;
+		}
 	};
 	lighthouse: {
 		discordId: string;

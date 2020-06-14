@@ -37,18 +37,9 @@ export default class AutoRoleCommand extends ExtendedClientCommand {
 		if (!roleId) throw new CommandError('FAILED_ROLE_PARSE');
 		const role = message.guild.roles.resolve(roleId);
 		if (!role) throw new CommandError('NO_ROLE_FOUND');
-		const guildAutoRole = await this.client.databaseClient.query(
-			`SELECT * FROM G_Auto_Role WHERE guild_id = ${message.guild.id}`,
-		);
-		if (guildAutoRole.length) {
-			await this.client.databaseClient.query(
-				`UPDATE G_Auto_Role SET guild_id = ${message.guild.id}, role_id = ${roleId}`,
-			);
-		} else {
-			await this.client.databaseClient.query(
-				`INSERT INTO G_Auto_Role(guild_id, role_id) VALUES(${message.guild.id}, ${roleId})`,
-			);
-		}
+
+		const guildCollection = await this.client.nextDBClient.getCollection('guilds');
+		guildCollection.update({ _id: message.guild.id }, { autoRoleId: roleId }, { upsert: true });
 		await message.channel.send(`Success!`); // Update For Embed
 	}
 }

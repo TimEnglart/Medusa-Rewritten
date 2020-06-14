@@ -64,6 +64,7 @@ class ClanSync {
 						);
 					} else {
 						// Lookup Via Database
+						/*
 						const discordId = await this.discordInstance.databaseClient.query(
 							`SELECT user_id FROM U_Bungie_Account WHERE bungie_id = ${player.bungieNetUserInfo.membershipId}`,
 						);
@@ -76,7 +77,7 @@ class ClanSync {
 									`ADDED ROLE FROM DATABASE REGISTER:\n${player.destinyUserInfo.displayName}\n`,
 								);
 							}
-						}
+						}*/
 					}
 				} catch (e) {
 					this.discordInstance.logger.logS(

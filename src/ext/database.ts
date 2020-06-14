@@ -60,6 +60,14 @@ export class Database {
 		}
 		return [];
 	}
+
+	private resolveTable(query: string | QueryOptions): string | undefined {
+		const stringQuery = typeof(query) === 'string' ? query : query.sql,
+			splitQuery = stringQuery.split(' '); 
+		for(let i = 0; i < splitQuery.length; i++) { // pretty crude
+			if (splitQuery[i].toUpperCase() === 'FROM' && i + 1 < splitQuery.length) return splitQuery[i + 1]; // Get Word after FROM
+		}
+	}
 }
 export interface SqlQuery {
 	type: string;

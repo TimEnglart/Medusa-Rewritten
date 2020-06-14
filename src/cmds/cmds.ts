@@ -27,11 +27,11 @@ export default class AwardCommand extends ExtendedClientCommand {
 			throw new CommandError('DYNAMIC_PROPERTY_CHECK_FAILED');
 		if (!message.author) throw new CommandError('NO_AUTHOR'); // If Author is Needed
 		if (!this.client.user) throw new CommandError('NO_BOT_USER'); // If Bot Instance is Needed
-		const resolvedId = message.guild ? message.guild.id : message.author.id;
-		const response = await this.client.databaseClient.query(
-			`SELECT prefix FROM G_Prefix WHERE guild_id = ${resolvedId}`,
-		);
-		const prefix = response ? response[0].prefix : this.client.settings.defaultPrefix;
+		const guildCollection = await this.client.nextDBClient.getCollection('guilds');
+		const guildPrefix = await guildCollection.findOne({
+			_id: message.guild ? message.guild.id : message.author.id,
+		});
+		const prefix = guildPrefix.prefix || this.client.settings.defaultPrefix;
 		const botEmbed = new MessageEmbed()
 			.setTitle('List of Commands')
 			.setColor('#00dde0')

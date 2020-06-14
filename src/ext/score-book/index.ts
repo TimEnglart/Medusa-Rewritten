@@ -17,12 +17,12 @@ class ScoreBook {
 	}
 	private epoch?: Date;
 	private discordInstance: ExtendedClient;
-	private databaseClient: Database;
+	private databaseClient: any;
 	private requester: MyRequester;
 
 	constructor(discordInstance: ExtendedClient, epoch?: Date | string) {
 		this.discordInstance = discordInstance;
-		this.databaseClient = discordInstance.databaseClient;
+		this.databaseClient = {}; // REMOVE ME
 		this.requester = new MyRequester({
 			hostname: 'www.bungie.net',
 			port: 443,
@@ -167,7 +167,7 @@ class ScoreBook {
 				);
 			}
 			// Give Medal / XP
-			if (medal) await this.discordInstance.MedalHandler.UnlockMedals(winner.userId, [medal]);
+			// if (medal) await this.discordInstance.MedalHandler.UnlockMedals(winner.userId, [medal]);
 		}
 		// Update Winner Table
 		await this.databaseClient.query(

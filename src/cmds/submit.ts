@@ -33,6 +33,7 @@ export default class ExitBot extends ExtendedClientCommand {
 		if (!message.author || !this.client.user) throw new CommandError('DYNAMIC_PROPERTY_CHECK_FAILED');
 		if (!message.author) throw new CommandError('NO_AUTHOR'); // If Author is Needed
 		if (!this.client.user) throw new CommandError('NO_BOT_USER'); // If Bot Instance is Needed
+		/*
 		let activityId = null;
 		if (message.guild && message.guild.me && message.guild.me.hasPermission('MANAGE_MESSAGES'))
 			await message.delete();
@@ -198,5 +199,6 @@ export default class ExitBot extends ExtendedClientCommand {
 		}
 		// tslint:disable-next-line: no-floating-promises
 		pendingMessage.delete({ timeout: 20000 });
+		*/
 	}
 }

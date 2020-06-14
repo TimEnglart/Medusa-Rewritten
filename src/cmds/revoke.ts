@@ -34,8 +34,8 @@ export default class ExitBot extends ExtendedClientCommand {
 		if (!message.member) throw new CommandError('NO_MEMBER'); // If Member is Needed
 		if (!message.guild) throw new CommandError('NO_GUILD'); // If Guild is Needed
 		args = Utility.quotedWords(args.join(' '));
-		const user: GuildMember | null = Utility.LookupMember(message.guild, args[0]);
-		if (!user) throw new CommandError('NO_USER_FOUND');
+		const member: GuildMember | null = Utility.LookupMember(message.guild, args[0]);
+		if (!member) throw new CommandError('NO_USER_FOUND');
 		const possibleMedal = args.slice(1).join(' ');
 		let myMedal: IMedalData | undefined = this.client.settings.lighthouse.medals.find(
 			(medal) => medal.name.toLowerCase() === possibleMedal.toLowerCase(),
@@ -58,9 +58,9 @@ export default class ExitBot extends ExtendedClientCommand {
 			}
 		}
 		if (!myMedal) throw new CommandError('NO_MEDAL_FOUND', `Was Unable to Find Medal Matching: ${possibleMedal}.`);
-		await this.client.MedalHandler.LockMedals(user.id, [myMedal]);
+		await this.client.MedalHandler.LockMedals(member.user, [myMedal]);
 		await message.channel.send(
-			RichEmbedGenerator.successEmbed(`Successfully Revoked ${myMedal.name}`, `To User ${user.displayName}`),
+			RichEmbedGenerator.successEmbed(`Successfully Revoked ${myMedal.name}`, `To User ${member.displayName}`),
 		);
 	}
 }

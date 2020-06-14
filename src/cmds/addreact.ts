@@ -65,23 +65,12 @@ export default class DisableCommand extends ExtendedClientCommand {
 			}
 		}
 		if (foundMessageChannel && foundMessage) {
-			const databaseResponse = await this.client.databaseClient.query(
-				`SELECT * FROM G_Reaction_Roles WHERE guild_id = ${message.guild.id} AND message_id = ${foundMessage.id} AND channel_id = ${foundMessageChannel.id} AND role_id = ${role.id}`,
-			);
-			if (!databaseResponse.length) {
-				await this.client.databaseClient.query(
-					`INSERT INTO G_Reaction_Roles(guild_id, message_id, channel_id, role_id, reaction_name, reaction_id, reaction_animated) VALUES(${message.guild.id}, ${foundMessage.id}, ${foundMessageChannel.id}, ${role.id}, '${emojiInfo.name}', ${emojiInfo.id}, ${emojiInfo.animated})`,
-				);
-				await foundMessage.react(emojiInfo.id || emojiInfo.name);
-				// Update Response Message
+			const emoji = message.guild.emojis.resolve(emojiInfo.id || emojiInfo.name);
+			if (!emoji) return;
+			if (this.client.ReactionRoleHandler.SetupReactionRole(message, role, emoji)) 
 				await statusMessage.edit('', RichEmbedGenerator.successEmbed('Successfully Linked Reaction Role to Message', `...`));
-			} else {
-				// Already in db
-				await statusMessage.edit(
-					'',
-					RichEmbedGenerator.notifyEmbed('Reaction Role Already Linked to Message', `...`),
-				);
-			}
+			else
+				await statusMessage.edit('', RichEmbedGenerator.notifyEmbed('Reaction Role Already Linked to Message', `...`));
 		} else {
 			await statusMessage.edit('', RichEmbedGenerator.errorEmbed('Failed to Find Specified Message', `...`));
 			// Failed to Find Message

@@ -26,12 +26,13 @@ export default class HelpCommand extends ExtendedClientCommand {
 		if (!message.author || !this.client.user) throw new CommandError('DYNAMIC_PROPERTY_CHECK_FAILED');
 		if (!message.author) throw new CommandError('NO_AUTHOR'); // If Author is Needed
 		if (!this.client.user) throw new CommandError('NO_BOT_USER'); // If Bot Instance is Needed
-		const response = await this.client.databaseClient.query<IGuildPrefixResponse>(
-			`SELECT prefix FROM G_Prefix WHERE guild_id = ${
-				message.guild ? message.guild.id : message.author.id
-			}`,
-		);
-		const prefix = response.length ? response[0].prefix : this.client.settings.defaultPrefix;
+
+
+		const guildCollection = await this.client.nextDBClient.getCollection('guilds');
+		const guildPrefix = await guildCollection.findOne({
+			_id: message.guild ? message.guild.id : message.author.id,
+		});
+		const prefix = guildPrefix.prefix || this.client.settings.defaultPrefix;
 		if (args.length > 0) {
 			const commandModule = this.client.commandHandler.Commands.get(args[0]);
 			if (commandModule && !commandModule.hidden) {

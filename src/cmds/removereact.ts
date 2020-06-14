@@ -35,7 +35,7 @@ export default class ExitBot extends ExtendedClientCommand {
 		if (args.length === 0) throw new CommandError('NO_ARGUMENTS');
 		const messageId = args[0];
 		const roleResolvable = args.slice(1).join(' ');
-
+		/*
 		const role = Utility.LookupRole(message.guild, roleResolvable);
 
 		if (!role) throw new CommandError('NO_ROLE_FOUND');
@@ -46,6 +46,7 @@ export default class ExitBot extends ExtendedClientCommand {
                     !message.guild.me.hasPermission('ADMINISTRATOR')
 			)
 				throw new CommandError('INSUFFICIENT_PRIVILEGES');
+			
 			const response = await this.client.databaseClient.query(
 				`SELECT * FROM G_Reaction_Roles WHERE guild_id = ${message.guild.id} AND message_id = ${messageId} AND role_id = ${role.id}`,
 			);
@@ -78,5 +79,6 @@ export default class ExitBot extends ExtendedClientCommand {
 				),
 			);
 		}
+		*/
 	}
 }

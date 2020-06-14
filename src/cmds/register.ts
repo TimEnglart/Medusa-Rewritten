@@ -26,7 +26,7 @@ export default class ExitBot extends ExtendedClientCommand {
 		if (!message.author) throw new CommandError('NO_AUTHOR'); // If Author is Needed
 		if (!this.client.user) throw new CommandError('NO_BOT_USER'); // If Bot Instance is Needed
 		message.channel.stopTyping();
-
+		/*
 		const initialTimeStamp = new Date();
 		const registerEmbed = new MessageEmbed()
 			.setURL(`${this.client.settings.webData.url}initialize.php?did=${message.author.id}`)
@@ -43,6 +43,7 @@ export default class ExitBot extends ExtendedClientCommand {
 		while (timePassed < 1200) {
 			await new Promise((completeTimeout) => setTimeout(completeTimeout, 5000));
 			timePassed += 5;
+			
 			const dbQuery = await this.client.databaseClient.query(
 				`SELECT * FROM U_Bungie_Account WHERE user_id = ${message.author.id}`,
 			);
@@ -58,5 +59,6 @@ export default class ExitBot extends ExtendedClientCommand {
 			}
 		}
 		throw new CommandError('REGISTRATION_TIMEOUT', 'Reuse the `register` Command to Attempt to Sign Up Again');
+		*/
 	}
 }

@@ -27,18 +27,20 @@ export default class PrintWelcomeMessage extends ExtendedClientCommand {
 		if (!message.member) throw new CommandError('NO_MEMBER'); // If Member is Needed
 		if (!message.guild) throw new CommandError('NO_GUILD'); // If Guild is Needed
 		if (!this.client.user) throw new CommandError('NO_BOT_USER'); // If Bot Instance is Needed
-
-		const select = await this.client.databaseClient.query(
-			`SELECT * FROM G_Prefix WHERE guild_id = ${message.guild.id}`,
+		const resolvedEnvironmentId = message.guild ? message.guild.id : message.author.id;
+		const guildCollection = await this.client.nextDBClient.getCollection('guilds');
+		await guildCollection.updateOne(
+			{
+				_id: resolvedEnvironmentId,
+			},
+			{
+				$set: {
+					_id: resolvedEnvironmentId,
+					prefix: args[0]
+				}
+			},
+			{ upsert: true },
 		);
-		if (select.length)
-			await this.client.databaseClient.query(
-				`UPDATE G_Prefix SET prefix = '${args[0]}' WHERE guild_id = ${message.guild.id}`,
-			);
-		else
-			await this.client.databaseClient.query(
-				`INSERT INTO G_Prefix (guild_id, prefix) VALUES (${message.guild.id}, '${args[0]}')`,
-			);
 		await message.channel.send(RichEmbedGenerator.successEmbed('Prefix Updated', `Set to ${args[0]}`));
 	}
 }
