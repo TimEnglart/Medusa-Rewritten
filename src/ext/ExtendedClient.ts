@@ -1,4 +1,4 @@
-import { Client, ClientOptions, User, GuildMember, TextChannel, VoiceChannel, ClientEvents, MessageEmbed, Message } from "discord.js";
+import { Client, ClientOptions, User, GuildMember, TextChannel, VoiceChannel, ClientEvents, MessageEmbed, Message, Guild, PartialGuildMember, VoiceState, MessageReaction, PartialUser, RateLimitData } from "discord.js";
 import CommandHandler from "./CommandHandler";
 import { ISettingsTemplate } from "./settingsInterfaces";
 import { ExperienceHandler} from "./experienceHandler";
@@ -315,221 +315,237 @@ export default class ExtendedClient extends Client {
 
 	
 	public LoadListeners() {
-		this.on('message', async (message) => {
-			// Check if Message Sender is a Bot
-			if (!(message instanceof Message)) return;
-			if (!message.author || message.author.bot) return;
-
-			// Do Xp If in A Guild Channel
-			if (message.channel && message.channel.type !== 'dm') {
-				const expData = await this.experienceHandler.GiveExperience(message.author);
-				if (expData.levelUps.length) {
-					for (const levelUp of expData.levelUps) {
-						if (message.member ?.lastMessage) await message.member.lastMessage.react(levelUp.emoji.id);
-					}
-					if (expData.level === this.settings.lighthouse.ranks.length) {
-						await message.author.send(
-							RichEmbedGenerator.resetNotifyEmbed(
-								'Rank Reset Is Now Available',
-								'Use command ```guardian reset``` to continue your progression.',
-							),
-						);
-					}
-				}
-
-				//await memeChecker.run(message);
-			}
-
-			// Determine The Guild/Channel Prefix for Commands
-			const guildCollection = await this.nextDBClient.getCollection('guilds');
-			const guildPrefix = await guildCollection.findOne({ _id: message.guild ? message.guild.id : message.author.id });
-			const prefix = guildPrefix ? guildPrefix.prefix : this.settings.defaultPrefix;
-
-			// Check if Sent Message Starts With the Servers Prefix
-			if (!message.content.startsWith(prefix)) return;
-
-			// Remove Prefix off the Message to give Command + Arguments
-			const args = message.content
-				.slice(prefix.length)
-				.trim()
-				.split(/ +/g);
-
-			// Separate Command And Arguments
-			const commandName = args.shift();
-			if (!commandName || !/^[a-zA-Z]+$/.test(commandName)) return;
-			// Attempt to Run Supplied Command
-			message.channel.startTyping();
-			const commandFile = await this.commandHandler.ExecuteCommand(commandName.toLowerCase(), message, ...args);
-			if (commandFile.error) {
-				if (commandFile.error instanceof CommandError) {
-					this.logger.logS(
-						`Command: ${commandName} Failed to Execute.\nExecuting User: ${message.author.username}\nReason: ${commandFile.error.name} -> ${commandFile.error ?.reason}\nStack Trace: ${commandFile.error.stack}`, 2
-					);
-					if (commandFile.error.message !== 'NO_COMMAND')
-						message.channel.send(
-							RichEmbedGenerator.errorEmbed(
-								`An Error Occurred When Running the Command ${commandName}`,
-								`Provided Reason: ${commandFile.error.reason}`,
-							),
-						);
-				}
-				else {
-					this.logger.logS(
-						`Command: ${commandName} Failed to Execute.\nExecuting User: ${message.author.username}\nReason: ${commandFile.error.name}\nStack Trace: ${commandFile.error.stack}`, 2);
-					message.channel.send(
-						RichEmbedGenerator.errorEmbed(
-							`An Error Occurred When Running the Command ${commandName}`,
-							`No Reason Provided`,
-						),
-					);
-				}
-				this.logger.logS(
-					`Command Error Occurred:\n
-							Failing Command: ${commandName}\n
-							Executing User: ${message.author.tag}\n
-							Raw Error:\n
-							${inspect(commandFile.error)}`,
-					LogFilter.Error,
-				);
-			}
-			message.channel.stopTyping(true);
-		});
-		this.on('error', error =>
-			this.logger.logS(`Unknown Discord.js Error Occurred:\nRaw Error:\n${error}`, LogFilter.Error),
-		);
-		this.on('warn' || 'debug', async info =>
-			this.logger.logS(`Discord Warn/Debug Message: ${info}`, LogFilter.Debug),
-		);
-
-		this.on('guildCreate', async (guild) => {
-			const guildCollection = await this.nextDBClient.getCollection('guilds');
-			await guildCollection.updateOne({ _id: guild.id }, { $set: { _id: guild.id } }, { upsert: true });
-			this.logger.logS(
-				`Joined Guild: ${guild.name}(${guild.id})`,
-				LogFilter.Debug,
-			);
-		});
-
-		this.on('guildMemberAdd', async (member) => {
-			if (!member.guild || !member.user) return; // wtf is this master update
-
-			// Enable User in Xp Database
-			await this.experienceHandler.connectUser(member);
-			// Assign Default Server Role
-			const guildCollection = await this.nextDBClient.getCollection('guilds');
-			const guild = await guildCollection.findOne({
-				_id: member.guild.id
-			});
-
-			if (guild && guild.autoRoleId && member.roles) {
-				const role = member.guild.roles.resolve(guild.autoRoleId);
-				if (role) await member.roles.add(role);
-			}
-			// Send User Joined Message to Moderator Channel
-			if (guild && guild.eventChannelId) {
-				const botEmbed = new MessageEmbed()
-					.setTitle('Displaying New User Profile')
-					.setThumbnail(member.user.avatarURL() || '')
-					.setColor('#00dde0')
-					.addFields(
-						{ name: 'Name', value: `${member.user.tag} | ${member.displayName} (${member.id})`, inline: true },
-						{ name: 'Created', value: `${member.user.createdAt}`, inline: false },
-					);
-				const channel = member.guild.channels.resolve(guild.eventChannelId) as TextChannel | null;
-				if (channel) await channel.send(`**Guardian ${member.user} has joined ${member.guild}!**`, botEmbed);
-			}
-			this.logger.logS(
-				`User: ${member.user.username}(${member.user.id}) Joined Guild: ${member.guild.name}(${
-				member.guild.id
-				})`,
-				LogFilter.Debug,
-			);
-		});
-
-		this.on('guildMemberRemove', async (member) => {
-			if (!member.guild || !member.user) return; // wtf is this master update
-			// Disable User in Xp Database
-			await this.experienceHandler.disconnectUser(member);
-			// Send User Left Message to Moderator Channel
-			const guildCollection = await this.nextDBClient.getCollection('guilds');
-			const guild = await guildCollection.findOne({
-				_id: member.guild.id,
-			});
-			if (guild && guild.eventChannelId) {
-				const botEmbed = new MessageEmbed()
-					.setTitle('Guardian Down! <:down:513403773272457231>')
-					.setThumbnail(member.user.avatarURL() || '')
-					.setColor('#ba0526')
-					.addFields(
-						{ name: 'Name', value: `${member.user.tag} | ${member.displayName} (${member.id})`, inline: true },
-						{ name: 'First Joined', value: `${member.joinedAt}`, inline: false },
-					);
-				const channel = member.guild.channels.resolve(guild.eventChannelId) as TextChannel | null;
-				if (channel) await channel.send(`**Guardian ${member.user} has left ${member.guild}!**`, botEmbed);
-			}
-			this.logger.logS(
-				`User: ${member.user.username}(${member.user.id}) Left Guild: ${member.guild.name}(${
-				member.guild.id
-				})`,
-				LogFilter.Debug,
-			);
-		});
-
-		this.on('voiceStateUpdate', async (previousVoiceState, newVoiceState) => {
-			if (newVoiceState.channel) {
-				if (this.TempChannelHandler.isMasterTempChannel(newVoiceState.channel)) { // Do Temp Channel
-					const tempChannel = await this.TempChannelHandler.AddTempChannel(newVoiceState.channel);
-					await newVoiceState.setChannel(tempChannel);
-				}
-			}
-
-			if (previousVoiceState.channel)
-				if (this.TempChannelHandler.isTempChannel(previousVoiceState.channel) && previousVoiceState.channel.members.size === 0)
-					this.TempChannelHandler.DeleteEmptyChannel(previousVoiceState.channel);
-		});
-
-		this.on('messageReactionAdd', async (reaction, user) => {
-
-			await this.ReactionRoleHandler.OnReactionAdd(reaction, user);
-		});
-
-		this.on('messageReactionRemove', async (reaction, user) => {
-
-			await this.ReactionRoleHandler.OnReactionRemove(reaction, user)
-
-		});
-
-		this.on('ready', async () => {
-			if (!this.user) return;
-			await this.user.setActivity(`BOOT SEQUENCE INITIALIZATION`, { type: 'WATCHING' });
-
-			await this.PrimeDatabase();
-			await this.CacheAndCleanUp();
-			// Cache All Messages That Have Reaction Roles Linked to Them
-			this.LoadCommands();
-
-			if (!this.settings.debug) {
-				this.RandomPresence(); // Cycles Through Set Presences (in 'this.activites')
-				//this.scoreBook.start(); // Starts The Automated Score Book Process
-			} else {
-				this.logger.logS('DEBUG MODE ENABLED', 1);
-			}
-
-			await this.user.setActivity(`READY`, { type: 'PLAYING' });
-			this.logger.logS(`COMPLETED ALL BOOT SEQUENCES`);
-			this.logger.logS(`${this.user.username} is Online!`)
-		});
+		this.on('message', this.onMessage.bind(this));
+		this.on('error', this.onError.bind(this));
+		this.on('warn', this.onWarn.bind(this));
+		this.on('guildCreate', this.onGuildJoin.bind(this));
+		this.on('guildMemberAdd', this.onGuildMemberJoin.bind(this));
+		this.on('guildMemberRemove', this.onGuildMemberLeave.bind(this));
+		this.on('voiceStateUpdate', this.onVoiceStateUpdate.bind(this));
+		this.on('messageReactionAdd', this.onMessageReactionAdd.bind(this));
+		this.on('messageReactionRemove', this.onMessageReactionRemove.bind(this));
+		this.on('ready', this.onReady.bind(this));
+		
+		if(this.settings.debug) {
+			this.on('debug', this.onDebug.bind(this));
+			this.on('rateLimit', this.onRateLimit.bind(this));
+			this.on('invalidated', this.onInvalidated);
+		}
 	}
 
 	public Update() {
+		this.logger.logS('Performing Client Update', LogFilter.Debug);
 		exec(`cd ${this.BasePaths.WorkingPath} && git pull && npm run build`,
 			(error, stdout, stderr) => {
-				if(error) return;
-
+				if (error) this.logger.logS(`Failed Update Operation:\n${error.message}`, LogFilter.Error);
+				else this.logger.logS(`Update Response:\nOutput: ${stdout}\nError: ${stderr}`, LogFilter.Debug);
 				if(this.HotReloader)
 					this.HotReloader.reload();
 			}
 		);
 
 	}
+
+	protected onRateLimit(rateLimitData: RateLimitData) {
+		this.logger.logS(`Request to: ${rateLimitData.path} has Triggered a Rate Limit... Time Limited: ${rateLimitData.timeout}`);
+	}
+	protected onInvalidated() {
+		this.Update();
+	}
+
+
+	protected async onMessage(message: Message) {
+		// Check if Message Sender is a Bot
+		if (!message.author || message.author.bot) return;
+
+		// Do Xp If in A Guild Channel
+		if (message.channel && message.channel.type !== 'dm') {
+			const expData = await this.experienceHandler.GiveExperience(message.author);
+			if (expData.levelUps.length) {
+				for (const levelUp of expData.levelUps) {
+					if (message.member?.lastMessage) await message.member.lastMessage.react(levelUp.emoji.id);
+				}
+				if (expData.level === this.settings.lighthouse.ranks.length) {
+					await message.author.send(
+						RichEmbedGenerator.resetNotifyEmbed(
+							'Rank Reset Is Now Available',
+							'Use command ```guardian reset``` to continue your progression.',
+						),
+					);
+				}
+			}
+
+			//await memeChecker.run(message);
+		}
+
+		// Determine The Guild/Channel Prefix for Commands
+		const guildCollection = await this.nextDBClient.getCollection('guilds');
+		const guildPrefix = await guildCollection.findOne({ _id: message.guild ? message.guild.id : message.author.id });
+		const prefix = guildPrefix ? guildPrefix.prefix : this.settings.defaultPrefix;
+
+		// Check if Sent Message Starts With the Servers Prefix
+		if (!message.content.startsWith(prefix)) return;
+
+		// Remove Prefix off the Message to give Command + Arguments
+		const args = message.content
+			.slice(prefix.length)
+			.trim()
+			.split(/ +/g);
+
+		// Separate Command And Arguments
+		const commandName = args.shift();
+		if (!commandName || !/^[a-zA-Z]+$/.test(commandName)) return;
+		// Attempt to Run Supplied Command
+		message.channel.startTyping();
+		const commandFile = await this.commandHandler.ExecuteCommand(commandName.toLowerCase(), message, ...args);
+		if (commandFile.error) {
+			if (commandFile.error instanceof CommandError) {
+				this.logger.logS(
+					`Command: ${commandName} Failed to Execute.\nExecuting User: ${message.author.username}\nReason: ${commandFile.error.name} -> ${commandFile.error?.reason}\nStack Trace: ${commandFile.error.stack}`, 2
+				);
+				if (commandFile.error.message !== 'NO_COMMAND')
+					message.channel.send(
+						RichEmbedGenerator.errorEmbed(
+							`An Error Occurred When Running the Command ${commandName}`,
+							`Provided Reason: ${commandFile.error.reason}`,
+						),
+					);
+			}
+			else {
+				this.logger.logS(
+					`Command: ${commandName} Failed to Execute.\nExecuting User: ${message.author.username}\nReason: ${commandFile.error.name}\nStack Trace: ${commandFile.error.stack}`, 2);
+				message.channel.send(
+					RichEmbedGenerator.errorEmbed(
+						`An Error Occurred When Running the Command ${commandName}`,
+						`No Reason Provided`,
+					),
+				);
+			}
+			this.logger.logS(
+				`Command Error Occurred:\n
+							Failing Command: ${commandName}\n
+							Executing User: ${message.author.tag}\n
+							Raw Error:\n
+							${inspect(commandFile.error)}`,
+				LogFilter.Error,
+			);
+		}
+		message.channel.stopTyping(true);
+	}
+
+
+
+
+	protected async onGuildJoin(guild: Guild) {
+		const guildCollection = await this.nextDBClient.getCollection('guilds');
+		await guildCollection.updateOne({ _id: guild.id }, { $set: { _id: guild.id } }, { upsert: true });
+		this.logger.logS(`Joined Guild: ${guild.name}(${guild.id})`, LogFilter.Debug);
+	}
+
+
+	protected async onGuildMemberJoin(guildMember: GuildMember | PartialGuildMember) {
+		// Enable User in Xp Database
+		await this.experienceHandler.connectUser(guildMember);
+		// Assign Default Server Role
+		const guildCollection = await this.nextDBClient.getCollection('guilds');
+		const guild = await guildCollection.findOne({
+			_id: guildMember.guild.id
+		});
+
+		if (guild && guild.autoRoleId && guildMember.roles) {
+			const role = guildMember.guild.roles.resolve(guild.autoRoleId);
+			if (role) await guildMember.roles.add(role);
+		}
+		// Send User Joined Message to Moderator Channel
+		if (guildMember.user) {
+			if (guild && guild.eventChannelId ) {
+				const botEmbed = new MessageEmbed()
+					.setTitle('Displaying New User Profile')
+					.setThumbnail(guildMember.user.avatarURL() || '')
+					.setColor('#00dde0')
+					.addFields(
+						{ name: 'Name', value: `${guildMember.user.tag} | ${guildMember.displayName} (${guildMember.id})`, inline: true },
+						{ name: 'Created', value: `${guildMember.user.createdAt}`, inline: false },
+					);
+				const channel = guildMember.guild.channels.resolve(guild.eventChannelId) as TextChannel | null;
+				if (channel) await channel.send(`**Guardian ${guildMember.user} has joined ${guildMember.guild}!**`, botEmbed);
+			}
+			this.logger.logS(`User: ${guildMember.displayName}(${guildMember.id}) Joined Guild: ${guildMember.guild.name}(${guildMember.guild.id})`, LogFilter.Debug);
+		}
+	}
+
+	protected async onGuildMemberLeave(guildMember: GuildMember | PartialGuildMember) {
+		// Disable User in Xp Database
+		await this.experienceHandler.disconnectUser(guildMember);
+		// Send User Left Message to Moderator Channel
+		const guildCollection = await this.nextDBClient.getCollection('guilds');
+		const guild = await guildCollection.findOne({
+			_id: guildMember.guild.id,
+		});
+		if (guildMember.user) {
+			if (guild && guild.eventChannelId) {
+				const botEmbed = new MessageEmbed()
+					.setTitle('Guardian Down! <:down:513403773272457231>')
+					.setThumbnail(guildMember.user.avatarURL() || '')
+					.setColor('#ba0526')
+					.addFields(
+						{ name: 'Name', value: `${guildMember.user.tag} | ${guildMember.displayName} (${guildMember.id})`, inline: true },
+						{ name: 'First Joined', value: `${guildMember.joinedAt}`, inline: false },
+					);
+				const channel = guildMember.guild.channels.resolve(guild.eventChannelId) as TextChannel | null;
+				if (channel) await channel.send(`**Guardian ${guildMember.user} has left ${guildMember.guild}!**`, botEmbed);
+			}
+			this.logger.logS(`User: ${guildMember.user.username}(${guildMember.id}) Left Guild: ${guildMember.guild.name}(${guildMember.guild.id})`, LogFilter.Debug);
+		}
+	}
+
+	protected async onVoiceStateUpdate(previousVoiceState: VoiceState, newVoiceState: VoiceState) {
+		if (newVoiceState.channel) {
+			if (this.TempChannelHandler.isMasterTempChannel(newVoiceState.channel)) { // Do Temp Channel
+				const tempChannel = await this.TempChannelHandler.AddTempChannel(newVoiceState.channel);
+				await newVoiceState.setChannel(tempChannel);
+			}
+		}
+
+		if (previousVoiceState.channel)
+			if (this.TempChannelHandler.isTempChannel(previousVoiceState.channel) && previousVoiceState.channel.members.size === 0)
+				this.TempChannelHandler.DeleteEmptyChannel(previousVoiceState.channel);
+	}
+
+	protected async onMessageReactionAdd(reaction: MessageReaction, user: User | PartialUser) {
+		await this.ReactionRoleHandler.OnReactionAdd(reaction, user);
+	}
+	protected async onMessageReactionRemove(reaction: MessageReaction, user: User | PartialUser) {
+		await this.ReactionRoleHandler.OnReactionRemove(reaction, user);
+	}
+
+	protected async onReady() {
+		if (!this.user) return;
+		await this.user.setActivity(`BOOT SEQUENCE INITIALIZATION`, { type: 'WATCHING' });
+
+		await this.PrimeDatabase();
+		await this.CacheAndCleanUp();
+		// Cache All Messages That Have Reaction Roles Linked to Them
+		this.LoadCommands();
+
+		if (!this.settings.debug) {
+			this.RandomPresence(); // Cycles Through Set Presences (in 'this.activites')
+			//this.scoreBook.start(); // Starts The Automated Score Book Process
+		} else {
+			this.logger.logS('DEBUG MODE ENABLED', 1);
+		}
+		await this.user.setActivity(`READY`, { type: 'PLAYING' });
+		this.logger.logS(`Successfully Booted and Online -> ${this.user.username}`, LogFilter.Success);
+	}
+
+	protected onError(error: Error) {
+		this.logger.logS(`Unknown Discord.js Error Occurred:\nRaw Error:\n${error}`, LogFilter.Error);
+	}
+	protected onWarn(warning: string) {
+		this.logger.logS(`Discord Warn Message: ${warning}`, LogFilter.Debug);
+	}
+	protected onDebug(debug: string) {
+		this.logger.logS(`Discord Debug Message: ${debug}`, LogFilter.Debug);
+	}
+	
 }
