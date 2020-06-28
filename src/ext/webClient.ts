@@ -152,8 +152,8 @@ class MyRequester {
 		
 		
 	}
-	private prepareCookies(hostName?: string | null | undefined) {
-		if (!hostName) return;
+	private prepareCookies(hostName?: string | null | undefined): string {
+		if (!hostName) return '';
 		const hostsCookies = this.cookies.get(hostName);
 		if (!hostsCookies) return '';
 		const cookies = [];
@@ -175,10 +175,10 @@ class MyRequester {
 		}
 		return `Cookie: ${cookies.join('; ')}`;
 	}
-	private addCookies(hostname: string | null | undefined, cookies: string[]) {
+	private addCookies(hostname: string | null | undefined, cookies: string[]): void {
 		if (!hostname) return;
 		let currentHostCookies = this.cookies.get(hostname);
-		if (!currentHostCookies) currentHostCookies = [] as Cookie[];
+		if (!currentHostCookies) currentHostCookies = [];
 		for (const cookie of cookies) {
 			currentHostCookies.push(new Cookie(cookie));
 			this.cookies.set(hostname, currentHostCookies);

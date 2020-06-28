@@ -82,5 +82,9 @@ export default class CommandHandler {
 		return await this.client.nextDBClient.getCollection('disabledCommands');
 	}
 
+	public resetCommands() {
+		// this.Commands = new Map();
+	}
+
 }
 

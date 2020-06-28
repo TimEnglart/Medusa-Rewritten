@@ -119,4 +119,14 @@ export default class ReactionRoleHandler {
 		}
 		
 	}
+
+	public get(filter: { // hack atm
+		roleId: string;
+		guildId: string;
+		messageId: string;
+	}) {
+		for (const [key, val] of this.reactionRoles.entries()) {
+			if (val.roleId === filter.roleId && val.guildId === filter.guildId && val.messageId === filter.messageId) return key;
+		}
+	}
 } 

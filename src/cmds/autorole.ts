@@ -39,7 +39,7 @@ export default class AutoRoleCommand extends ExtendedClientCommand {
 		if (!role) throw new CommandError('NO_ROLE_FOUND');
 
 		const guildCollection = await this.client.nextDBClient.getCollection('guilds');
-		guildCollection.update({ _id: message.guild.id }, { autoRoleId: roleId }, { upsert: true });
+		await guildCollection.updateOne({ _id: message.guild.id }, { autoRoleId: roleId }, { upsert: true });
 		await message.channel.send(`Success!`); // Update For Embed
 	}
 }

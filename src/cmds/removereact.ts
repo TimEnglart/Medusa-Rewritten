@@ -35,7 +35,7 @@ export default class ExitBot extends ExtendedClientCommand {
 		if (args.length === 0) throw new CommandError('NO_ARGUMENTS');
 		const messageId = args[0];
 		const roleResolvable = args.slice(1).join(' ');
-		/*
+		
 		const role = Utility.LookupRole(message.guild, roleResolvable);
 
 		if (!role) throw new CommandError('NO_ROLE_FOUND');
@@ -47,38 +47,32 @@ export default class ExitBot extends ExtendedClientCommand {
 			)
 				throw new CommandError('INSUFFICIENT_PRIVILEGES');
 			
-			const response = await this.client.databaseClient.query(
-				`SELECT * FROM G_Reaction_Roles WHERE guild_id = ${message.guild.id} AND message_id = ${messageId} AND role_id = ${role.id}`,
-			);
-			if (!response.length)
+			
+			const response = this.client.ReactionRoleHandler.get({
+				guildId: message.guild.id,
+				messageId: messageId,
+				roleId: role.id
+			});
+			if (!response)
 				throw new CommandError('DATABASE_ENTRY_NOT_FOUND', 'Reaction Role Not Linked to Provided Role');
 			const statusMessage = await message.channel.send(
 				`Removing Reaction For ${role.name} From the Selected Message`,
 			);
-			const channelLookup = message.guild.channels.resolve(response[0].channel_id) as TextChannel;
+			const channelLookup = message.guild.channels.resolve(response.channelId) as TextChannel;
 			if (!channelLookup) throw new CommandError('NO_CHANNEL_FOUND');
 			const reactionMessage = await channelLookup.messages.fetch(messageId);
 			if (!reactionMessage) throw new CommandError('NO_MESSAGE_FOUND');
-			reactionMessage.reactions.resolve(
-				response[0].reaction_id === null
-					? response[0].reaction_name
-					: this.client.emojis.resolve(response[0].reaction_id),
-			)?.remove();
-			await this.client.databaseClient.query(
-				`DELETE FROM G_Reaction_Roles WHERE guild_id = ${message.guild.id} AND message_id = ${messageId} AND role_id = ${role.id}`,
-			);
+			const emoji = this.client.emojis.resolve(response.reactionId || response.reactionName);
+			if(!emoji) throw new CommandError('NO_EMOJI_FOUND');
+
+			await this.client.ReactionRoleHandler.RemoveReactionRole(reactionMessage, emoji);
 			await statusMessage.edit(
 				'',
 				RichEmbedGenerator.successEmbed(
 					'Role Reaction Successfully Removed From Message',
-					`Reaction: ${
-						response[0].reaction_id === null
-							? response[0].reaction_name
-							: this.client.emojis.resolve(response[0].reaction_id)
-					}`,
+					`Reaction: ${emoji}`,
 				),
 			);
 		}
-		*/
 	}
 }

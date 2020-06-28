@@ -1,7 +1,7 @@
 'use strict';
 import * as fs from 'fs';
 import * as path from 'path';
-import RateLimiter from 'limited-rate-limiter';
+import RateLimiter from '@timenglart/limited-rate-limiter';
 import * as Colors from './Colors';
 const writeLine = console.log;
 
@@ -62,7 +62,7 @@ export class Logger {
 	private rateLimiter: RateLimiter;
 	constructor(
 		private logFileLocation = './logs',
-		public filters: LogFilter[] | undefined = [LogFilter.Info],
+		public filters: LogFilter[] | undefined = [LogFilter.Info, LogFilter.Debug, LogFilter.Error, LogFilter.Success],
 		public json?: boolean,
 	) {
 		this.rateLimiter = new RateLimiter({

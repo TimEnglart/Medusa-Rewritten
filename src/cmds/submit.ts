@@ -2,8 +2,8 @@ import ExtendedClientCommand, { ICommandResult } from "../ext/CommandTemplate";
 import CommandHandler from "../ext/CommandHandler";
 import { Message, MessageEmbed, MessageReaction, User } from "discord.js";
 import { CommandError } from "../ext/errorParser";
-import { IActivityDefinition } from "../ext/discordToBungie";
-import { ScoreBook } from "../ext/score-book";
+//import { IActivityDefinition } from "../ext/discordToBungie";
+//import { ScoreBook } from "../ext/score-book";
 import RichEmbedGenerator from "../ext/RichEmbeds";
 
 export default class ExitBot extends ExtendedClientCommand {

@@ -5,7 +5,6 @@ import ExtendedClient from "./ExtendedClient";
 import { GuildMember, User } from "discord.js";
 import { IBungieResponse } from "./BungieAPIRequester";
 import { Collection } from "mongodb";
-import { stat } from "fs";
 
 interface ICategorizedMedals {
 	[medalCategory: string]: IMedalData[];

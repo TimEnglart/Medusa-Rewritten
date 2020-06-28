@@ -1,10 +1,13 @@
 
 // import ExtendedClientCommand, { ICommandResult } from "../ext/CommandTemplate";
 // import CommandHandler from "../ext/CommandHandler";
-// import { Message, User, GuildMember, MessageEmbed } from "discord.js";
+// import { Message, User, GuildMember, MessageEmbed, Guild } from "discord.js";
 // import { CommandError } from "../ext/errorParser";
 // import RichEmbedGenerator from "../ext/RichEmbeds";
 // import { Utility } from "../ext/utility";
+// import { IRankData } from "ext/settingsInterfaces";
+
+
 
 
 // export default class ExitBot extends ExtendedClientCommand {
@@ -24,6 +27,7 @@
 // 			},
 // 		};
 // 	}
+
 // 	protected async Run(message: Message, ...args: string[]): Promise<ICommandResult | void> {
 // 		if (!message.author || !this.client.user) throw new CommandError('DYNAMIC_PROPERTY_CHECK_FAILED');
 // 		const fixEmbed = (array: string[], index = 4): string[] => {
@@ -44,41 +48,60 @@
 // 		let user: User | GuildMember | null;
 // 		const ranks = this.client.settings.lighthouse.ranks;
 // 		const amountOfLevels = ranks.length;
+// 		const userCollection = await this.client.nextDBClient.getCollection('experience');
 // 		if (args[0] === 'rank') {
-// 			const leaderBoard = await this.client.databaseClient.query(
-// 				`SELECT * FROM( SELECT * FROM (SELECT * FROM U_Experience ORDER BY reset DESC, level DESC LIMIT 0, 11) as top UNION SELECT * FROM U_Experience WHERE user_id = '${message.member.id}') as top_ten JOIN (SELECT user_id, ROW_NUMBER() OVER (ORDER BY reset DESC, xp DESC) as position FROM U_Experience WHERE connected = true) as positions ON positions.user_id = top_ten.user_id ORDER BY position ASC;`,
-// 			);
+// 			const leaderBoard = userCollection.find<IUserExperience>().sort({reset: -1, level: -1});
+			
 // 			const leaderBoardEmbed = new MessageEmbed()
 // 				.setTitle('Top 10 Guardians')
 // 				.setThumbnail(message.guild.iconURL() || '')
 // 				.setColor('#ff8827');
-// 			for (const leaderBoardEntry of leaderBoard) {
-// 				const guildMember = message.guild.members.resolve(leaderBoardEntry.user_id);
-// 				const _currentRank =
-//                         ranks[leaderBoardEntry.level >= amountOfLevels ? amountOfLevels - 1 : leaderBoardEntry.level];
+
+
+// 			let i = 1,
+// 				foundUser = false;
+// 			while(await leaderBoard.hasNext()) {
+// 				const user = await leaderBoard.next();
+// 				if(!user) break;
+// 				const _userFound = !foundUser && user._id == message.author.id;
+// 				const data = this.getUserData(user, message.guild);
 // 				leaderBoardEmbed.addField(
-// 					`${leaderBoardEntry.position}. ${guildMember ? guildMember.displayName : 'REDACTED'} ${
-// 						_currentRank.emoji.text
-// 					} ${leaderBoardEntry.user_id === message.member.id ? ' \\◀' : ''}`,
-// 					`${_currentRank.name} - Reset: ${leaderBoardEntry.reset} - XP: ${leaderBoardEntry.xp}`,
+// 					`${i}. ${data.displayName} ${data.rank.emoji.text} ${_userFound ? ' \\◀' : ''}`,
+// 					`${data.rank.name} - Reset: ${data.databaseData.reset} - XP: ${data.databaseData.xp}`,
 // 				);
+// 				if(_userFound) foundUser = true;
+// 				i++;
+// 			}
+// 			if(!foundUser) {
+// 				const userData = await userCollection.findOne({ _id: message.author.id });
+// 				const data = this.getUserData(userData, message.guild);
+// 				if(userData)
+// 					leaderBoardEmbed.addField(
+// 						`${i}. ${data.displayName} ${data.rank.emoji.text} ${foundUser ? ' \\◀' : ''}`,
+// 						`${data.rank.name} - Reset: ${data.databaseData.reset} - XP: ${data.databaseData.xp}`,
+// 					);
 // 			}
 // 			await message.channel.send(leaderBoardEmbed);
 // 			return;
+			
 // 		} else if (args[0] === 'reset') {
-// 			const _userExperience = await this.client.databaseClient.query(
-// 				`SELECT * FROM U_Experience WHERE user_id = ${message.member.id}`,
-// 			);
-// 			if (_userExperience.length && _userExperience[0].level >= amountOfLevels) {
+// 			const _userExperience = await userCollection.findOne<IUserExperience>({ _id: message.author.id });
+			
+
+// 			if (_userExperience && _userExperience.level >= amountOfLevels) {
 // 				const resetXp = 3000 * amountOfLevels;
-// 				const _currentReset = +_userExperience[0].reset;
-// 				const currentXp = +_userExperience[0].xp;
+// 				const _currentReset = _userExperience.reset;
+// 				const currentXp = _userExperience.xp;
 // 				const newReset = _currentReset + 1;
 // 				const newXp = currentXp > resetXp ? currentXp - resetXp : 0;
 
-// 				await this.client.databaseClient.query(
-// 					`UPDATE U_Experience SET reset = ${newReset}, xp = ${newXp}, level = 1 WHERE user_id = ${message.member.id}`,
-// 				);
+// 				await userCollection.updateOne({ _id: message.author.id }, {
+// 					$set: {
+// 						reset: newReset,
+// 						xp: newXp,
+// 						level: 1
+// 					}
+// 				});
 // 				await message.channel.send(
 // 					RichEmbedGenerator.successEmbed(
 // 						'Your Light Grows Brighter Guardian!',
@@ -113,6 +136,23 @@
 // 		//	[key: string]: DestinyPlayer;
 // 		//} = {};
 // 		// Get Destiny Data From Database
+// 		const destinyCollection = await this.client.nextDBClient.getCollection('destinyAccounts');
+// 		const destinyProfile = destinyCollection.find({discordId: user.id});
+
+// 		if(destinyProfile) {
+// 			for await (const membershipType of destinyProfile) {
+// 				const req = await this.client.bungieApiRequester.SendRequest(
+// 					`/Destiny2/${destinyProfile.destinyProfiles[membershipType].destinyId}/Profile/${membershipType}/?components=100,900`,
+// 				);
+// 				if(req)
+// 					for (const result of req.Response) {
+// 						destinyProfiles[result.parsedData.profile.data.userInfo.membershipType] = result;
+// 						if (+result.data.profileRecords.data.score > +score || isNaN(+score))
+// 							score = +result.data.profileRecords.data.score;
+// 					}
+// 			}
+// 		}
+
 // 		const destinyProfilesData = await this.client.databaseClient.query(
 // 			`SELECT * FROM U_Destiny_Profile WHERE bungie_id = (SELECT bungie_id FROM U_Bungie_Account WHERE user_id = ${user.id});`,
 // 		);
@@ -125,24 +165,7 @@
 // 			// }
 // 			// else {
 // 			//FIX THIS
-// 			/*
-// 			for (const profile of destinyProfilesData) {
-// 				const lookupResults = await DestinyPlayer.lookup(
-// 					{
-// 						membershipId: profile.destiny_id || undefined,
-// 						// displayName: Utility.,
-// 						membershipType: profile.membership_id,
-// 					},
-// 					['100', '900'],
-// 				);
-// 				for (const result of lookupResults) {
-// 					// Should be index 0 bc of the search using ids
-// 					destinyProfiles[result.parsedData.profile.data.userInfo.membershipType] = result;
-// 					if (+result.data.profileRecords.data.score > +score || isNaN(+score))
-// 						score = +result.data.profileRecords.data.score;
-// 				}
-// 			}
-// 			*/
+			
 // 			// }
 // 		}
 
@@ -247,7 +270,7 @@
 // 		const bars: {[bar: string]: string} = {
 // 			leftEndFull: '<:Left_End_Full:530375114408067072>',
 // 			leftEndHalf: '<:Left_End_Half:530375043704946693>',
-// 			leftEndEmpty: 'reee',
+// 			leftEndEmpty: '...',
 // 			middleFull: '<:Middle_Full:530375192342429736>',
 // 			middleHalf: '<:Middle_Half:530375180195856385>',
 // 			middleEmpty: '<:Middle_Empty:530375162806140928>',
@@ -323,4 +346,37 @@
 // 		while (i--) roman = (digits.length ? key[+digits.pop()! + i * 10] : '') + roman;
 // 		return Array(+digits.join('') + 1).join('M') + roman;
 // 	}
+
+// 	private getUserData(experienceDatabase: IUserExperience, guild?: Guild): IExperienceUserData {
+// 		return {
+// 			displayName: guild?.members.resolve(experienceDatabase._id)?.displayName || 'REDACTED',
+// 			id: experienceDatabase._id,
+// 			rank: this.client.settings.lighthouse.ranks[
+// 				experienceDatabase.level >= this.client.settings.lighthouse.ranks.length ? 
+// 					this.client.settings.lighthouse.ranks.length - 1 : 
+// 					experienceDatabase.level
+// 			],
+// 			databaseData: experienceDatabase
+// 		};
+// 	}
+// }
+// interface IExperienceUserData {
+// 	displayName: string;
+// 	id: string;
+// 	rank: IRankData;
+// 	databaseData: IUserExperience;
+// }
+// interface IUserExperience {
+// 	_id: string;
+// 	xp: number;
+// 	level: number;
+// 	reset: number;
+// 	medals: {
+// 		[medalName: string]: {
+
+// 		}
+// 	}
+// }
+// interface IUserRankData {
+// 	emoji: IRankData["emoji"]
 // }

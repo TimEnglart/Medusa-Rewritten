@@ -5,7 +5,7 @@ import { CommandError } from '../ext/errorParser';
 import { Utility } from '../ext/utility';
 
 
-export default class AddTemporaryChannel extends ExtendedClientCommand {
+export default class AddTemporaryChannelCommand extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {
 		super(commandHandler);
 		this.name = 'addtemp',
@@ -40,7 +40,7 @@ export default class AddTemporaryChannel extends ExtendedClientCommand {
 			if (channel.type !== 'voice') throw new CommandError('INVALID_CHANNEL', 'Use This Command in a Voice Channel or Provide A Voice Channel with the Command');
 			if(this.client.TempChannelHandler.isTempChannel(channel)) throw new CommandError('ALREADY_TEMP_CHANNEL', `The Supplied Channel: ${channel.name} is a Temporary Channel`);
 			if(this.client.TempChannelHandler.isMasterTempChannel(channel)) throw new CommandError('ALREADY_TEMP_CHANNEL_MASTER', `The Supplied Channel: ${channel.name} is Already a Temporary Channel Master`);
-			this.client.TempChannelHandler.AddMasterTempChannel(channel);
+			await this.client.TempChannelHandler.AddMasterTempChannel(channel);
 		} else throw new CommandError('FAILED_CHANNEL_PARSE'); // No Channel Selected
 	}
 }

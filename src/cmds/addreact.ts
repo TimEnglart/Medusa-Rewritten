@@ -6,7 +6,7 @@ import { Utility } from '../ext/utility';
 import RichEmbedGenerator from '../ext/RichEmbeds';
 
 
-export default class DisableCommand extends ExtendedClientCommand {
+export default class AddReactionCommand extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {
 		super(commandHandler);
 		this.name = 'addreact';
@@ -51,7 +51,7 @@ export default class DisableCommand extends ExtendedClientCommand {
 		) as Collection<string, TextChannel>;
 		let foundMessageChannel: TextChannel | undefined;
 		let foundMessage: Message | undefined;
-		for (const [channelId, channel] of textChannels) {
+		for (const [, channel] of textChannels) {
 			try {
 				const messageLookup = await channel.messages.fetch(args[0]);
 				if (messageLookup) {

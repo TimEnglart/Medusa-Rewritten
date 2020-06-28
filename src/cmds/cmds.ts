@@ -4,7 +4,7 @@ import { Message, PermissionString, MessageEmbed } from "discord.js";
 import { CommandError } from '../ext/errorParser';
 import RichEmbedGenerator from '../ext/RichEmbeds';
 
-export default class AwardCommand extends ExtendedClientCommand {
+export default class CommandListCommand extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {
 		super(commandHandler);
 		this.name = 'cmds';
@@ -22,7 +22,7 @@ export default class AwardCommand extends ExtendedClientCommand {
 			},
 		};
 	}
-	protected async Run(message: Message, ...args: string[]): Promise<ICommandResult | void> {
+	protected async Run(message: Message): Promise<ICommandResult | void> {
 		if (!message.author || !this.client.user)
 			throw new CommandError('DYNAMIC_PROPERTY_CHECK_FAILED');
 		if (!message.author) throw new CommandError('NO_AUTHOR'); // If Author is Needed

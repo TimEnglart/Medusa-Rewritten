@@ -5,7 +5,7 @@ import { CommandError } from "../ext/errorParser";
 import { Utility } from "../ext/utility";
 
 
-export default class DisableCommand extends ExtendedClientCommand {
+export default class GiveMedalsCommand extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {
 		super(commandHandler);
 		this.name = 'giveme';
