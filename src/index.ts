@@ -1,15 +1,10 @@
 import ExtendedClient from "./ext/ExtendedClient";
 import { LogFilter } from "./ext/logger";
-import { AntiRepost } from "./ext/antiRepostInitiative";
-// import { ClanSync } from "./ext/clanCheck";
-import { Message, MessageEmbed, TextChannel } from "discord.js";
-import RichEmbedGenerator from "./ext/RichEmbeds";
-import { CommandError } from "./ext/errorParser";
-import { inspect } from "util";
 import HotReload from "./ext/HotReload";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const instance = new HotReload<ExtendedClient>({
-	exec: (reloader) => {
+	exec: (reloader): ExtendedClient => {
 		const client = new ExtendedClient({
 			fetchAllMembers: true,
 			reloader: reloader
@@ -34,11 +29,11 @@ const instance = new HotReload<ExtendedClient>({
 		client.login();
 		return client;
 	},
-	shutdown: (client) => {
-		if(client) {
+	shutdown: (client): void => {
+		if (client) {
 			client.destroy();
 			client.webServer.shutdown();
 		}
-			
+
 	}
 });

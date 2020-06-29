@@ -1,7 +1,6 @@
 import ExtendedClient from "./ExtendedClient";
 import { IKeyBasedObject } from ".";
 import { VoiceChannel } from "discord.js";
-import { ITempChannelResponse, ITempChannelMasterResponse } from "./DatabaseInterfaces";
 import { LogFilter } from "./logger";
 import { Collection } from "mongodb";
 import { throws } from "assert";

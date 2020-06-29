@@ -1,10 +1,10 @@
 import { IMedalData } from "./settingsInterfaces";
-import { Database } from "./database";
 import { IKeyBasedObject } from "ext";
 import ExtendedClient from "./ExtendedClient";
 import { GuildMember, User } from "discord.js";
 import { IBungieResponse } from "./BungieAPIRequester";
 import { Collection } from "mongodb";
+import { MongoDBHandler } from "./newDatabaseHandler";
 
 interface ICategorizedMedals {
 	[medalCategory: string]: IMedalData[];
@@ -159,7 +159,7 @@ export default class MedalHandler {
 	public async medalFunction(
 		member: GuildMember,
 		medal: IMedalData,
-		databaseClient?: Database,
+		databaseClient?: MongoDBHandler,
 		existingRecords?: IRecordResponse[],
 	): Promise<boolean> {
 		const a = 'as';

@@ -1,8 +1,6 @@
 import ExtendedClient from "./ExtendedClient";
 import { MessageReaction, User, Message, Role, Emoji, EmojiResolvable, GuildEmoji, ReactionEmoji, PartialUser } from "discord.js";
-import { UpsertResult } from "mariadb";
 import { CommandError } from "./errorParser";
-import { IReactionRoleResponse } from "./DatabaseInterfaces";
 import { LogFilter } from "./logger";
 import { Collection } from "mongodb";
 

@@ -1,14 +1,12 @@
 import { Client, ClientOptions, User, GuildMember, TextChannel, VoiceChannel, ClientEvents, MessageEmbed, Message, Guild, PartialGuildMember, VoiceState, MessageReaction, PartialUser, RateLimitData } from "discord.js";
 import CommandHandler from "./CommandHandler";
 import { ISettingsTemplate } from "./settingsInterfaces";
-import { ExperienceHandler} from "./experienceHandler";
+import { ExperienceHandler } from "./experienceHandler";
 import BungieAPIRequester from './BungieAPIRequester';
 import { Logger, LogFilter } from "./logger";
-import { Database } from "./database";
 import { WebServer } from "./web-server";
 // import { ScoreBook } from "./score-book";
 import { existsSync, readdirSync } from "fs";
-import { ITempChannelResponse, IReactionRoleResponse } from "./DatabaseInterfaces";
 import MedalHandler from "./MedalHandler";
 import TempChannelHandler from "./TempChannelHandler";
 import ReactionRoleHandler from "./ReactionRoleHandler";
@@ -33,11 +31,11 @@ interface IExtendedClientDynamicPaths {
 	};
 	LoggingFolder: string;
 }
-	
+
 interface IExtendedClientOptions extends ClientOptions {
 	reloader?: HotReload;
 }
-	
+
 export default class ExtendedClient extends Client {
 	public commandHandler: CommandHandler;
 	public settings: ISettingsTemplate;
@@ -55,7 +53,7 @@ export default class ExtendedClient extends Client {
 	private readonly HotReloader?: HotReload<ExtendedClient>;
 	constructor(options?: IExtendedClientOptions) {
 		super(options);
-		if(options)
+		if (options)
 			this.HotReloader = options.reloader;
 		// Extended Client Stuff Here
 		if (!require.main) throw new Error('Unable to Resolve Working Directory');
@@ -112,7 +110,7 @@ export default class ExtendedClient extends Client {
 				Relative: overrides?.commandDirectory || 'cmds',
 				Absolute: path.resolve(
 					this.BasePaths.WorkingPath,
-                                   overrides?.commandDirectory || 'cmds',
+					overrides?.commandDirectory || 'cmds',
 				),
 			},
 			LoggingFolder: path.join(this.BasePaths.WorkingPath, overrides?.LogDirectory || 'logs'),
@@ -180,7 +178,7 @@ export default class ExtendedClient extends Client {
 			// Add All Missing Guilds & Users
 
 			const guildCollection = await this.nextDBClient.getCollection('guilds');
-			await guildCollection.insertMany(this.guilds.cache.map((guild) => { return { _id: guild.id } }), {ordered: false});
+			await guildCollection.insertMany(this.guilds.cache.map((guild) => { return { _id: guild.id } }), { ordered: false });
 			const userCollection = await this.nextDBClient.getCollection('users');
 			for (const [, guild] of this.guilds.cache) {
 				try {
@@ -236,7 +234,7 @@ export default class ExtendedClient extends Client {
 		this.logger.logS(`Cached All Message Reactions`, LogFilter.Debug);
 
 		await this.TempChannelHandler.UpdateFromDatabase();
-		
+
 		const tempChannelCollection = await this.nextDBClient.getCollection('temporaryChannels');
 		// Check All Existing Temporary Channels & Delete if Empty
 		for await (const tempChannel of tempChannelCollection.find()) {
@@ -313,8 +311,8 @@ export default class ExtendedClient extends Client {
 		});
 	}
 
-	
-	public LoadListeners() {
+
+	public LoadListeners(): void {
 		this.on('message', this.onMessage.bind(this));
 		this.on('error', this.onError.bind(this));
 		this.on('warn', this.onWarn.bind(this));
@@ -325,36 +323,36 @@ export default class ExtendedClient extends Client {
 		this.on('messageReactionAdd', this.onMessageReactionAdd.bind(this));
 		this.on('messageReactionRemove', this.onMessageReactionRemove.bind(this));
 		this.on('ready', this.onReady.bind(this));
-		
-		if(this.settings.debug) {
+
+		if (this.settings.debug) {
 			this.on('debug', this.onDebug.bind(this));
 			this.on('rateLimit', this.onRateLimit.bind(this));
 			this.on('invalidated', this.onInvalidated);
 		}
 	}
 
-	public Update() {
+	public Update(): void {
 		this.logger.logS('Performing Client Update', LogFilter.Debug);
-		exec(`cd ${this.BasePaths.WorkingPath} && git pull && npm run build`,
+		exec(`cd "${this.BasePaths.WorkingPath}" && git pull && npm run build`,
 			(error, stdout, stderr) => {
 				if (error) this.logger.logS(`Failed Update Operation:\n${error.message}`, LogFilter.Error);
 				else this.logger.logS(`Update Response:\nOutput: ${stdout}\nError: ${stderr}`, LogFilter.Debug);
-				if(this.HotReloader)
+				if (this.HotReloader)
 					this.HotReloader.reload();
 			}
 		);
 
 	}
 
-	protected onRateLimit(rateLimitData: RateLimitData) {
+	protected onRateLimit(rateLimitData: RateLimitData): void {
 		this.logger.logS(`Request to: ${rateLimitData.path} has Triggered a Rate Limit... Time Limited: ${rateLimitData.timeout}`);
 	}
-	protected onInvalidated() {
+	protected onInvalidated(): void {
 		this.Update();
 	}
 
 
-	protected async onMessage(message: Message) {
+	protected async onMessage(message: Message): Promise<void> {
 		// Check if Message Sender is a Bot
 		if (!message.author || message.author.bot) return;
 
@@ -436,14 +434,14 @@ export default class ExtendedClient extends Client {
 
 
 
-	protected async onGuildJoin(guild: Guild) {
+	protected async onGuildJoin(guild: Guild): Promise<void> {
 		const guildCollection = await this.nextDBClient.getCollection('guilds');
 		await guildCollection.updateOne({ _id: guild.id }, { $set: { _id: guild.id } }, { upsert: true });
 		this.logger.logS(`Joined Guild: ${guild.name}(${guild.id})`, LogFilter.Debug);
 	}
 
 
-	protected async onGuildMemberJoin(guildMember: GuildMember | PartialGuildMember) {
+	protected async onGuildMemberJoin(guildMember: GuildMember | PartialGuildMember): Promise<void> {
 		// Enable User in Xp Database
 		await this.experienceHandler.connectUser(guildMember);
 		// Assign Default Server Role
@@ -458,7 +456,7 @@ export default class ExtendedClient extends Client {
 		}
 		// Send User Joined Message to Moderator Channel
 		if (guildMember.user) {
-			if (guild && guild.eventChannelId ) {
+			if (guild && guild.eventChannelId) {
 				const botEmbed = new MessageEmbed()
 					.setTitle('Displaying New User Profile')
 					.setThumbnail(guildMember.user.avatarURL() || '')
@@ -474,7 +472,7 @@ export default class ExtendedClient extends Client {
 		}
 	}
 
-	protected async onGuildMemberLeave(guildMember: GuildMember | PartialGuildMember) {
+	protected async onGuildMemberLeave(guildMember: GuildMember | PartialGuildMember): Promise<void> {
 		// Disable User in Xp Database
 		await this.experienceHandler.disconnectUser(guildMember);
 		// Send User Left Message to Moderator Channel
@@ -499,7 +497,7 @@ export default class ExtendedClient extends Client {
 		}
 	}
 
-	protected async onVoiceStateUpdate(previousVoiceState: VoiceState, newVoiceState: VoiceState) {
+	protected async onVoiceStateUpdate(previousVoiceState: VoiceState, newVoiceState: VoiceState): Promise<void> {
 		if (newVoiceState.channel) {
 			if (this.TempChannelHandler.isMasterTempChannel(newVoiceState.channel)) { // Do Temp Channel
 				const tempChannel = await this.TempChannelHandler.AddTempChannel(newVoiceState.channel);
@@ -512,14 +510,14 @@ export default class ExtendedClient extends Client {
 				this.TempChannelHandler.DeleteEmptyChannel(previousVoiceState.channel);
 	}
 
-	protected async onMessageReactionAdd(reaction: MessageReaction, user: User | PartialUser) {
+	protected async onMessageReactionAdd(reaction: MessageReaction, user: User | PartialUser): Promise<void> {
 		await this.ReactionRoleHandler.OnReactionAdd(reaction, user);
 	}
-	protected async onMessageReactionRemove(reaction: MessageReaction, user: User | PartialUser) {
+	protected async onMessageReactionRemove(reaction: MessageReaction, user: User | PartialUser): Promise<void> {
 		await this.ReactionRoleHandler.OnReactionRemove(reaction, user);
 	}
 
-	protected async onReady() {
+	protected async onReady(): Promise<void> {
 		if (!this.user) return;
 		await this.user.setActivity(`BOOT SEQUENCE INITIALIZATION`, { type: 'WATCHING' });
 
@@ -538,14 +536,14 @@ export default class ExtendedClient extends Client {
 		this.logger.logS(`Successfully Booted and Online -> ${this.user.username}`, LogFilter.Success);
 	}
 
-	protected onError(error: Error) {
+	protected onError(error: Error): void {
 		this.logger.logS(`Unknown Discord.js Error Occurred:\nRaw Error:\n${error}`, LogFilter.Error);
 	}
-	protected onWarn(warning: string) {
+	protected onWarn(warning: string): void {
 		this.logger.logS(`Discord Warn Message: ${warning}`, LogFilter.Debug);
 	}
-	protected onDebug(debug: string) {
+	protected onDebug(debug: string): void {
 		this.logger.logS(`Discord Debug Message: ${debug}`, LogFilter.Debug);
 	}
-	
+
 }

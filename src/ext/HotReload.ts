@@ -1,13 +1,13 @@
 interface IHotReloadSettings<T> {
 	exec: (HotReloader: HotReload<T>, args?: any[]) => T;
 	shutdown?: (ref: T | null) => void; 
-	args?: any[]
+	args?: any[];
 }
 
 export default class HotReload<T = any> {
-	private ref: T | null;
+	private ref: T | null = null;
 	constructor(private readonly options: IHotReloadSettings<T>) {
-		this.ref = this.options.exec(this, this.options.args);
+		this.start();
 	}
 	public reload(): void {
 		this.stop();

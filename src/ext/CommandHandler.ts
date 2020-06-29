@@ -1,6 +1,5 @@
 import { Message } from 'discord.js';
 import { Collection } from 'mongodb';
-import { IDisabledCommandsResponse } from './DatabaseInterfaces';
 import ExtendedClient from './ExtendedClient';
 import ExtendedClientCommand, { ICommandResult } from './CommandTemplate';
 import { CommandError } from './errorParser';

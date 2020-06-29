@@ -1,4 +1,3 @@
-import { Database } from "./database";
 import ExtendedClient from "./ExtendedClient";
 import { IRankData } from "./settingsInterfaces";
 import { GuildMember, User, PartialGuildMember } from "discord.js";
