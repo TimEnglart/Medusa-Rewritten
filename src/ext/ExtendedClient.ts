@@ -419,6 +419,7 @@ export default class ExtendedClient extends Client {
 					),
 				);
 			}
+			/*
 			this.logger.logS(
 				`Command Error Occurred:\n
 							Failing Command: ${commandName}\n
@@ -427,6 +428,7 @@ export default class ExtendedClient extends Client {
 							${inspect(commandFile.error)}`,
 				LogFilter.Error,
 			);
+			*/
 		}
 		message.channel.stopTyping(true);
 	}
@@ -518,6 +520,7 @@ export default class ExtendedClient extends Client {
 	}
 
 	protected async onReady(): Promise<void> {
+		
 		if (!this.user) return;
 		await this.user.setActivity(`BOOT SEQUENCE INITIALIZATION`, { type: 'WATCHING' });
 

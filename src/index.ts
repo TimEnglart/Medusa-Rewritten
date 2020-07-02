@@ -2,30 +2,40 @@ import ExtendedClient from "./ext/ExtendedClient";
 import { LogFilter } from "./ext/logger";
 import HotReload from "./ext/HotReload";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const instance = new HotReload<ExtendedClient>({
+
+
+let client: ExtendedClient | undefined;
+
+function onUnhandledRejection(reason: {} | null | undefined, promise: Promise<unknown>): void {
+	if(client)
+		client.logger.logS(
+			`Uncaught Promise Rejection:\nReason:\n${reason}\n\nPromise:\n${JSON.stringify(promise)}`,
+			LogFilter.Error,
+		);
+}
+function onUncaughtException(err: Error): void {
+	console.log(err);
+	if (client)
+		client.logger.logS(`Uncaught Exception thrown:\n${err}\nExiting...`, LogFilter.Error);
+	throw err;
+}
+
+function onExit(exitCode: number): void {
+	console.log(exitCode);
+}
+
+process
+	.on('unhandledRejection', onUnhandledRejection)
+	.on('uncaughtException', onUncaughtException)
+	.on('exit', onExit);
+
+// HotReload will be Referenced in client so it shouldnt be in GC
+new HotReload<ExtendedClient>({
 	exec: (reloader): ExtendedClient => {
-		const client = new ExtendedClient({
+		client = new ExtendedClient({
 			fetchAllMembers: true,
 			reloader: reloader
 		});
-
-		process
-			.on('unhandledRejection', (reason, p) => {
-				client.logger.logS(
-					`Uncaught Promise Rejection:\nReason:\n${reason}\n\nPromise:\n${JSON.stringify(p)}`,
-					LogFilter.Error,
-				);
-			})
-			.on('uncaughtException', err => {
-				console.log(err);
-				client.logger.logS(`Uncaught Exception thrown:\n${err}\nExiting...`, LogFilter.Error);
-				process.exit(1);
-			})
-			.on('exit', e => {
-				console.log(e);
-			});
-
 		client.login();
 		return client;
 	},
@@ -34,6 +44,5 @@ const instance = new HotReload<ExtendedClient>({
 			client.destroy();
 			client.webServer.shutdown();
 		}
-
 	}
 });
