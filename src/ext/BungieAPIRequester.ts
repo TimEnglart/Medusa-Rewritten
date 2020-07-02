@@ -1,4 +1,4 @@
-import { MyRequester, ExtendedRequestOptions } from "./webClient";
+import { MyRequester, IExtendedRequestOptions } from "./webClient";
 // import { BungieResponse } from "./discordToBungie";
 import RateLimiter from "@timenglart/limited-rate-limiter";
 import { Logger, LogFilter } from "./logger";
@@ -27,8 +27,8 @@ export default class BungieAPIRequester {
 	public numberOfRetries = 0;
 	private requester: MyRequester;
 	private RateLimiter: RateLimiter;
-	constructor(apiKey: string, private readonly logger: Logger, requestOptions?: ExtendedRequestOptions) {
-		const defaultOptions: ExtendedRequestOptions = {
+	constructor(apiKey: string, private readonly logger: Logger, requestOptions?: IExtendedRequestOptions) {
+		const defaultOptions: IExtendedRequestOptions = {
 			hostname: 'www.bungie.net',
 			port: 443,
 			method: 'GET',
@@ -47,7 +47,7 @@ export default class BungieAPIRequester {
 			returnTokenOnCompletion: false,
 		});
 	}
-	public async SendRequest<T = any>(path: string, overrideOptions?: ExtendedRequestOptions, data?: unknown): Promise<IBungieResponse<T> | undefined> {
+	public async SendRequest<T = any>(path: string, overrideOptions?: IExtendedRequestOptions, data?: unknown): Promise<IBungieResponse<T> | undefined> {
 		try {
 			const response = await this.RateLimiter.addPromise<Promise<IBungieResponse<T>>>(
 				this.requestToRateLimitFunc,
@@ -77,10 +77,10 @@ export default class BungieAPIRequester {
 	}
 }
 
-type RequestVariadic = [MyRequester, ExtendedRequestOptions, unknown];
+type RequestVariadic = [MyRequester, IExtendedRequestOptions, unknown];
 interface IRequestArgs {
 	requester: MyRequester;
-	options: ExtendedRequestOptions;
+	options: IExtendedRequestOptions;
 	data: any;
 }
 interface IContactEndpointResponse<T> {
