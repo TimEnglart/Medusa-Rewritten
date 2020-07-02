@@ -7,7 +7,7 @@ interface IExperienceVoiceChannelState {
 	[userId: string]: {
 		channelId: string;
 		time: number;
-	}
+	};
 }
 
 export class ExperienceHandler {

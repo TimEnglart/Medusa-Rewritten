@@ -4,7 +4,7 @@
 	"description": "Discord Bot For The Lighthouse Destiny Discord Server",
 	"main": "lib/index.js",
 	"engines": {
-		"node": ">=8.0.0"
+		"node": ">=12.0.0"
 	},
 	"author": "Tim Englart",
 	"license": "ISC",

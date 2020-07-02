@@ -1,6 +1,6 @@
 import { IKeyBasedObject } from '.';
 
-interface IMedalData {
+export interface IMedalData {
 	name: string;
 	emoji: string;
 	dbData: {
@@ -18,7 +18,7 @@ interface IMedalData {
 	available: boolean;
 }
 
-interface IRankData {
+export interface IRankData {
 	name: string;
 	icon: string;
 	emoji: {
@@ -29,7 +29,7 @@ interface IRankData {
 	};
 }
 
-interface ISettingsTemplate {
+export interface ISettingsTemplate {
 	version: string;
 	debug: boolean;
 	defaultPrefix: string;
@@ -47,7 +47,7 @@ interface ISettingsTemplate {
 		password: string;
 		mongo: {
 			uri: string;
-		}
+		};
 	};
 	lighthouse: {
 		discordId: string;
@@ -76,5 +76,3 @@ interface ISettingsTemplate {
 		reason: string;
 	}>;
 }
-
-export { ISettingsTemplate, IRankData, IMedalData };

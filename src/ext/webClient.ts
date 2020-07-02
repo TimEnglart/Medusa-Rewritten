@@ -62,7 +62,7 @@ class Cookie {
 	}
 }
 
-interface ExtendedRequestOptions extends https.RequestOptions {
+export interface IExtendedRequestOptions extends https.RequestOptions {
 	responseType?: 'RAW' | 'JSON' | 'XML' | undefined;
 	doNotFollowRedirect?: boolean;
 }
@@ -72,7 +72,7 @@ class RequestError extends Error {
 	public statusCode: number;
 	public path?: string | null;
 	public redirectUrl?: URL;
-	constructor(public options: ExtendedRequestOptions, public response: IncomingMessage) {
+	constructor(public options: IExtendedRequestOptions, public response: IncomingMessage) {
 		super(`HTTP_STATUS_CODE_${response.statusCode}`);
 		this.statusCode = response.statusCode || 0;
 		this.hostname = options.hostname;
@@ -86,11 +86,11 @@ class RequestError extends Error {
 // tslint:disable-next-line: max-classes-per-file
 class MyRequester {
 	public cookies: Map<string, Cookie[]>;
-	constructor(public options: ExtendedRequestOptions) {
+	constructor(public options: IExtendedRequestOptions) {
 		this.cookies = new Map<string, Cookie[]>();
 		// options.protocol = 'https:';
 	}
-	public async request(options?: ExtendedRequestOptions, postData: any = null): Promise<any> {
+	public async request(options?: IExtendedRequestOptions, postData: any = null): Promise<any> {
 		if (!this.options && !options) throw new Error('No Options');
 		const overrideOptions = this.options;
 		Object.assign(overrideOptions, options);
@@ -185,4 +185,4 @@ class MyRequester {
 		}
 	}
 }
-export { MyRequester, RequestError, ExtendedRequestOptions };
+export { MyRequester, RequestError };

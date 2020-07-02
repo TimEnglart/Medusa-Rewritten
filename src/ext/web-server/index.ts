@@ -23,7 +23,7 @@ class WebServer {
 				res.set('Access-Control-Allow-Origin', '*');
 				res.status(200).send(JSON.parse(logFile));
 			});
-			this.server = 
+		this.server = 
 			this.app.listen(port || 3000, () => console.log(`Example app listening on port ${port || 3000}!`));
 		return this;
 	}
