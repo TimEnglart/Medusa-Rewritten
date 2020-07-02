@@ -30,6 +30,11 @@ jobs:
             ${{ runner.OS }}-build-${{ env.cache-name }}-
             ${{ runner.OS }}-build-
             ${{ runner.OS }}-
+
+      - name: Auth With Github
+        env: 
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> ~/.npmrc
       - name: Install Node Dependencies
         run: npm install
         env:

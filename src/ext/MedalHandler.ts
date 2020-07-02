@@ -1,9 +1,10 @@
 import { IMedalData } from "./settingsInterfaces";
-import { Database } from "./database";
 import { IKeyBasedObject } from "ext";
 import ExtendedClient from "./ExtendedClient";
 import { GuildMember, User } from "discord.js";
 import { IBungieResponse } from "./BungieAPIRequester";
+import { Collection } from "mongodb";
+import { MongoDBHandler } from "./newDatabaseHandler";
 
 interface ICategorizedMedals {
 	[medalCategory: string]: IMedalData[];
@@ -11,49 +12,58 @@ interface ICategorizedMedals {
 
 
 export default class MedalHandler {
-	private readonly DatabaseClient: Database;
 	private Functions: IKeyBasedObject<(args: string[]) => Promise<boolean>>;
 	constructor(private readonly client: ExtendedClient) {
-		this.DatabaseClient = this.client.databaseClient;
 		this.Functions = {};
 	}
-	private async ChangeMedalStatus(userId: string, medal: IMedalData, unlock: boolean): Promise<void> {
-		const response = await this.DatabaseClient.query(
-			`SELECT ${medal.dbData.column} FROM ${medal.dbData.table} WHERE user_id = ${userId}`,
-		);
-		if (!response.length)
-			await this.DatabaseClient.query(
-				`INSERT INTO ${medal.dbData.table}(${medal.dbData.column}) VALUES(${unlock}) WHERE user_id = ${userId}`,
-			);
-		else if (response[0][medal.dbData.column]) return; //Medal Already Unlocked
-
-		await this.DatabaseClient.query(
-			`UPDATE ${medal.dbData.table} SET ${medal.dbData.column} = ${unlock} WHERE user_id = ${userId}`,
-		);
-		await this.client.experienceHandler.GiveExperience(userId, unlock ? +medal.xp : -medal.xp);
+	private async getExperienceCollection(): Promise<Collection<any>> {
+		return await this.client.nextDBClient.getCollection('experience');
 	}
-	public async UnlockMedals(userId: string, medals: IMedalData[]): Promise<void> {
+	private async ChangeMedalStatus(user: User, medal: IMedalData, unlock: boolean): Promise<void> {
+		const experienceCollection = await this.getExperienceCollection();
+		const status = await experienceCollection.updateOne(
+			{
+				_id: user.id,
+			},
+			{
+				$set: {
+					[`medals.${medal.name}`]: unlock,
+				},
+			},
+			{ upsert: true },
+		);
+		if (status.result.nModified > 0) // add exp if it was updated
+			await this.client.experienceHandler.GiveExperience(user, unlock ? +medal.xp : -medal.xp);
+	}
+	public async UnlockMedals(user: User, medals: IMedalData[]): Promise<void> {
 		for (const medal of medals) {
-			await this.ChangeMedalStatus(userId, medal, true);
+			await this.ChangeMedalStatus(user, medal, true);
 		}
 	}
-	public async LockMedals(userId: string, medals: IMedalData[]): Promise<void> {
+	public async LockMedals(user: User, medals: IMedalData[]): Promise<void> {
 		for (const medal of medals) {
-			await this.ChangeMedalStatus(userId, medal, false);
+			await this.ChangeMedalStatus(user, medal, false);
 		}
 	}
-	public async SetMedals(userId: string, medalStatuses: {unlock: boolean; medal: IMedalData}[]): Promise<void> {
+	public async SetMedals(
+		user: User,
+		medalStatuses: { unlock: boolean; medal: IMedalData }[],
+	): Promise<void> {
 		for (const medal of medalStatuses) {
-			await this.ChangeMedalStatus(userId, medal.medal, medal.unlock);
+			await this.ChangeMedalStatus(user, medal.medal, medal.unlock);
 		}
 	}
-	public FindMostRelatedMedal(medalString: string): {name: string; correctness: number;} {
+	public FindMostRelatedMedal(medalString: string): { name: string; correctness: number } {
 		const medalCheck: {
 			[index: string]: boolean[];
 		} = {};
 		for (const listedMedal of this.client.settings.lighthouse.medals) {
 			for (let i = 0; i < medalString.length; i++) {
-				if (medalString[i] === listedMedal.name[i] ? listedMedal.name[i].toLowerCase() : undefined) {
+				if (
+					medalString[i] === listedMedal.name[i]
+						? listedMedal.name[i].toLowerCase()
+						: undefined
+				) {
 					if (Array.isArray(medalCheck[listedMedal.name])) {
 						medalCheck[listedMedal.name].push(true);
 					} else {
@@ -69,7 +79,8 @@ export default class MedalHandler {
 		for (const checkedMedal in medalCheck) {
 			if (!checkedMedal) continue;
 			const percentCheck =
-                (medalCheck[checkedMedal].filter((element) => element).length / checkedMedal.length) * 100;
+                               (medalCheck[checkedMedal].filter((element) => element).length / checkedMedal.length) *
+                               100;
 			if (selection.correctness < percentCheck) {
 				selection = { name: checkedMedal, correctness: percentCheck };
 			}
@@ -80,7 +91,7 @@ export default class MedalHandler {
 		member: GuildMember | User | null,
 		getRecords: boolean,
 	): Promise<IMedalData[]> {
-		return [];/*
+		return []; /*
 		try {
 			if (!member) throw new Error('No User Supplied');
 			const records = getRecords ? await getUserRecords(member, databaseClient) : undefined;
@@ -96,7 +107,11 @@ export default class MedalHandler {
 			throw e;
 		}*/
 	}
-	public async checkMedal(member: GuildMember | User, medal: IMedalData, records?: IRecordResponse[]): Promise<boolean> {
+	public async checkMedal(
+		member: GuildMember | User,
+		medal: IMedalData,
+		records?: IRecordResponse[],
+	): Promise<boolean> {
 		return false; /*
 		try {
 			switch (medal.acquisitionMethod.function.toUpperCase()) {
@@ -144,11 +159,11 @@ export default class MedalHandler {
 	public async medalFunction(
 		member: GuildMember,
 		medal: IMedalData,
-		databaseClient?: Database,
+		databaseClient?: MongoDBHandler,
 		existingRecords?: IRecordResponse[],
 	): Promise<boolean> {
 		const a = 'as';
-		return false;/*
+		return false; /*
 		return new Promise(async (resolve, reject) => {
 			const dynamicFunctions: {
 				[functionName: string]: (args: string[]) => Promise<boolean>;
@@ -249,12 +264,18 @@ export default class MedalHandler {
 				return newObj; // Can Remove Categorized Medal Typing and Replace with any if errors occur
 			}, {});
 	}
-	private async GetUserRecords(destinyMembershipId: string, membershipType: string): Promise<IBungieResponse<IRecordResponse> | undefined> {
+	private async GetUserRecords(
+		destinyMembershipId: string,
+		membershipType: string,
+	): Promise<IBungieResponse<IRecordResponse> | undefined> {
 		return await this.client.bungieApiRequester.SendRequest<IRecordResponse>(
 			`/Destiny2/${membershipType}/Profile/${destinyMembershipId}/?components=900`,
 		);
 	}
-	private async GetUserCollectables(destinyMembershipId: string, membershipType: string): Promise<IBungieResponse<IRecordResponse> | undefined> {
+	private async GetUserCollectables(
+		destinyMembershipId: string,
+		membershipType: string,
+	): Promise<IBungieResponse<IRecordResponse> | undefined> {
 		return await this.client.bungieApiRequester.SendRequest<IRecordResponse>(
 			`/Destiny2/${membershipType}/Profile/${destinyMembershipId}/?components=800`,
 		);

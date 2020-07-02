@@ -1,9 +1,7 @@
-import { Message, Permissions, PermissionString, GuildMember, User } from 'discord.js';
+import { Message, Permissions, PermissionString } from 'discord.js';
 import { CommandError } from '../ext/errorParser';
 import CommandHandler from '../ext/CommandHandler';
 import ExtendedClient from './ExtendedClient';
-import { LogFilter } from './logger';
-import { isNullOrUndefined } from 'util';
 
 // TODO: Add Additional Debugging to Property Checks
 
@@ -19,9 +17,19 @@ interface IExpectedArgument {
 	example: string;
 }
 
-interface ICommandResult {
+export interface ICommandResult {
 	success: boolean;
 	error?: Error | CommandError;
+}
+enum ChannelType {
+	text = 0,
+	dm = 1,
+	voice = 2,
+	group = 3,
+	category = 4,
+	news = 5,
+	store = 6,
+	unknown = 7,
 }
 class ExtendedClientCommand {
 	public description: string;
@@ -92,7 +100,7 @@ class ExtendedClientCommand {
 		}
 	}
 
-	protected async Run(message: Message, ...args: string[]): Promise<ICommandResult | void> {
+	protected async Run(message: Message, ...args: string[]): Promise<void | ICommandResult> {
 		throw new CommandError('DEFAULT_COMMAND'); // Just Throw because There is a Catch in Execute
 	}
 	protected ExtendedPropertyCheck(): boolean {
@@ -100,11 +108,11 @@ class ExtendedClientCommand {
 		return true;
 	}
 
-	private propertyIsDefined(obj: Record<string, any>, property: string, requiredValue?: any): boolean {
+	private propertyIsDefined(obj: Record<string, any>, property: string, requiredValue?: unknown): boolean {
 		if (!obj) return false; // If No Base Object
 		const objectProperty = obj[property];
-		if (isNullOrUndefined(objectProperty)) return false; // If Property has no value
-		if (!isNullOrUndefined(requiredValue) && objectProperty !== requiredValue) return false; // if we are checking if it has an required value which isnt null or undef
+		if (objectProperty === null || objectProperty === undefined) return false; // If Property has no value
+		if (!(requiredValue === null || requiredValue === undefined) && objectProperty !== requiredValue) return false; // if we are checking if it has an required value which isnt null or undef
 		return true;
 	}
 	private checkProperties(obj: Record<string, any>): boolean {
@@ -119,7 +127,6 @@ class ExtendedClientCommand {
 				const propertyToCheck = requiredProperties[propertyName];
 				if (typeof propertyToCheck === 'object') {
 					if (!this.recursivePropertyCheck(obj[propertyName], propertyToCheck)) return false;
-					
 				} else {
 					if (!this.propertyIsDefined(obj, propertyName, propertyToCheck)) return false;
 				}
@@ -163,4 +170,3 @@ class ExtendedClientCommand {
 }
 
 export default ExtendedClientCommand;
-export { ICommandResult };

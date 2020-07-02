@@ -33,17 +33,20 @@ export default class SetLogChannel extends ExtendedClientCommand {
 		if (!userLogChannel) throw new CommandError('NO_CHANNEL_FOUND');
 		const actualChannel = message.guild.channels.resolve(userLogChannel.id);
 		if (actualChannel) {
-			const select = await this.client.databaseClient.query(
-				`SELECT * FROM G_Event_Log_Channel WHERE guild_id = ${message.guild.id} AND text_channel_id = ${userLogChannel.id}`,
+			const guildCollection = await this.client.nextDBClient.getCollection('guilds');
+			await guildCollection.updateOne(
+				{
+					_id: message.guild.id,
+				},
+				{
+					$set: {
+						_id: message.guild.id,
+						eventChannelId: userLogChannel.id,
+					}
+				},
+				{ upsert: true }
 			);
-			if (select.length)
-				await this.client.databaseClient.query(
-					`UPDATE G_Event_Log_Channel SET text_channel_id = ${userLogChannel.id} WHERE guild_id = ${message.guild.id}`,
-				);
-			else
-				await this.client.databaseClient.query(
-					`INSERT INTO G_Prefix (guild_id, text_channel_id) VALUES (${message.guild.id}, ${userLogChannel.id})`,
-				);
+			
 			await message.channel.send(
 				RichEmbedGenerator.successEmbed('User Log Channel Updated', `${message.guild.channels.resolve(userLogChannel.id)}`),
 			);

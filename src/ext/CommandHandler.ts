@@ -1,6 +1,5 @@
-import { Collection, Message } from 'discord.js';
-
-import { IDisabledCommandsResponse } from './DatabaseInterfaces';
+import { Message } from 'discord.js';
+import { Collection } from 'mongodb';
 import ExtendedClient from './ExtendedClient';
 import ExtendedClientCommand, { ICommandResult } from './CommandTemplate';
 import { CommandError } from './errorParser';
@@ -43,29 +42,48 @@ export default class CommandHandler {
 				),
 			};
 		}
-		return await command.Execute(message, ...args);
+		return command.Execute(message, ...args);
 	}
 	public async DisableCommand(commandName: string, reason: string): Promise<void> {
 		this.DisabledCommands[commandName] = reason; // Override Reason if there is One
-		await this.client.databaseClient.query(
-			`INSERT IGNORE INTO G_Disabled_Commands (name, reason) VALUES ("${commandName}", "${reason}");`,
+		const disabledCommands = await this.getDisabledCommandCollection();
+		await disabledCommands.updateOne(
+			{
+				commandName: commandName,
+			},
+			{
+				$set: {
+					commandName: commandName,
+					reason: reason
+				}
+			},
 		);
 	}
 	public async EnableCommand(commandName: string): Promise<void> {
 		if (!this.DisabledCommands[commandName]) return;
 		delete this.DisabledCommands[commandName];
-		await this.client.databaseClient.query(
-			`DELETE IGNORE FROM G_Disabled_Commands WHERE name = "${commandName}";`,
+
+		const disabledCommands = await this.getDisabledCommandCollection();
+		await disabledCommands.deleteOne(
+			{
+				commandName: commandName,
+			}
 		);
 	}
-	public async GetRemoteDisabledCommands(): Promise<IDisabledCommandsResponse[]> {
-		const disabledCommands = await this.client.databaseClient.query<IDisabledCommandsResponse>(
-			`SELECT * FROM G_Disabled_Commands`,
-		);
-		for (const disabledCommand of disabledCommands) {
-			this.DisabledCommands[disabledCommand.name] = disabledCommand.reason;
+	public async GetRemoteDisabledCommands(): Promise<void> {
+		const disabledCommands = await this.getDisabledCommandCollection();
+		for await (const disabledCommand of disabledCommands.find<any>()) {
+			this.DisabledCommands[disabledCommand.commandName] = disabledCommand.reason;
 		}
-		return disabledCommands;
 	}
+
+	private async getDisabledCommandCollection(): Promise<Collection<any>> {
+		return await this.client.nextDBClient.getCollection('disabledCommands');
+	}
+
+	public resetCommands() {
+		// this.Commands = new Map();
+	}
+
 }
 

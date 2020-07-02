@@ -38,8 +38,8 @@ export default class AwardCommand extends ExtendedClientCommand {
 		if (!this.client.user) throw new CommandError('NO_BOT_USER'); // If Bot Instance is Needed
 		if (args.length === 0) throw new CommandError('NO_ARGUMENTS');
 		const [userResolvable, medalName] = Utility.quotedWords(args.join(' '));
-		const user: GuildMember | null = Utility.LookupMember(message.guild, userResolvable);
-		if (!user) throw new CommandError('NO_USER_FOUND');
+		const member: GuildMember | null = Utility.LookupMember(message.guild, userResolvable);
+		if (!member) throw new CommandError('NO_USER_FOUND');
 		let myMedal: IMedalData | undefined = this.client.settings.lighthouse.medals.find(
 			(medal) => medal.name.toLowerCase() === medalName.toLowerCase(),
 		);
@@ -61,9 +61,9 @@ export default class AwardCommand extends ExtendedClientCommand {
 			}
 		}
 		if (!myMedal) throw new CommandError('NO_MEDAL_FOUND', `Was Unable to Find Medal Matching: ${medalName}.`);
-		await this.client.MedalHandler.UnlockMedals(user.id, [myMedal])
+		await this.client.MedalHandler.UnlockMedals(member.user, [myMedal]);
 		await message.channel.send(
-			RichEmbedGenerator.successEmbed(`Successfully Awarded ${myMedal.name}`, `To User ${user.displayName}`),
+			RichEmbedGenerator.successEmbed(`Successfully Awarded ${myMedal.name}`, `To User ${member.displayName}`),
 		);
 	}
 }

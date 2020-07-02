@@ -38,6 +38,7 @@ export default class ExitBot extends ExtendedClientCommand {
 				.addField(`Created`, user.user.createdAt.toDateString(), true);
 		}
 		//embed.addBlankField();
+		/*
 		const query = await this.client.databaseClient.query(
 			`SELECT * FROM U_Bungie_Account uba JOIN U_Destiny_Profile udf ON uba.bungie_id = udf.bungie_id JOIN U_Experience ue ON uba.user_id = ue.user_id WHERE uba.user_id = ${userId}`,
 		);
@@ -73,5 +74,6 @@ export default class ExitBot extends ExtendedClientCommand {
 			if (medals.length) embed.addField(`${key}`, `${medals.join('\n')}`);
 		}
 		await message.channel.send(embed);
+		*/
 	}
 }

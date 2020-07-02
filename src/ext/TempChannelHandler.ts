@@ -1,8 +1,9 @@
 import ExtendedClient from "./ExtendedClient";
 import { IKeyBasedObject } from ".";
-import { VoiceChannel, Collection } from "discord.js";
-import { ITempChannelResponse, ITempChannelMasterResponse } from "./DatabaseInterfaces";
+import { VoiceChannel } from "discord.js";
 import { LogFilter } from "./logger";
+import { Collection } from "mongodb";
+import { throws } from "assert";
 
 
 
@@ -15,26 +16,26 @@ export default class TempChannelHandler {
 		this.TempMasterChannels = new Map();
 		this.TemporaryChannels = new Map();
 	}
+	private async getTempChannelCollection(): Promise<Collection<any>> {
+		return await this.client.nextDBClient.getCollection('temporaryChannels');
+	}
+	private async getMasterTempChannelCollection(): Promise<Collection<any>> {
+		return await this.client.nextDBClient.getCollection('masterTemporaryChannels');
+	}
 	public async UpdateFromDatabase(): Promise<TempChannelHandler> {
 		// yuck
-		const dbMasterChannels = await this.client.databaseClient.query<ITempChannelMasterResponse>(
-			`SELECT * FROM G_Master_Temp_Channels`,
-		);
-		for (const masterChannel of dbMasterChannels) {
-			const masterChannels = this.TempMasterChannels.get(masterChannel.guild_id);
+		const dbMasterChannelCollection = await this.getMasterTempChannelCollection();
+		for await (const masterChannel of dbMasterChannelCollection.find()) {
+			const masterChannels = this.TempMasterChannels.get(masterChannel.guildId);
 			if (!masterChannels)
-				this.TempMasterChannels.set(masterChannel.guild_id, [masterChannel.voice_channel_id]);
-			else masterChannels.push(masterChannel.voice_channel_id);
-
-			const dbTempChannels = await this.client.databaseClient.query<ITempChannelResponse>(
-				`SELECT * FROM G_Temp_Channels WHERE guild_id = ${masterChannel.guild_id}`,
-			);
-			for (const tempChannel of dbTempChannels) {
-				const tempChannels = this.TemporaryChannels.get(masterChannel.guild_id);
-				if (!tempChannels)
-					this.TemporaryChannels.set(masterChannel.guild_id, [tempChannel.voice_channel_id]);
-				else tempChannels.push(tempChannel.voice_channel_id);
-			}
+				this.TempMasterChannels.set(masterChannel.guildId, [masterChannel.voiceChannelId]);
+			else masterChannels.push(masterChannel.voiceChannelId);
+		}
+		const tempChannelCollection = await this.getTempChannelCollection();
+		for await (const tempChannel of tempChannelCollection.find()) {
+			const tempChannels = this.TemporaryChannels.get(tempChannel.guildId);
+			if (!tempChannels) this.TemporaryChannels.set(tempChannel.guildId, [tempChannel.voiceChannelId]);
+			else tempChannels.push(tempChannel.voiceChannelId);
 		}
 		return this;
 	}
@@ -42,14 +43,13 @@ export default class TempChannelHandler {
 		voiceChannel: VoiceChannel,
 		channelName?: string,
 	): Promise<VoiceChannel> {
-		this.AddChannelEntry(this.TemporaryChannels, voiceChannel.guild.id, voiceChannel.id);
-
+		
 		// Clone Current Voice Channel as a Temporary Channel
 		const clonedChannel = await voiceChannel.clone({
 			name: `${channelName || voiceChannel.name}`,
 			reason: 'Dynamic Channel Created',
 		});
-
+		this.AddChannelEntry(this.TemporaryChannels, clonedChannel.guild.id, clonedChannel.id);
 		// Set Members Voice Channel to New Temp Channel
 		//await newVoiceState.setChannel(clonedChannel, 'Moving to Temp Channel');
 
@@ -57,11 +57,13 @@ export default class TempChannelHandler {
 			`Created Temporary Channel: ${clonedChannel.name}(${clonedChannel.id}) in Guild: ${clonedChannel.guild.id}`,
 			LogFilter.Debug,
 		);
-		// Add Clone to Current Temp Channel List
-		await this.client.databaseClient.query(
-			`INSERT IGNORE INTO G_Temp_Channels VALUES (${clonedChannel.guild.id}, ${clonedChannel.id})`,
-		);
 
+		// Add Clone to Current Temp Channel List
+		const tempCollection = await this.getTempChannelCollection();
+		await tempCollection.insertOne({
+			guildId: clonedChannel.guild.id,
+			voiceChannelId: clonedChannel.id,
+		});
 		// Wait 10 Seconds. Allow for Latency as If User Doesnt Successfully Join Channel VoiceState Doesnt Trigger
 		setTimeout(async () => {
 			await this.DeleteEmptyChannel(clonedChannel);
@@ -78,9 +80,12 @@ export default class TempChannelHandler {
 		if (!tempVoiceChannel) return;
 		await voiceChannel.delete('Dynamic Channel Destroyed');
 		this.RemoveChannelEntry(this.TemporaryChannels, voiceChannel.guild.id, voiceChannel.id);
-		await this.client.databaseClient.query<ITempChannelResponse>(
-			`DELETE IGNORE FROM G_Temp_Channels WHERE voice_channel_id = ${voiceChannel.id} AND guild_id = ${voiceChannel.guild.id}`,
-		);
+
+		const tempCollection = await this.getTempChannelCollection();
+		await tempCollection.deleteOne({
+			voiceChannelId: voiceChannel.id,
+			guildId: voiceChannel.guild.id
+		});
 		this.client.logger.logS(
 			`Deleting Temporary Channel: ${voiceChannel.name}(${voiceChannel.id}) in Guild: ${voiceChannel.guild.id}`,
 			1,
@@ -98,7 +103,7 @@ export default class TempChannelHandler {
 	}
 	private AddChannelEntry(map: Map<string, string[]>, key: string, value: string): void {
 		const guidVoiceChannels = map.get(key);
-		if (!guidVoiceChannels) this.TemporaryChannels.set(key, [value]);
+		if (!guidVoiceChannels) map.set(key, [value]);
 		else guidVoiceChannels.push(value);
 	}
 	private GetChannelEntry(map: Map<string, string[]>, key: string, value: string): string | undefined {
@@ -128,9 +133,11 @@ export default class TempChannelHandler {
 			LogFilter.Debug,
 		);
 		// Add Clone to Current Temp Channel List
-		await this.client.databaseClient.query(
-			`INSERT IGNORE INTO G_Master_Temp_Channels VALUES (${voiceChannel.guild.id}, ${voiceChannel.id})`,
-		);
+		const masterCollection = await this.getMasterTempChannelCollection();
+		await masterCollection.insertOne({
+			guildId: voiceChannel.guild.id,
+			voiceChannelId: voiceChannel.id,
+		});
 	}
 	public async RemoveMasterTempChannel(voiceChannel: VoiceChannel): Promise<void> {
 		const tempVoiceChannel = this.GetChannelEntry(
@@ -140,18 +147,21 @@ export default class TempChannelHandler {
 		);
 		if (tempVoiceChannel) return; // DONT ADD CURRENT TEMP CHANNELS AS MASTERS
 
-		this.AddChannelEntry(this.TempMasterChannels, voiceChannel.guild.id, voiceChannel.id);
+		this.RemoveChannelEntry(this.TempMasterChannels, voiceChannel.guild.id, voiceChannel.id);
 
 		this.client.logger.logS(
 			`Removed Temporary Channel Master: ${voiceChannel.name}(${voiceChannel.id}) in Guild: ${voiceChannel.guild.id}`,
 			LogFilter.Debug,
 		);
 		// Add Clone to Current Temp Channel List
-		await this.client.databaseClient.query(
-			`DELETE IGNORE FROM G_Master_Temp_Channels WHERE guild_id = '${voiceChannel.guild.id}' AND voice_channel_id = '${voiceChannel.id})'`,
-		);
+		const masterCollection = await this.getMasterTempChannelCollection();
+		await masterCollection.deleteOne({
+			guildId: voiceChannel.guild.id,
+			voiceChannelId: voiceChannel.id,
+		});
 	}
 	public async DeleteEmptyChannel(voiceChannel: VoiceChannel): Promise<void> {
-		if (!voiceChannel.members.size && voiceChannel.deletable) await this.RemoveTempChannel(voiceChannel);
+		if (!voiceChannel.members.size && voiceChannel.deletable)
+			await this.RemoveTempChannel(voiceChannel);
 	}
 }

@@ -27,6 +27,6 @@ export default class ExitBot extends ExtendedClientCommand {
 		if (!message.author) throw new CommandError('NO_AUTHOR'); // If Author is Needed
 		if (!this.client.user) throw new CommandError('NO_BOT_USER'); // If Bot Instance is Needed
 		await message.channel.send('Restarting :)');
-		process.exit(+args[0] || 0);
+		this.client.Update();
 	}
 }

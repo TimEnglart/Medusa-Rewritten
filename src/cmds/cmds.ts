@@ -4,7 +4,7 @@ import { Message, PermissionString, MessageEmbed } from "discord.js";
 import { CommandError } from '../ext/errorParser';
 import RichEmbedGenerator from '../ext/RichEmbeds';
 
-export default class AwardCommand extends ExtendedClientCommand {
+export default class CommandListCommand extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {
 		super(commandHandler);
 		this.name = 'cmds';
@@ -22,16 +22,16 @@ export default class AwardCommand extends ExtendedClientCommand {
 			},
 		};
 	}
-	protected async Run(message: Message, ...args: string[]): Promise<ICommandResult | void> {
+	protected async Run(message: Message): Promise<ICommandResult | void> {
 		if (!message.author || !this.client.user)
 			throw new CommandError('DYNAMIC_PROPERTY_CHECK_FAILED');
 		if (!message.author) throw new CommandError('NO_AUTHOR'); // If Author is Needed
 		if (!this.client.user) throw new CommandError('NO_BOT_USER'); // If Bot Instance is Needed
-		const resolvedId = message.guild ? message.guild.id : message.author.id;
-		const response = await this.client.databaseClient.query(
-			`SELECT prefix FROM G_Prefix WHERE guild_id = ${resolvedId}`,
-		);
-		const prefix = response ? response[0].prefix : this.client.settings.defaultPrefix;
+		const guildCollection = await this.client.nextDBClient.getCollection('guilds');
+		const guildPrefix = await guildCollection.findOne({
+			_id: message.guild ? message.guild.id : message.author.id,
+		});
+		const prefix = guildPrefix.prefix || this.client.settings.defaultPrefix;
 		const botEmbed = new MessageEmbed()
 			.setTitle('List of Commands')
 			.setColor('#00dde0')

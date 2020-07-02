@@ -1,44 +1,48 @@
-import { Database } from "./database";
 import ExtendedClient from "./ExtendedClient";
 import { IRankData } from "./settingsInterfaces";
+import { GuildMember, User, PartialGuildMember } from "discord.js";
+import { Collection } from "mongodb";
 
 interface IExperienceVoiceChannelState {
 	[userId: string]: {
 		channelId: string;
 		time: number;
-	}
+	};
 }
 
 export class ExperienceHandler {
-	public readonly DatabaseClient: Database;
 
 	private readonly _MINIMUM_XP = 8;
 	private readonly _MAXIMUM_XP = 12;
 
 	public VoiceChannelOccupants: IExperienceVoiceChannelState;
 	constructor(public discordClient: ExtendedClient) {
-		this.DatabaseClient = discordClient.databaseClient;
 		this.VoiceChannelOccupants = {};
 	}
-
-	public async GiveExperience(userId: string, xp?: number): Promise<IExperienceResponse> {
-		if (!userId) throw new Error('No User Provided');
-		if (!xp) xp = this.RandomXP(8, 12);
-		const response = await this.DatabaseClient.query(`SELECT * FROM U_Experience WHERE user_id = ${userId}`);
-		let xpData;
-		if (!response.length) xpData = this.CalculateExperience(xp, 0);
-		else xpData = this.CalculateExperience(xp + response[0].xp, response[0].level);
-		if (!xpData) throw new Error(`Unable to Process XP:\nUser Id: ${userId}`);
-		if (response.length)
-			await this.DatabaseClient.query(
-				`UPDATE U_Experience SET xp = ${xpData.xp}, level = ${xpData.level} WHERE user_id = ${userId}`,
-			);
-		else
-			await this.DatabaseClient.query(
-				`INSERT INTO U_Experience(user_id, xp, level, reset, connected) VALUES(${userId}, ${
-					xpData.xp
-				}, ${xpData.level}, ${0}, ${true})`,
-			);
+	private async getUserCollection(): Promise<Collection<any>> {
+		return await this.discordClient.nextDBClient.getCollection('users');
+	}
+	public async GiveExperience(user: User, xp?: number): Promise<IExperienceResponse> {
+		if (!xp) xp = this.RandomXP(this._MINIMUM_XP, this._MAXIMUM_XP);
+		const users = await this.discordClient.nextDBClient.getCollection('experience');
+		const response = await users.findOne({
+			_id: user.id,
+		});
+		const xpData = response
+			? this.CalculateExperience(xp + response.xp, response.level)
+			: this.CalculateExperience(xp, 0);
+		await users.updateOne(
+			{
+				_id: user.id,
+			},
+			{
+				$set: {
+					xp: xpData.xp,
+					level: xpData.level,
+				}
+			},
+			{upsert: true}
+		);
 		return xpData;
 	}
 	private RandomXP(min: number, max: number): number {
@@ -65,24 +69,35 @@ export class ExperienceHandler {
 			xp,
 		};
 	}
-	private async updateConnectionStatus(userId: string | null, connected: boolean): Promise<void> {
+
+	private async updateConnectionStatus(member: GuildMember| PartialGuildMember, connected: boolean): Promise<void> {
 		/* Add User to Experience Table */
-		if (!userId) throw new Error('No User Provided');
-		const response = await this.DatabaseClient.query(`SELECT * FROM U_Experience WHERE user_id = ${userId}`);
-		if (response.length)
-			await this.DatabaseClient.query(
-				`UPDATE U_Experience SET connected = ${connected} WHERE user_id = ${userId}`,
-			);
-		else
-			await this.DatabaseClient.query(
-				`INSERT INTO U_Experience(user_id, connected) VALUES(${userId}, ${connected})`,
-			);
+		const users = await this.getUserCollection();
+		await users.updateOne(
+			{
+				_id: member.id,
+			},
+			connected // Yuck
+				? {
+					_id: member.id,
+					$addToSet: {
+						connectedGuilds: member.guild.id,
+					},
+				}
+				: {
+					_id: member.id,
+					$pull: {
+						connectedGuilds: member.guild.id,
+					},
+				},
+			{ upsert: true },
+		);
 	}
-	public disconnectUser(userId: string | null): Promise<void> {
-		return this.updateConnectionStatus(userId, false);
+	public disconnectUser(member: GuildMember | PartialGuildMember): Promise<void> {
+		return this.updateConnectionStatus(member, false);
 	}
-	public connectUser(userId: string | null): Promise<void> {
-		return this.updateConnectionStatus(userId, true);
+	public connectUser(member: GuildMember | PartialGuildMember): Promise<void> {
+		return this.updateConnectionStatus(member, true);
 	}
 }
 /*
@@ -350,12 +365,9 @@ function categoriseMedals(): ICategorisedMedal {
 		}, {});
 }
 
-function voiceChannelXp(
-	member: discord.GuildMember | undefined,
-	xpPerTick: number,
-	discordBot: ExtendedClient,
-	timeOut = 300000,
-) {
+async function HandleVoiceChannelExperince(xpPerTick: number, member?: GuildMember, timeOut = 300000): Promise<void> {
+
+	
 	return new Promise(async (resolve: (recursive: Promise<void> | void) => void, reject: (e: Error) => void) => {
 		if (!member) return reject(new Error('No Member'));
 		const voiceState = member.voice;
