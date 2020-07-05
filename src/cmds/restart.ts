@@ -69,7 +69,7 @@ export default class ExitBot extends ExtendedClientCommand {
 			}
 		});
 
-		if(response) await message.channel.send(response));
+		if(response) await message.channel.send(response);
 	}
 	private generateEmbed(fields: {name: string, value: string, inline?: boolean}[], success: boolean = true) { // assume success as throw with error
 		return new MessageEmbed({
