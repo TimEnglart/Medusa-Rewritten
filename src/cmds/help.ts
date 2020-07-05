@@ -34,7 +34,7 @@ export default class HelpCommand extends ExtendedClientCommand {
 		const prefix = guildPrefix.prefix || this.client.settings.defaultPrefix;
 		if (args.length > 0) {
 			const commandModule = this.client.commandHandler.Commands.get(args[0]);
-			if (commandModule && !commandModule.hidden) {
+			if (commandModule && commandModule.validPermissions(message)) {
 				await message.channel.send(RichEmbedGenerator.helpEmbed(commandModule, prefix));
 			} else
 				throw new CommandError(

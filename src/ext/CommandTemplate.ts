@@ -139,7 +139,7 @@ class ExtendedClientCommand {
 		// Add Extra Permission Checks Here In Child Class to Override
 		return false;
 	}
-	private validPermissions(message: Message): boolean {
+	public validPermissions(message: Message): boolean { // make public so its known if it will be executed
 		if (this.client.isSuperUser(message.author)) return true;
 		if (message.member) {
 			if (this.propertyIsDefined(Permissions.FLAGS, this.permissionRequired))

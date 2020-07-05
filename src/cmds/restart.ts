@@ -37,18 +37,18 @@ export default class ExitBot extends ExtendedClientCommand {
 			switch(commandType) {
 				case 'custom':
 					exec(args.join(' '), (error, stdout, stderr) => {
-							if (error) rej(error);
-							return res(this.generateEmbed([
-								{
-									name: `Standard Output`,
-									value: stdout
-								},
-								{
-									name: `Standard Error`,
-									value: stderr
-								}
-							]));
-						}
+						if (error) rej(error);
+						return res(this.generateEmbed([
+							{
+								name: `Standard Output`,
+								value: stdout
+							},
+							{
+								name: `Standard Error`,
+								value: stderr
+							}
+						]));
+					}
 					);
 					break;
 				case 'update':
@@ -61,7 +61,7 @@ export default class ExitBot extends ExtendedClientCommand {
 							name: `Standard Error`,
 							value: stderr
 						}
-						], !!error))
+					], !!error))
 					);
 					break;
 				default: 
@@ -71,7 +71,7 @@ export default class ExitBot extends ExtendedClientCommand {
 
 		if(response) await message.channel.send(response);
 	}
-	private generateEmbed(fields: {name: string, value: string, inline?: boolean}[], success: boolean = true) { // assume success as throw with error
+	private generateEmbed(fields: {name: string; value: string; inline?: boolean}[], success = true): MessageEmbed { // assume success as throw with error
 		return new MessageEmbed({
 			title: `Execution ${success ? `Successful`: 'Failed'}`,
 			fields: fields,
