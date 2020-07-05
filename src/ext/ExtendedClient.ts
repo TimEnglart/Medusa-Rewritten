@@ -14,7 +14,7 @@ import ExtendedClientCommand from "./CommandTemplate";
 import * as path from 'path';
 import { MongoDBHandler } from "./newDatabaseHandler";
 import HotReload from "./HotReload";
-import { exec, execSync } from "child_process";
+import { exec, execSync, ExecException } from "child_process";
 import RichEmbedGenerator from "./RichEmbeds";
 import { inspect } from "util";
 import { CommandError } from "./errorParser";
@@ -331,10 +331,11 @@ export default class ExtendedClient extends Client {
 		}
 	}
 
-	public Update(): void {
+	public Update(callback?: (error: ExecException | null, stdout: string, stderr: string) => void): void {
 		this.logger.logS('Performing Client Update', LogFilter.Debug);
 		exec(`cd "${this.BasePaths.WorkingPath}" && git pull && npm run build`,
 			(error, stdout, stderr) => {
+				if(callback) callback(error, stdout, stderr);
 				if (error) this.logger.logS(`Failed Update Operation:\n${error.message}`, LogFilter.Error);
 				else this.logger.logS(`Update Response:\nOutput: ${stdout}\nError: ${stderr}`, LogFilter.Debug);
 				if (this.HotReloader)
