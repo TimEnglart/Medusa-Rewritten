@@ -53,17 +53,7 @@ export default class ExitBot extends ExtendedClientCommand {
 						);
 						break;
 					case 'update':
-						this.client.Update((error, stdout, stderr) => res(this.generateEmbed([
-							{
-								name: `Standard Output`,
-								value: stdout || 'NO_OUTPUT'
-							},
-							{
-								name: `Standard Error`,
-								value: stderr || 'NO_OUTPUT'
-							}
-						], !!error))
-						);
+						this.client.Update();
 						break;
 
 					case 'assginrole': {
