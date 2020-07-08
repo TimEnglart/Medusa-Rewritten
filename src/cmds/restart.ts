@@ -13,7 +13,7 @@ export default class ExitBot extends ExtendedClientCommand {
 		this.name = 'exec';
 		this.description = 'Runs an Internal Command or Bot Function';
 		this.environments = ['text', 'dm'];
-		this.expectedArguments = [{ name: 'Exit Code', optional: true, example: '1' }];
+		this.expectedArguments = [{ name: 'Command Type', optional: false, example: 'custom' }, {name: 'Arguments', optional: true, example: 'neofetch'}];
 		this.permissionRequired = 'SUPER_USER';
 		this.requiredProperties = {
 			Message: {
@@ -33,13 +33,27 @@ export default class ExitBot extends ExtendedClientCommand {
 		const commandType = args.shift();
 
 		this.client.logger.logS(`Running an Exec Command:\nUser: ${message.author.username}(${message.author.id})\nCommandType: ${commandType}\nArguments: ${JSON.stringify(args)}`, LogFilter.Debug);
-
-		const response = await new Promise((res: (value?: MessageEmbed) => void, rej) => {
-			switch(commandType) {
-				case 'custom':
-					exec(args.join(' '), (error, stdout, stderr) => {
-						if (error) rej(error);
-						return res(this.generateEmbed([
+		try {
+			const response = await new Promise((res: (value?: MessageEmbed) => void, rej) => {
+				switch(commandType) {
+					case 'custom':
+						exec(args.join(' '), (error, stdout, stderr) => {
+							if (error) rej(error);
+							return res(this.generateEmbed([
+								{
+									name: `Standard Output`,
+									value: stdout
+								},
+								{
+									name: `Standard Error`,
+									value: stderr
+								}
+							]));
+						}
+						);
+						break;
+					case 'update':
+						this.client.Update((error, stdout, stderr) => res(this.generateEmbed([
 							{
 								name: `Standard Output`,
 								value: stdout
@@ -48,37 +62,33 @@ export default class ExitBot extends ExtendedClientCommand {
 								name: `Standard Error`,
 								value: stderr
 							}
-						]));
-					}
-					);
-					break;
-				case 'update':
-					this.client.Update((error, stdout, stderr) => res(this.generateEmbed([
-						{
-							name: `Standard Output`,
-							value: stdout
-						},
-						{
-							name: `Standard Error`,
-							value: stderr
+						], !!error))
+						);
+						break;
+
+					case 'assginrole': {
+						if(message.member && message.guild) {
+							const role = Utility.LookupRole(message.guild, args[0]);
+							if(role) {
+								message.member.roles.add(role).then(() => {
+									res(this.generateEmbed([{name: `Successfully Added Role: ${role.name}`, value: `You Should Now Have the Mentioned Role`}]));
+								}).catch(e => {
+									rej(e);
+								});
+							}
 						}
-					], !!error))
-					);
-					break;
-
-				case 'assginRole': {
-					if(message.member && message.guild) {
-						const role = Utility.LookupRole(message.guild, args[0]);
-						if(role) message.member.roles.add(role);
+						break;
 					}
-					break;
+					default: 
+						break;
 				}
-				default: 
-					break;
-			}
-		});
-
-		if(response) await message.channel.send(response);
+			});
+			if (response) await message.channel.send(response);
+		}
+		catch(e) {
+			await message.channel.send(this.generateEmbed([{name: `Execution Failed and Throw an Error`, value: `Raw Error:\n${JSON.stringify(e)}`}], false));
+		}
+		
 	}
 	private generateEmbed(fields: {name: string; value: string; inline?: boolean}[], success = true): MessageEmbed { // assume success as throw with error
 		return new MessageEmbed({
