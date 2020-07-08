@@ -42,11 +42,11 @@ export default class ExitBot extends ExtendedClientCommand {
 							return res(this.generateEmbed([
 								{
 									name: `Standard Output`,
-									value: stdout
+									value: stdout || 'NO_OUTPUT'
 								},
 								{
 									name: `Standard Error`,
-									value: stderr
+									value: stderr || 'NO_OUTPUT'
 								}
 							]));
 						}
@@ -56,11 +56,11 @@ export default class ExitBot extends ExtendedClientCommand {
 						this.client.Update((error, stdout, stderr) => res(this.generateEmbed([
 							{
 								name: `Standard Output`,
-								value: stdout
+								value: stdout || 'NO_OUTPUT'
 							},
 							{
 								name: `Standard Error`,
-								value: stderr
+								value: stderr || 'NO_OUTPUT'
 							}
 						], !!error))
 						);
