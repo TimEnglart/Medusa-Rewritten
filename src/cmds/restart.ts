@@ -66,6 +66,7 @@ export default class ExitBot extends ExtendedClientCommand {
 									rej(e);
 								});
 							}
+							else rej('Failed to Find Role');
 						}
 						break;
 					}
