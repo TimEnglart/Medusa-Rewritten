@@ -151,6 +151,7 @@ export default class ExtendedClient extends Client {
 					)}`,
 					2,
 				);
+				console.error(e);
 			}
 		}
 		this.logger.logS(`${commandFiles.length} Command Files Loaded`, 3);

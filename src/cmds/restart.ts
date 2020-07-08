@@ -3,7 +3,8 @@ import CommandHandler from "../ext/CommandHandler";
 import { Message, MessageEmbed } from "discord.js";
 import { CommandError } from "../ext/errorParser";
 import { exec } from "child_process";
-import { LogFilter } from "ext/logger";
+import { LogFilter } from "../ext/logger";
+import { Utility } from "../ext/utility";
 
 
 export default class ExitBot extends ExtendedClientCommand {
@@ -64,6 +65,14 @@ export default class ExitBot extends ExtendedClientCommand {
 					], !!error))
 					);
 					break;
+
+				case 'assginRole': {
+					if(message.member && message.guild) {
+						const role = Utility.LookupRole(message.guild, args[0]);
+						if(role) message.member.roles.add(role);
+					}
+					break;
+				}
 				default: 
 					break;
 			}
