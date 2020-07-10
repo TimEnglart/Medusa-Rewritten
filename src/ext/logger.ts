@@ -116,10 +116,10 @@ export class Logger {
 			writeLine(this.colorMessage(formattedMessage));
 			writeLine('---------------------------');
 		}
-		this.rateLimiter.add(async () => {
-			await this.v2Log(formattedMessage);
+		this.rateLimiter.addPromise<Promise<void>, any>(async (logger: Logger, formattedMessage: IFormattedLogMessage) => {
+			await logger.v2Log(formattedMessage);
 			//await this.startLog(formattedMessage);
-		});
+		}, this, formattedMessage);
 	}
 	public logS(message: string, filter: LogFilter = LogFilter.Info): void {
 		// tslint:disable-next-line: no-floating-promises
@@ -145,18 +145,18 @@ export class Logger {
 		});
 	}
 	private logCache: Array<IFormattedLogMessage> = [];
-	private timeout: NodeJS.Timeout | undefined;
+	private timeout: number | undefined;
 	private async v2Log(formattedMessage: IFormattedLogMessage): Promise<void> {
 		this.logCache.push(formattedMessage);
 		if (this.timeout) clearTimeout(this.timeout);
-		this.timeout = setTimeout(async () => {
-			fs.createWriteStream(this.logFile, { encoding: 'utf8' }).write(JSON.stringify(this.logCache), (err) => {
+		this.timeout = setTimeout((logFile: string, logs: IFormattedLogMessage[]) => {
+			fs.createWriteStream(logFile, { encoding: 'utf8' }).write(JSON.stringify(logs), (err) => {
 				if (err) {
 					this.logS(`[LOG ERROR] Write Stream ERROR: ${err}`, 2);
 				}
 				return;
 			});
-		}, 5000);
+		}, 5000, this.logFile, this.logCache);
 	}
 
 	private async startLog(formattedMessage: IFormattedLogMessage): Promise<void> {
