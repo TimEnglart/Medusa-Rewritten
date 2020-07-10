@@ -68,9 +68,15 @@ export default class ExitBot extends ExtendedClientCommand {
 							}
 							else rej('Failed to Find Role');
 						}
+						else rej('Unknown Error');
+						break;
+					}
+					case 'version': {
+						this.client.Version().then(ver => res(this.generateEmbed([{ name: "Version", value: ver || 'NO_OUPUT'}]))).catch(e => rej(e));
 						break;
 					}
 					default: 
+						rej('Failed to Find Command');
 						break;
 				}
 			});

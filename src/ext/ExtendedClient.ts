@@ -342,7 +342,13 @@ export default class ExtendedClient extends Client {
 					this.HotReloader.reload();
 			}
 		);
-
+	}
+	public Version(): Promise<string> {
+		return new Promise((res: (ret: string) => void) => {
+			exec(`cd "${this.BasePaths.WorkingPath}" && git rev-parse HEAD`, function (err, stdout) {
+				return res(stdout);
+			});
+		});
 	}
 
 	protected onRateLimit(rateLimitData: RateLimitData): void {
