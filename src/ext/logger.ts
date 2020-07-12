@@ -66,9 +66,12 @@ export class Logger {
 		public json?: boolean,
 	) {
 		this.rateLimiter = new RateLimiter({
-			operations: 1,
-			returnTokenOnCompletion: true,
-			rate: 400
+			operations: 10,
+			rate: 2000,
+			delay: 2000,
+			stdErr: console.error,
+			stdOut: console.log,
+			debugOutput: true
 		});
 		if (!fs.existsSync(logFileLocation)) {
 			fs.mkdirSync(logFileLocation);
@@ -116,7 +119,11 @@ export class Logger {
 			writeLine(this.colorMessage(formattedMessage));
 			writeLine('---------------------------');
 		}
+		console.log(`# Reqs: ${this.rateLimiter.pendingRequests.length}\nRunning: ${this.rateLimiter.isRunning}\nLimiting: ${this.rateLimiter.isLimitting}\nTokens: ${this.rateLimiter.avaliableTokens}`);
+		
 		this.rateLimiter.addPromise<Promise<void>, any>(async (logger: Logger, formattedMessage: IFormattedLogMessage) => {
+			console.log(logger);
+			console.log(formattedMessage);
 			await logger.v2Log(formattedMessage);
 			//await this.startLog(formattedMessage);
 		}, this, formattedMessage);

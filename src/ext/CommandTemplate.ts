@@ -84,7 +84,7 @@ class ExtendedClientCommand {
 		if (!this.validPermissions(message)) {
 			return {
 				success: false,
-				error: new CommandError('INSUFFICIENT_PRIVILEGES'),
+				error: new CommandError('USER_INSUFFICIENT_PRIVILEGES'),
 			};
 		}
 

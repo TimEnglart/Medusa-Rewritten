@@ -401,7 +401,7 @@ export default class ExtendedClient extends Client {
 		const commandName = args.shift();
 		if (!commandName || !/^[a-zA-Z]+$/.test(commandName)) return;
 		// Attempt to Run Supplied Command
-		message.channel.startTyping();
+		
 		const commandFile = await this.commandHandler.ExecuteCommand(commandName.toLowerCase(), message, ...args);
 		if (commandFile.error) {
 			if (commandFile.error instanceof CommandError) {

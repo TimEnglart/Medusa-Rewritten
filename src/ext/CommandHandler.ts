@@ -28,11 +28,12 @@ export default class CommandHandler {
 	}
 	public async ExecuteCommand(commandName: string, message: Message, ...args: string[]): Promise<ICommandResult> {
 		const command = this.Commands.get(commandName);
-		if (!command)
+		if (!command || !command.validPermissions(message))
 			return {
 				success: false,
 				error: new CommandError('NO_COMMAND', `The Command: ${commandName} Doesn't Exist`),
 			};
+		message.channel.startTyping();
 		if (this.DisabledCommands[commandName]) {
 			return {
 				success: false,
