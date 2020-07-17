@@ -32,10 +32,11 @@ process
 // HotReload will be Referenced in client so it shouldnt be in GC
 new HotReload<ExtendedClient>({
 	exec: (reloader): ExtendedClient => {
-		client = new ExtendedClient({
+		client = new (require('./ext/ExtendedClient').default)({
 			fetchAllMembers: true,
 			reloader: reloader
 		});
+		if(!client) throw new Error();
 		client.login();
 		return client;
 	},

@@ -275,7 +275,7 @@ export default class ExtendedClient extends Client {
 
 	private async handleEvent<K extends keyof ClientEvents>(
 		eventName: K,
-		listener: (...args: ClientEvents[K]) => void,
+		listener: (...args: ClientEvents[K]) => void | Promise<void>,
 		...args: ClientEvents[K]
 	): Promise<void> {
 		const eventReceived = Date.now();

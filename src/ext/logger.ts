@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import RateLimiter from '@timenglart/limited-rate-limiter';
 import * as Colors from './Colors';
+import { inspect } from 'util';
 const writeLine = console.log;
 
 export enum LogFilter {
@@ -66,9 +67,8 @@ export class Logger {
 		public json?: boolean,
 	) {
 		this.rateLimiter = new RateLimiter({
-			operations: 10,
-			rate: 2000,
-			delay: 2000,
+			operations: 1,
+			rate: 300,
 			stdErr: console.error,
 			stdOut: console.log,
 			debugOutput: true
@@ -103,7 +103,7 @@ export class Logger {
 	}
 	public async log(message: string, filter: LogFilter = LogFilter.Info): Promise<void> {
 		// New Message
-
+		
 		const formattedMessage = Logger.formatMessage({
 			message,
 			time: new Date(),
@@ -119,20 +119,21 @@ export class Logger {
 			writeLine(this.colorMessage(formattedMessage));
 			writeLine('---------------------------');
 		}
-		console.log(`# Reqs: ${this.rateLimiter.pendingRequests.length}\nRunning: ${this.rateLimiter.isRunning}\nLimiting: ${this.rateLimiter.isLimitting}\nTokens: ${this.rateLimiter.avaliableTokens}`);
+		// writeLine(`# Reqs: ${this.rateLimiter.pendingRequests.length}\nRunning: ${this.rateLimiter.isRunning}\nLimiting: ${this.rateLimiter.isLimitting}\nTokens: ${this.rateLimiter.avaliableTokens}`);
 		
-		this.rateLimiter.addPromise<Promise<void>, any>(async (logger: Logger, formattedMessage: IFormattedLogMessage) => {
-			console.log(logger);
-			console.log(formattedMessage);
-			await logger.v2Log(formattedMessage);
-			//await this.startLog(formattedMessage);
-		}, this, formattedMessage);
+		// const completed = await this.rateLimiter.addPromise<void>((logger: Logger, formattedMessage: IFormattedLogMessage) => {
+		// 	writeLine(logger);
+		// 	writeLine(formattedMessage);
+			
+		// }, this, formattedMessage);
+		this.v2Log(formattedMessage);
+		// writeLine(`Logged!: ${completed.timeCompleted}`);
 	}
 	public logS(message: string, filter: LogFilter = LogFilter.Info): void {
 		// tslint:disable-next-line: no-floating-promises
 		this.log(message, filter);
 	}
-	public logDirectory() {
+	public logDirectory(): string {
 		return path.relative(process.cwd(), this.logFileLocation);
 	}
 	public returnLogFile() {
@@ -153,11 +154,11 @@ export class Logger {
 	}
 	private logCache: Array<IFormattedLogMessage> = [];
 	private timeout: number | undefined;
-	private async v2Log(formattedMessage: IFormattedLogMessage): Promise<void> {
+	private v2Log(formattedMessage: IFormattedLogMessage): void {
 		this.logCache.push(formattedMessage);
 		if (this.timeout) clearTimeout(this.timeout);
 		this.timeout = setTimeout((logFile: string, logs: IFormattedLogMessage[]) => {
-			fs.createWriteStream(logFile, { encoding: 'utf8' }).write(JSON.stringify(logs), (err) => {
+			fs.createWriteStream(logFile, { encoding: 'utf8', autoClose: true }).write(JSON.stringify(logs), (err) => {
 				if (err) {
 					this.logS(`[LOG ERROR] Write Stream ERROR: ${err}`, 2);
 				}
