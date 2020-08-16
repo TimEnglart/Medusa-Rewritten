@@ -35,12 +35,12 @@ export default class Provision extends ExtendedClientCommand {
 				channel = guild?.channels.resolve(reactionRoleStruct.channelId) as TextChannel | null,
 				message = channel?.messages.resolve(reactionRoleStruct.messageId),
 				reactions = message?.reactions.resolve(reactionRoleStruct.reactionId || reactionRoleStruct.reactionName),
-				reactedUsers = reactions?.users;
+				reactedUsers = await reactions?.users.fetch();
 			
 			if (reactedUsers)
-				for (const user of reactedUsers.cache.values()) {
+				for (const user of reactedUsers.values()) {
 					const member = guild?.member(user);
-					if (member && !member?.roles.cache.has(reactionRoleStruct.roleId)) {
+					if (member && !member.roles.cache.has(reactionRoleStruct.roleId)) {
 						this.log(`Assigning Role (${reactionRoleStruct.roleId}) to: ${user.username}(${user.id})`, 1);
 						await member.roles.add(reactionRoleStruct.roleId);
 					}	
