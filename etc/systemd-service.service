@@ -4,11 +4,14 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
+Type=simple
+WorkingDirectory=/srv/Medusa-Rewritten/start-bot.sh
 #RemainAfterExit=yes
 Restart=always
 RestartSec=120000ms
 StartLimitInterval=0
-ExecStart=/usr/bin/env HOME=/root /srv/Medusa-Rewritten/start-bot.sh
+User=tim
+ExecStart=/srv/Medusa-Rewritten/start-bot.sh
 
 
 [Install]
