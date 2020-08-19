@@ -157,14 +157,14 @@ export class Logger {
 	private v2Log(formattedMessage: IFormattedLogMessage): void {
 		this.logCache.push(formattedMessage);
 		if (this.timeout) clearTimeout(this.timeout);
-		this.timeout = setTimeout((logFile: string, logs: IFormattedLogMessage[]) => {
+		this.timeout = setTimeout((logFile: string, logs: IFormattedLogMessage[], logFunc: (message: string, filter: LogFilter) => void) => {
 			fs.createWriteStream(logFile, { encoding: 'utf8', autoClose: true }).write(JSON.stringify(logs), (err) => {
 				if (err) {
-					this.logS(`[LOG ERROR] Write Stream ERROR: ${err}`, 2);
+					logFunc(`[LOG ERROR] Write Stream ERROR: ${err}`, 2);
 				}
 				return;
 			});
-		}, 5000, this.logFile, this.logCache);
+		}, 5000, this.logFile, this.logCache, this.logS);
 	}
 
 	private async startLog(formattedMessage: IFormattedLogMessage): Promise<void> {

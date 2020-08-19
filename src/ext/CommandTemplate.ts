@@ -1,7 +1,7 @@
 import { Message, Permissions, PermissionString } from 'discord.js';
 import { CommandError } from '../ext/errorParser';
 import CommandHandler from '../ext/CommandHandler';
-import ExtendedClient from './ExtendedClient';
+import ExtendedClient, { ChannelTypes } from './ExtendedClient';
 import { LogFilter } from './logger';
 
 // TODO: Add Additional Debugging to Property Checks
@@ -22,20 +22,12 @@ export interface ICommandResult {
 	success: boolean;
 	error?: Error | CommandError;
 }
-const ChannelType = {
-	dm: 'Direct Message',
-	text: 'Guild Text Channel',
-	voice: 'Guild Voice Channel',
-	category: 'Guild Category Channel',
-	news: 'Guild News Channel',
-	store: 'Guild Store Channel',
-	unknown: 'Unknown Channel',
-};
+
 
 
 class ExtendedClientCommand {
 	public description: string;
-	public environments: (keyof typeof ChannelType)[];
+	public environments: (keyof typeof ChannelTypes)[];
 	public expectedArguments: IExpectedArgument[];
 	public name: string;
 	public permissionRequired: PermissionString | string;
@@ -158,7 +150,7 @@ class ExtendedClientCommand {
 		return args.length >= this.expectedArguments.filter((arg) => !arg.optional).length;
 	}
 	public ReadableEnvironments(): string[] {
-		return this.environments.map((environment) => ChannelType[environment]);
+		return this.environments.map((environment) => ChannelTypes[environment]);
 	}
 
 	protected log(message: string, filter: LogFilter = LogFilter.Info): void {

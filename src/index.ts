@@ -1,6 +1,7 @@
 import ExtendedClient from "./ext/ExtendedClient";
 import { LogFilter } from "./ext/logger";
 import HotReload from "./ext/HotReload";
+import { exec, execSync } from "child_process";
 
 
 
@@ -36,7 +37,7 @@ new HotReload<ExtendedClient>({
 			fetchAllMembers: true,
 			reloader: reloader
 		});
-		if(!client) throw new Error();
+		if(!client) throw new Error(`Failed to Create Discord Client`);
 		client.login();
 		return client;
 	},
@@ -44,6 +45,11 @@ new HotReload<ExtendedClient>({
 		if (client) {
 			client.destroy();
 			client.webServer.shutdown();
+			for (const requiredFiles of Object.keys(require.cache)) {
+				if (requiredFiles.startsWith(client.BasePaths.WorkingPath))
+					delete require.cache[require.resolve(requiredFiles)]
+			}
+			execSync(`cd ${client.BasePaths.WorkingPath} && npm run build`);
 		}
 	}
 });

@@ -35,22 +35,32 @@ interface IExtendedClientDynamicPaths {
 interface IExtendedClientOptions extends ClientOptions {
 	reloader?: HotReload;
 }
+export const ChannelTypes = {
+	dm: 'Direct Message',
+	text: 'Guild Text Channel',
+	voice: 'Guild Voice Channel',
+	category: 'Guild Category Channel',
+	news: 'Guild News Channel',
+	store: 'Guild Store Channel',
+	unknown: 'Unknown Channel',
+};
 
 export default class ExtendedClient extends Client {
-	public commandHandler: CommandHandler;
-	public settings: ISettingsTemplate;
-	public experienceHandler: ExperienceHandler;
-	public logger: Logger;
-	public nextDBClient: MongoDBHandler;
-	public webServer: WebServer;
+	public readonly commandHandler: CommandHandler;
+	public readonly settings: ISettingsTemplate;
+	public readonly experienceHandler: ExperienceHandler;
+	public readonly logger: Logger;
+	public readonly nextDBClient: MongoDBHandler;
+	public readonly webServer: WebServer;
 	//public scoreBook: ScoreBook;
-	public bungieApiRequester: BungieAPIRequester;
-	public MedalHandler: MedalHandler;
-	public TempChannelHandler: TempChannelHandler;
-	public ReactionRoleHandler: ReactionRoleHandler;
-	private BasePaths: IExtendedClientStaticPaths;
-	private DynamicPaths: IExtendedClientDynamicPaths;
-	private readonly HotReloader?: HotReload<ExtendedClient>;
+	public readonly bungieApiRequester: BungieAPIRequester;
+	public readonly MedalHandler: MedalHandler;
+	public readonly TempChannelHandler: TempChannelHandler;
+	public readonly ReactionRoleHandler: ReactionRoleHandler;
+	public readonly BasePaths: IExtendedClientStaticPaths;
+	public readonly DynamicPaths: IExtendedClientDynamicPaths;
+	public readonly HotReloader?: HotReload<ExtendedClient>;
+
 	constructor(options?: IExtendedClientOptions) {
 		super(options);
 		if (options)
@@ -69,6 +79,7 @@ export default class ExtendedClient extends Client {
 			[LogFilter.Info, LogFilter.Debug, LogFilter.Error, LogFilter.Success],
 			true,
 		);
+		this.logger.logS(`Working Path: ${this.BasePaths.WorkingPath}`);
 		this.nextDBClient = new MongoDBHandler(this.logger, this.settings.database.mongo.uri);
 		this.commandHandler = new CommandHandler(this);
 		this.experienceHandler = new ExperienceHandler(this);
@@ -169,7 +180,7 @@ export default class ExtendedClient extends Client {
 				status: 'online',
 			});
 		}
-		setTimeout(() => this.RandomPresence(), 600000);
+		setTimeout(this.RandomPresence.bind(this), 600000);
 	}
 
 	public async PrimeDatabase(): Promise<void> {
@@ -210,29 +221,29 @@ export default class ExtendedClient extends Client {
 		}
 	}
 	public async CacheAndCleanUp(): Promise<void> { // move this to dedicated Classes
-		const reactionRoleCollection = await this.nextDBClient.getCollection('roleReactions');
-		for await (const reactionRole of reactionRoleCollection.find()) {
+		const reactionRoles = await this.ReactionRoleHandler.GetRemoteReactionRoles();
+		for (const reactionRole of reactionRoles.values()) {
 			try {
 				const resolvedGuild = this.guilds.resolve(reactionRole.guildId);
 				if (resolvedGuild) {
-					const resolvedTextChannel = resolvedGuild.channels.resolve(
-						reactionRole.channelId,
-					) as TextChannel | null;
+					const resolvedTextChannel = resolvedGuild.channels.resolve(reactionRole.channelId) as TextChannel | null;
 					if (resolvedTextChannel)
 						await resolvedTextChannel.messages.fetch(reactionRole.messageId, true);
 					else {
 						// Cant Find Text Channel But Bot IS IN Guild
-						// this.logger.logS(``);
+						this.logger.logS(`Cannot Find Channel: ${reactionRole.channelId} in Guild: ${resolvedGuild.name}(${resolvedGuild.id})`, 2);
 					}
 				} else {
 					// Cant Find Text Channel Because Bot ISN'T IN Guild
-					// this.logger.logS(``);
+					this.logger.logS(`No Longer in Guild ${reactionRole.guildId} Therefore Cannot Resolve Channel: ${reactionRole.channelId}`, 2);
 				}
 			} catch (e) {
 				// Error
+				this.logger.logS(`Unknown Error Occurred When Caching Reaction Roles for Reaction Role:\n${JSON.stringify(reactionRole)}\n\nError:\n${JSON.stringify(e)}`, 2);
 			}
 		}
 		this.logger.logS(`Cached All Message Reactions`, LogFilter.Debug);
+		
 
 		await this.TempChannelHandler.UpdateFromDatabase();
 
@@ -253,18 +264,23 @@ export default class ExtendedClient extends Client {
 						await resolvedVoiceChannel.delete('Remove Temp Channel');
 					} else {
 						// There are People in The Temp Voice Channel
-						// this.logger.logS(``);
+						//this.logger.logS(``);
 					}
 				} else {
 					// Cant Find Voice Channel But Bot IS IN Guild
-					// this.logger.logS(``);
+					this.logger.logS(`Cannot Find Voice Channel: ${tempChannel.voiceChannelId} in Guild: ${resolvedGuild.name} (${resolvedGuild.id})`);
 				}
 			} else {
 				// Not In Server
-				// this.logger.logS(``, LogFilter.Error);
+				this.logger.logS(`No Longer in Guild: ${tempChannel.guildId} Therefore Cannot Resolve Voice Channel: ${tempChannel.voiceChannelId}`, LogFilter.Error);
 			}
 		}
 		this.logger.logS(`Deleted All Empty Temp Channels`, LogFilter.Debug);
+
+
+		await this.ReactionRoleHandler.assignMissingRoles();
+		this.logger.logS(`Removed and Assigned all Reaction Roles Which Occured While Offline`, LogFilter.Debug);
+
 	}
 	public isSuperUser(user: User | GuildMember | string | undefined): boolean {
 		if (user instanceof User || user instanceof GuildMember)
@@ -279,11 +295,11 @@ export default class ExtendedClient extends Client {
 		...args: ClientEvents[K]
 	): Promise<void> {
 		const eventReceived = Date.now();
-		let eventError: Error | null = null;
+		let eventError: any | null = null;
 		try {
 			await listener(...args);
 		} catch (e) {
-			eventError = new Error(`${eventName}`);
+			eventError = e;
 		}
 		const eventTime = Date.now() - eventReceived;
 		this.logger.logS(
@@ -328,7 +344,7 @@ export default class ExtendedClient extends Client {
 		if (this.settings.debug) {
 			this.on('debug', this.onDebug.bind(this));
 			this.on('rateLimit', this.onRateLimit.bind(this));
-			this.on('invalidated', this.onInvalidated);
+			this.on('invalidated', this.onInvalidated.bind(this));
 		}
 	}
 
@@ -418,7 +434,7 @@ export default class ExtendedClient extends Client {
 			}
 			else {
 				this.logger.logS(
-					`Command: ${commandName} Failed to Execute.\nExecuting User: ${message.author.username}\nReason: ${commandFile.error.name}\nStack Trace: ${commandFile.error.stack}`, 2);
+					`Command: ${commandName} Failed to Execute.\nExecuting User: ${message.author.username} (${message.author.id})\nReason: ${commandFile.error.name}\nStack Trace: ${commandFile.error.stack}`, 2);
 				message.channel.send(
 					RichEmbedGenerator.errorEmbed(
 						`An Error Occurred When Running the Command ${commandName}`,
@@ -451,58 +467,72 @@ export default class ExtendedClient extends Client {
 
 
 	protected async onGuildMemberJoin(guildMember: GuildMember | PartialGuildMember): Promise<void> {
+		try {
 		// Enable User in Xp Database
-		await this.experienceHandler.connectUser(guildMember);
-		// Assign Default Server Role
-		const guildCollection = await this.nextDBClient.getCollection('guilds');
-		const guild = await guildCollection.findOne({
-			_id: guildMember.guild.id
-		});
+			// await this.experienceHandler.connectUser(guildMember);
+			// Assign Default Server Role
+			const guildCollection = await this.nextDBClient.getCollection('guilds');
+			const guild = await guildCollection.findOne({
+				_id: guildMember.guild.id
+			});
 
-		if (guild && guild.autoRoleId && guildMember.roles) {
-			const role = guildMember.guild.roles.resolve(guild.autoRoleId);
-			if (role) await guildMember.roles.add(role);
-		}
-		// Send User Joined Message to Moderator Channel
-		if (guildMember.user) {
-			if (guild && guild.eventChannelId) {
-				const botEmbed = new MessageEmbed()
-					.setTitle('Displaying New User Profile')
-					.setThumbnail(guildMember.user.avatarURL() || '')
-					.setColor('#00dde0')
-					.addFields(
-						{ name: 'Name', value: `${guildMember.user.tag} | ${guildMember.displayName} (${guildMember.id})`, inline: true },
-						{ name: 'Created', value: `${guildMember.user.createdAt}`, inline: false },
-					);
-				const channel = guildMember.guild.channels.resolve(guild.eventChannelId) as TextChannel | null;
-				if (channel) await channel.send(`**Guardian ${guildMember.user} has joined ${guildMember.guild}!**`, botEmbed);
+			if (guild && guild.autoRoleId && guildMember.roles) {
+				const role = guildMember.guild.roles.resolve(guild.autoRoleId);
+				if (role) await guildMember.roles.add(role);
 			}
-			this.logger.logS(`User: ${guildMember.displayName}(${guildMember.id}) Joined Guild: ${guildMember.guild.name}(${guildMember.guild.id})`, LogFilter.Debug);
+			// Send User Joined Message to Moderator Channel
+			if (guildMember.user) {
+				if (guild && guild.eventChannelId) {
+					const botEmbed = new MessageEmbed()
+						.setTitle('Displaying New User Profile')
+						.setThumbnail(guildMember.user.avatarURL() || '')
+						.setColor('#00dde0')
+						.addFields(
+							{ name: 'Name', value: `${guildMember.user.tag} | ${guildMember.displayName} (${guildMember.id})`, inline: true },
+							{ name: 'Created', value: `${guildMember.user.createdAt}`, inline: false },
+						);
+					const channel = guildMember.guild.channels.resolve(guild.eventChannelId) as TextChannel | null;
+					if (channel) await channel.send(`**Guardian ${guildMember.user} has joined ${guildMember.guild}!**`, botEmbed);
+				}
+				this.logger.logS(`User: ${guildMember.displayName}(${guildMember.id}) Joined Guild: ${guildMember.guild.name}(${guildMember.guild.id})`, LogFilter.Debug);
+			}
+		}
+		catch (e) {
+			this.logger.logS(JSON.stringify(e), 2);
 		}
 	}
 
 	protected async onGuildMemberLeave(guildMember: GuildMember | PartialGuildMember): Promise<void> {
-		// Disable User in Xp Database
-		await this.experienceHandler.disconnectUser(guildMember);
-		// Send User Left Message to Moderator Channel
-		const guildCollection = await this.nextDBClient.getCollection('guilds');
-		const guild = await guildCollection.findOne({
-			_id: guildMember.guild.id,
-		});
-		if (guildMember.user) {
-			if (guild && guild.eventChannelId) {
-				const botEmbed = new MessageEmbed()
-					.setTitle('Guardian Down! <:down:513403773272457231>')
-					.setThumbnail(guildMember.user.avatarURL() || '')
-					.setColor('#ba0526')
-					.addFields(
-						{ name: 'Name', value: `${guildMember.user.tag} | ${guildMember.displayName} (${guildMember.id})`, inline: true },
-						{ name: 'First Joined', value: `${guildMember.joinedAt}`, inline: false },
-					);
-				const channel = guildMember.guild.channels.resolve(guild.eventChannelId) as TextChannel | null;
-				if (channel) await channel.send(`**Guardian ${guildMember.user} has left ${guildMember.guild}!**`, botEmbed);
+		try{
+
+			// Disable User in Xp Database
+			// await this.experienceHandler.disconnectUser(guildMember);
+			// Send User Left Message to Moderator Channel
+			const guildCollection = await this.nextDBClient.getCollection('guilds');
+			const guild = await guildCollection.findOne({
+				_id: guildMember.guild.id,
+			});
+			if (guildMember.user) {
+				if (guild && guild.eventChannelId) {
+					const botEmbed = new MessageEmbed()
+						.setTitle(`Guardian Down! <:down:513403773272457231>`)
+						.setThumbnail(guildMember.user.avatarURL() || '')
+						.setColor('#ba0526')
+						.addFields(
+							{ name: 'Name', value: `${guildMember.user.tag} | ${guildMember.displayName} (${guildMember.id})`, inline: true },
+							{ name: 'First Joined', value: `${guildMember.joinedAt}`, inline: false },
+						);
+					const userBan = (await guildMember.guild.fetchBans()).get(guildMember.id);
+					if (userBan)
+						botEmbed.addField('BANNED', userBan.reason || 'Unspecified Reason');
+					const channel = guildMember.guild.channels.resolve(guild.eventChannelId) as TextChannel | null;
+					if (channel) await channel.send(`**Guardian ${guildMember.user} has left ${guildMember.guild}!**`, botEmbed);
+				}
+				this.logger.logS(`User: ${guildMember.user.username}(${guildMember.id}) Left Guild: ${guildMember.guild.name}(${guildMember.guild.id})`, LogFilter.Debug);
 			}
-			this.logger.logS(`User: ${guildMember.user.username}(${guildMember.id}) Left Guild: ${guildMember.guild.name}(${guildMember.guild.id})`, LogFilter.Debug);
+		}
+		catch(e){
+			this.logger.logS(JSON.stringify(e), 2);
 		}
 	}
 
