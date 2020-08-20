@@ -12,7 +12,7 @@ export default class GiveMedalsCommand extends ExtendedClientCommand {
 		this.description = 'Gives In Game Acquired Medals for Guild Progression';
 		this.environments = ['text'];
 		this.expectedArguments = [];
-		this.permissionRequired = 'SEND_MESSAGES';
+		this.executorPermissionRequired = 'SEND_MESSAGES';
 		this.requiredProperties = undefined;
 	}
 	protected async Run(message: Message, ...args: string[]): Promise<ICommandResult | void> {
@@ -20,8 +20,8 @@ export default class GiveMedalsCommand extends ExtendedClientCommand {
 		if (!message.member) throw new CommandError('NO_MEMBER'); // If Member is Needed
 		if (!message.guild) throw new CommandError('NO_GUILD'); // If Guild is Needed
 		if (!this.client.user) throw new CommandError('NO_BOT_USER'); // If Bot Instance is Needed
-		let subject = message.member;
-		if (args.length) subject = Utility.LookupMember(message.guild, args.join(' ')) || message.member;
+		const subject = Utility.LookupMember(message.guild, args.join(' ')) || message.member;
+		
 		const statusMessage = await message.channel.send(`Currently Checking Medals for ${subject.displayName}`);
 		const awardedMedals = await this.client.MedalHandler.checkAllMedals(subject, true);
 		await this.client.MedalHandler.UnlockMedals(subject.user, awardedMedals);

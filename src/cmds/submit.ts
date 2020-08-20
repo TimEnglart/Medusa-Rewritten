@@ -6,7 +6,7 @@ import { CommandError } from "../ext/errorParser";
 //import { ScoreBook } from "../ext/score-book";
 import RichEmbedGenerator from "../ext/RichEmbeds";
 
-export default class ExitBot extends ExtendedClientCommand {
+export default class SubmitNightfallCommad extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {
 		super(commandHandler);
 		this.name = 'submit';
@@ -19,7 +19,7 @@ export default class ExitBot extends ExtendedClientCommand {
 				example: ' https://www.bungie.net/en/PGCR/4156451264/  | submit 4156451264',
 			},
 		];
-		this.permissionRequired = 'SEND_MESSAGES';
+		this.executorPermissionRequired = 'SEND_MESSAGES';
 		this.requiredProperties = {
 			Message: {
 				author: undefined,

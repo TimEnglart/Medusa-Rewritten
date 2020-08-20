@@ -7,14 +7,14 @@ import { LogFilter } from "../ext/logger";
 import { Utility } from "../ext/utility";
 
 
-export default class ExitBot extends ExtendedClientCommand {
+export default class ExecuteCustomCommands extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {
 		super(commandHandler);
 		this.name = 'exec';
 		this.description = 'Runs an Internal Command or Bot Function';
 		this.environments = ['text', 'dm'];
 		this.expectedArguments = [{ name: 'Command Type', optional: false, example: 'custom' }, {name: 'Arguments', optional: true, example: 'neofetch'}];
-		this.permissionRequired = 'SUPER_USER';
+		this.executorPermissionRequired = 'SUPER_USER';
 		this.requiredProperties = {
 			Message: {
 				author: undefined,

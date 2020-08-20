@@ -11,7 +11,7 @@ export default class ListEmojisCommand extends ExtendedClientCommand {
 		this.description = 'Sends a list of all Discord servers custom emojis via direct message.';
 		this.environments = ['text'];
 		this.expectedArguments = [];
-		this.permissionRequired = 'SEND_MESSAGES';
+		this.executorPermissionRequired = 'SEND_MESSAGES';
 		this.requiredProperties = undefined;
 	}
 	protected async Run(message: Message): Promise<ICommandResult | void> {

@@ -1,4 +1,4 @@
-import { Message, User, GuildMember, Guild, Role, GuildChannel } from "discord.js";
+import { Message, User, GuildMember, Guild, Role, GuildChannel, PermissionString } from "discord.js";
 
 class Utility {
 	/**
@@ -175,6 +175,14 @@ class Utility {
 			if (match) matches.push(match[0]);
 		} while (match);
 		return matches;
+	}
+
+	public static isRoleElevation(member: GuildMember, role: Role, permissionsRequired?: PermissionString[]): boolean {
+		if (member.roles.highest.comparePositionTo(role) < 1) return true; // Cant Modify Roles Including and Above Your Highest
+		if(permissionsRequired)
+			for(const permission of permissionsRequired) 
+				if(!member.hasPermission(permission)) return true; // Certain Permissions are Required For the Action (eg. Assign Roles. If you dont have it the bot wont let you)
+		return false; // You Have a Higher Role Than the Specified Role and Have All of it Permissions
 	}
 }
 

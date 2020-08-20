@@ -6,7 +6,7 @@ import { Utility } from "../ext/utility";
 import RichEmbedGenerator from "../ext/RichEmbeds";
 import { IMedalData } from '../ext/settingsInterfaces'
 
-export default class ExitBot extends ExtendedClientCommand {
+export default class RevokeMedalCommand extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {
 		super(commandHandler);
 		this.name = 'revoke';
@@ -17,7 +17,8 @@ export default class ExitBot extends ExtendedClientCommand {
 			{ name: 'User Resolvable', optional: false, example: '@User#12345' },
 			{ name: 'Medal Resolvable', optional: false, example: 'pointbreaker' },
 		];
-		this.permissionRequired = 'MANAGE_ROLES';
+		this.executorPermissionRequired = 'MANAGE_ROLES';
+		this.clientPermissionsRequired = ['MANAGE_ROLES', 'SEND_MESSAGES'];
 		this.requiredProperties = {
 			Message: {
 				author: undefined,

@@ -4,14 +4,15 @@ import { Message, OverwriteResolvable } from "discord.js";
 import { CommandError } from "../ext/errorParser";
 import RichEmbedGenerator from "../ext/RichEmbeds";
 
-export default class ExitBot extends ExtendedClientCommand {
+export default class LockVoiceChannelCommand extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {
 		super(commandHandler);
 		this.name = 'lock';
 		this.description = 'Restricts Joining Permissions to Current Voice Channel to Other Members';
 		this.environments = ['text'];
 		this.expectedArguments = [];
-		this.permissionRequired = 'SEND_MESSAGES';
+		this.executorPermissionRequired = 'SEND_MESSAGES';
+		this.clientPermissionsRequired = ['SEND_MESSAGES', 'MANAGE_CHANNELS'];
 		this.requiredProperties = {
 			Message: {
 				author: undefined,
@@ -29,14 +30,20 @@ export default class ExitBot extends ExtendedClientCommand {
 		if (!this.client.user) throw new CommandError('NO_BOT_USER'); // If Bot Instance is Needed
 
 		const bannedVoiceChannelIds = ['197984269430161408', '386504870695534593'];
+
+
 		const voiceChannel = message.member.voice.channel;
 		if (!voiceChannel) throw new CommandError('NO_VOICE_CHANNEL');
+
+		if (bannedVoiceChannelIds.includes(voiceChannel.id) || message.guild.afkChannel === voiceChannel) 
+			throw new CommandError('BLACKLISTED_CHANNEL');
+
 		if (voiceChannel.name.substr(0).indexOf('🔒') > -1)
 			throw new CommandError(
 				'CHANNEL_ALREADY_LOCKED',
 				'Channel is Already Locked. Unlock or Lock Another Channel',
 			);
-		if (bannedVoiceChannelIds.includes(voiceChannel.id)) throw new CommandError('BLACKLISTED_CHANNEL');
+		
 		const members = [];
 		const voiceData: OverwriteResolvable[] = [
 			{

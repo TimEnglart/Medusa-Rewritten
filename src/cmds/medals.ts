@@ -4,14 +4,14 @@ import { Message, MessageEmbed } from "discord.js";
 import { CommandError } from "../ext/errorParser";
 import RichEmbedGenerator from "../ext/RichEmbeds";
 
-export default class ExitBot extends ExtendedClientCommand {
+export default class MedalsCommand extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {
 		super(commandHandler);
 		this.name = 'medals';
 		this.description = 'Displays all Possible Medals that can/could be awarded';
 		this.environments = ['text', 'dm'];
 		this.expectedArguments = [];
-		this.permissionRequired = 'SEND_MESSAGES';
+		this.executorPermissionRequired = 'SEND_MESSAGES';
 		this.requiredProperties = {
 			Message: {
 				author: undefined,
@@ -28,8 +28,12 @@ export default class ExitBot extends ExtendedClientCommand {
 		const categorizedMedals = this.client.MedalHandler.categorizeMedals();
 		for (const [medalCategory, medals] of Object.entries(categorizedMedals)) {
 			if (medalCategory === 'Locked') continue;
-			const embed = new MessageEmbed().setTitle(`${medalCategory} Medals`);
+			let embed = new MessageEmbed().setTitle(`${medalCategory} Medals`);
 			for (const medal of medals) {
+				if(embed.fields.length === 25) {
+					await message.author.send(embed);
+					embed = new MessageEmbed().setTitle(`${medalCategory} Medals Pt. 2`);
+				}
 				embed.addField(`${medal.name} ${medal.emoji}`, `${medal.description}\n**${medal.xp} XP**`);
 			}
 			await message.author.send(embed);

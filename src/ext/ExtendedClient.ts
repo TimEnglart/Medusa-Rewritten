@@ -18,6 +18,7 @@ import { exec, execSync, ExecException } from "child_process";
 import RichEmbedGenerator from "./RichEmbeds";
 import { inspect } from "util";
 import { CommandError } from "./errorParser";
+import RainbowRoleHandler from "./RainbowRoleHandler";
 
 interface IExtendedClientStaticPaths {
 	SettingsFile: string;
@@ -60,6 +61,7 @@ export default class ExtendedClient extends Client {
 	public readonly BasePaths: IExtendedClientStaticPaths;
 	public readonly DynamicPaths: IExtendedClientDynamicPaths;
 	public readonly HotReloader?: HotReload<ExtendedClient>;
+	public readonly RainbowRoles: RainbowRoleHandler;
 
 	constructor(options?: IExtendedClientOptions) {
 		super(options);
@@ -93,7 +95,7 @@ export default class ExtendedClient extends Client {
 		this.MedalHandler = new MedalHandler(this);
 		this.TempChannelHandler = new TempChannelHandler(this);
 		this.ReactionRoleHandler = new ReactionRoleHandler(this);
-
+		this.RainbowRoles = new RainbowRoleHandler(this, 1500);
 		this.LoadListeners();
 	}
 
@@ -341,11 +343,11 @@ export default class ExtendedClient extends Client {
 		this.on('messageReactionRemove', this.onMessageReactionRemove.bind(this));
 		this.on('ready', this.onReady.bind(this));
 
-		if (this.settings.debug) {
-			this.on('debug', this.onDebug.bind(this));
-			this.on('rateLimit', this.onRateLimit.bind(this));
-			this.on('invalidated', this.onInvalidated.bind(this));
-		}
+		//if (this.settings.debug) {
+		this.on('debug', this.onDebug.bind(this));
+		this.on('rateLimit', this.onRateLimit.bind(this));
+		this.on('invalidated', this.onInvalidated.bind(this));
+		//}
 	}
 
 	public Update(): void {
@@ -574,6 +576,7 @@ export default class ExtendedClient extends Client {
 		}
 		await this.user.setActivity(`READY`, { type: 'PLAYING' });
 		this.logger.logS(`Successfully Booted and Online -> ${this.user.username}`, LogFilter.Success);
+		this.RainbowRoles.start();
 	}
 
 	protected onError(error: Error): void {

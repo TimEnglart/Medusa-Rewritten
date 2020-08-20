@@ -10,7 +10,7 @@ export default class PrintWelcomeMessage extends ExtendedClientCommand {
 		this.description = 'Prints Welcome Messages to Welcome Channel [Hard Coded]';
 		this.environments = ['text'];
 		this.expectedArguments = [{ name: 'Text Channel Resolvable', optional: true, example: '4126456125411' }];
-		this.permissionRequired = 'ADMINISTRATOR';
+		this.executorPermissionRequired = 'ADMINISTRATOR';
 		this.requiredProperties = {
 			Message: {
 				author: undefined,

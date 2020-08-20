@@ -4,14 +4,14 @@ import { Message, MessageEmbed } from "discord.js";
 import { CommandError } from "../ext/errorParser";
 import RichEmbedGenerator from "../ext/RichEmbeds";
 
-export default class ExitBot extends ExtendedClientCommand {
+export default class RegisterCommand extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {
 		super(commandHandler);
 		this.name = 'register';
 		this.description = 'Link Discord Account to Bungie Account For Guild So In Game Progression Can Be Tracked';
 		this.environments = ['text', 'dm'];
 		this.expectedArguments = [{ name: 'Exit Code', optional: true, example: '1' }];
-		this.permissionRequired = 'SEND_MESSAGES';
+		this.executorPermissionRequired = 'SEND_MESSAGES';
 		this.requiredProperties = {
 			Message: {
 				author: undefined,

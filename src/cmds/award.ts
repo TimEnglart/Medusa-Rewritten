@@ -17,7 +17,7 @@ export default class AwardCommand extends ExtendedClientCommand {
 			{ name: 'User Resolvable', optional: false, example: '@User#12345' },
 			{ name: 'Medal Resolvable', optional: false, example: 'pointbreaker' },
 		];
-		this.permissionRequired = 'MANAGE_ROLES';
+		this.executorPermissionRequired = 'MANAGE_ROLES';
 		this.requiredProperties = {
 			Message: {
 				author: undefined,

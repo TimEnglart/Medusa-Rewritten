@@ -4,7 +4,7 @@ import { Message, VoiceChannel } from "discord.js";
 import { CommandError } from "../ext/errorParser";
 import { Utility } from "../ext/utility";
 
-export default class PrintWelcomeMessage extends ExtendedClientCommand {
+export default class RemoveTemporaryChannelCommand extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {
 		super(commandHandler);
 		this.name = 'removetemp';
@@ -12,7 +12,8 @@ export default class PrintWelcomeMessage extends ExtendedClientCommand {
             'Remove an Existing Temporary Channel Master';
 		this.environments = ['text'];
 		this.expectedArguments = [{ name: 'Channel Resolvable', optional: false, example: '31263512635413' }];
-		this.permissionRequired = 'MANAGE_CHANNELS';
+		this.executorPermissionRequired = 'MANAGE_CHANNELS';
+		this.clientPermissionsRequired = ['MANAGE_CHANNELS', 'MOVE_MEMBERS', 'CONNECT'];
 		this.requiredProperties = {
 			Message: {
 				author: undefined,
@@ -27,9 +28,7 @@ export default class PrintWelcomeMessage extends ExtendedClientCommand {
 		if (!message.member) throw new CommandError('NO_MEMBER'); // If Member is Needed
 		if (!message.guild) throw new CommandError('NO_GUILD'); // If Guild is Needed
 		if (!this.client.user) throw new CommandError('NO_BOT_USER'); // If Bot Instance is Needed
-		const channelId =
-                Utility.parseChannelMentionToId(args[0]) ||
-                (message.member.voice.channel !== null ? message.member.voice.channel.id : null);
+		const channelId =  Utility.parseChannelMentionToId(args[0]) || message.member.voice.channel?.id;
 		if (channelId) {
 			
 			const channel = message.guild.channels.resolve(channelId) as VoiceChannel;

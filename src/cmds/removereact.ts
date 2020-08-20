@@ -5,7 +5,7 @@ import { CommandError } from "../ext/errorParser";
 import { Utility } from "../ext/utility";
 import RichEmbedGenerator from "../ext/RichEmbeds";
 
-export default class ExitBot extends ExtendedClientCommand {
+export default class RemoveRoleReactionCommand extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {
 		super(commandHandler);
 		this.name = 'removereact';
@@ -15,7 +15,8 @@ export default class ExitBot extends ExtendedClientCommand {
 			{ name: 'Message Id', optional: false, example: '62135126421' },
 			{ name: 'Role Resolvable', optional: false, example: '@Role' },
 		];
-		this.permissionRequired = 'MANAGE_ROLES';
+		this.executorPermissionRequired = 'MANAGE_ROLES';
+		this.clientPermissionsRequired = ['MANAGE_ROLES', 'ADD_REACTIONS'];
 		this.requiredProperties = {
 			Message: {
 				author: undefined,
@@ -40,13 +41,8 @@ export default class ExitBot extends ExtendedClientCommand {
 
 		if (!role) throw new CommandError('NO_ROLE_FOUND');
 		else {
-			if (
-				(role.position >= message.member.roles.highest.position ||
-                        role.position >= message.guild.me.roles.highest.position) &&
-                    !message.guild.me.hasPermission('ADMINISTRATOR')
-			)
+			if (Utility.isRoleElevation(message.guild.me, role, this.clientPermissionsRequired) || Utility.isRoleElevation(message.member, role, this.clientPermissionsRequired))
 				throw new CommandError('INSUFFICIENT_PRIVILEGES');
-			
 			
 			const response = this.client.ReactionRoleHandler.get({
 				guildId: message.guild.id,
@@ -55,12 +51,14 @@ export default class ExitBot extends ExtendedClientCommand {
 			});
 			if (!response)
 				throw new CommandError('DATABASE_ENTRY_NOT_FOUND', 'Reaction Role Not Linked to Provided Role');
-			const statusMessage = await message.channel.send(
-				`Removing Reaction For ${role.name} From the Selected Message`,
-			);
+
+
+			const statusMessage = await message.channel.send(`Removing Reaction For ${role.name} From the Selected Message`);
 			const channelLookup = message.guild.channels.resolve(response.channelId) as TextChannel;
+			
 			if (!channelLookup) throw new CommandError('NO_CHANNEL_FOUND');
-			const reactionMessage = await channelLookup.messages.fetch(messageId);
+			const reactionMessage = await channelLookup.messages.fetch(messageId, true);
+			
 			if (!reactionMessage) throw new CommandError('NO_MESSAGE_FOUND');
 			const emoji = this.client.emojis.resolve(response.reactionId || response.reactionName);
 			if(!emoji) throw new CommandError('NO_EMOJI_FOUND');

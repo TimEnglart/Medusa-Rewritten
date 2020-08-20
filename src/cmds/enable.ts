@@ -12,12 +12,16 @@ export default class EnableCommand extends ExtendedClientCommand {
 		this.expectedArguments = [
 			{ name: 'Command Name', example: 'enable', optional: false }
 		];
-		this.permissionRequired = 'SUPER_USER';
+		this.executorPermissionRequired = 'SUPER_USER';
 		this.requiredProperties = undefined;
 		this.hidden = true;
 	}
 	protected async Run(message: Message, ...args: string[]): Promise<ICommandResult | void> {
-		const commandToEnable = args[0];
+		const commandToEnable = args.shift();
+		if(!commandToEnable) {
+			await message.channel.send(RichEmbedGenerator.helpEmbed(this));
+			return;
+		}
 		this.CommandHandler.EnableCommand(commandToEnable);
 		await message.channel.send(RichEmbedGenerator.successEmbed(`Successfully Enabled Command`, `The Command: ${commandToEnable} has Successfully Been Enabled`));
 	}

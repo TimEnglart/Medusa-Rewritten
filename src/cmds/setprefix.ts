@@ -5,14 +5,14 @@ import { CommandError } from "../ext/errorParser";
 import RichEmbedGenerator from "../ext/RichEmbeds";
 
 
-export default class PrintWelcomeMessage extends ExtendedClientCommand {
+export default class SetPrefix extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {
 		super(commandHandler);
 		this.name = 'setprefix';
 		this.description = 'Sets the Guilds Bot Command Prefix';
 		this.environments = ['text', 'dm'];
 		this.expectedArguments = [{ name: 'prefix', optional: false, example: '*' }];
-		this.permissionRequired = 'ADMINISTRATOR';
+		this.executorPermissionRequired = 'ADMINISTRATOR';
 		this.requiredProperties = {
 			Message: {
 				author: undefined,
@@ -25,9 +25,8 @@ export default class PrintWelcomeMessage extends ExtendedClientCommand {
 	protected async Run(message: Message, ...args: string[]): Promise<ICommandResult | void> {
 		if (!message.author) throw new CommandError('NO_AUTHOR'); // If Author is Needed
 		if (!message.member) throw new CommandError('NO_MEMBER'); // If Member is Needed
-		if (!message.guild) throw new CommandError('NO_GUILD'); // If Guild is Needed
 		if (!this.client.user) throw new CommandError('NO_BOT_USER'); // If Bot Instance is Needed
-		const resolvedEnvironmentId = message.guild ? message.guild.id : message.author.id;
+		const resolvedEnvironmentId = message.guild?.id || message.author.id;
 		const guildCollection = await this.client.nextDBClient.getCollection('guilds');
 		await guildCollection.updateOne(
 			{

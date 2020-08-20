@@ -1,4 +1,4 @@
-import { Message, Permissions, PermissionString } from 'discord.js';
+import { Message, Permissions, PermissionString, Guild, BitField } from 'discord.js';
 import { CommandError } from '../ext/errorParser';
 import CommandHandler from '../ext/CommandHandler';
 import ExtendedClient, { ChannelTypes } from './ExtendedClient';
@@ -30,19 +30,23 @@ class ExtendedClientCommand {
 	public environments: (keyof typeof ChannelTypes)[];
 	public expectedArguments: IExpectedArgument[];
 	public name: string;
-	public permissionRequired: PermissionString | string;
+	public executorPermissionRequired: PermissionString | string;
+	public clientPermissionsRequired: PermissionString[];
 	public requiredProperties?: IRequiredProperties;
 	public hidden?: boolean; // IDK About This One
 	protected readonly client: ExtendedClient;
 	constructor(protected readonly CommandHandler: CommandHandler) {
-		this.client = this.CommandHandler.client;
-		this.description = 'NO_DESC';
-		this.environments = ['text', 'dm', 'voice', 'category', 'news', 'store', 'unknown'];
-		this.expectedArguments = [];
-		this.name = '';
-		this.permissionRequired = '';
-		this.requiredProperties = undefined;
+		this.client = this.CommandHandler.client; // Discord Bot Client
+		this.description = 'NO_DESC'; // Description of The Command
+		this.environments = ['text', 'dm', 'voice', 'category', 'news', 'store', 'unknown']; // What Channels The Command can Be Executed In
+		this.expectedArguments = []; // The Arguments the Command Will Take
+		this.name = ''; // Name of the Command
+		this.executorPermissionRequired = ''; // Permission the Person Executing the Command Will Need
+		this.clientPermissionsRequired = ['SEND_MESSAGES']; // Permissions the Bot Will Need When Executing the Command.... maybe combine with above property
+		this.requiredProperties = undefined; // A Dynamic Property Check to see if properties Exist on the ExtendedClient and the Message
 		/*
+		EXAMPLE OF requiredProperties
+
 		this.requiredProperties = {
 			Message: {
 				member: undefined,
@@ -73,6 +77,12 @@ class ExtendedClientCommand {
 			return {
 				success: false,
 				error: new CommandError('MISSING_PROPERTIES'),
+			};
+		}
+		if (!this.validPermissions(message)) {
+			return {
+				success: false,
+				error: new CommandError('USER_INSUFFICIENT_PRIVILEGES'),
 			};
 		}
 		if (!this.validPermissions(message)) {
@@ -136,13 +146,23 @@ class ExtendedClientCommand {
 	public validPermissions(message: Message): boolean { // make public so its known if it will be executed
 		if (this.client.isSuperUser(message.author)) return true;
 		if (message.member) {
-			if (this.propertyIsDefined(Permissions.FLAGS, this.permissionRequired))
-				if (message.member.hasPermission(this.permissionRequired as PermissionString)) return true;
+			if (this.propertyIsDefined(Permissions.FLAGS, this.executorPermissionRequired))
+				if (message.member.hasPermission(this.executorPermissionRequired as PermissionString)) return true;
 		} else if (message.author) {
-			if (this.permissionRequired === 'SEND_MESSAGES') return true;
+			if (this.executorPermissionRequired === 'SEND_MESSAGES') return true;
 		}
 		return this.ExtendedPermissionCheck(message);
 	}
+
+	public validClientPermissions(message: Message): boolean { // we know if it is in the right channel for the action due to validChannel()
+		if(!message.guild) return true; // DM. So No Client Permissions are Required
+		const clientMember = message.guild.me;
+		if (!clientMember) throw new CommandError(`NO_MEMBER`, 'Was Unable to Resolve Myself in the Guild Context');
+		for(const permissionString of this.clientPermissionsRequired)
+			if (!clientMember.hasPermission(permissionString)) return false;
+		return true;
+	}
+
 	private validChannel(message: Message): boolean {
 		return this.environments.includes(message.channel.type);
 	}

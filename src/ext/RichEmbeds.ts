@@ -69,7 +69,7 @@ export default class RichEmbedGenerator {
 					}\n`,
 					inline: false,
 				},
-				{ name: 'Required Permissions', value: `${command.permissionRequired}`, inline: false },
+				{ name: 'Required Permissions', value: `${command.executorPermissionRequired}`, inline: false },
 			],
 			title: `Info on "${command.name || '<Empty>'}" Command. <:banshee:515429193518153748>`,
 		};

@@ -11,7 +11,7 @@ export default class HelpCommand extends ExtendedClientCommand {
 		this.description = 'Responds with a guide on how to use the bot, including basic commands.';
 		this.environments = ['text', 'dm'];
 		this.expectedArguments = [{ name: 'Command Name', optional: true, example: 'guardian' }];
-		this.permissionRequired = 'SEND_MESSAGES';
+		this.executorPermissionRequired = 'SEND_MESSAGES';
 		this.requiredProperties = {
 			Message: {
 				author: undefined,
@@ -32,15 +32,13 @@ export default class HelpCommand extends ExtendedClientCommand {
 			_id: message.guild ? message.guild.id : message.author.id,
 		});
 		const prefix = guildPrefix.prefix || this.client.settings.defaultPrefix;
+
 		if (args.length > 0) {
 			const commandModule = this.client.commandHandler.Commands.get(args[0]);
-			if (commandModule && commandModule.validPermissions(message)) {
+			if (commandModule && commandModule.validPermissions(message))
 				await message.channel.send(RichEmbedGenerator.helpEmbed(commandModule, prefix));
-			} else
-				throw new CommandError(
-					`NO_COMMAND_FOUND`,
-					`I was Unable to Find the Specified Command: ${args[0]}`,
-				);
+			else 
+				throw new CommandError(`NO_COMMAND_FOUND`);
 		} else {
 			const botIcon = this.client.user.displayAvatarURL();
 			const helpCmdEmbed = new MessageEmbed()

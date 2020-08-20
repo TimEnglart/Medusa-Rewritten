@@ -33,6 +33,8 @@ process
 // HotReload will be Referenced in client so it shouldnt be in GC
 new HotReload<ExtendedClient>({
 	exec: (reloader): ExtendedClient => {
+		// Because the file will be in lib
+		// eslint-disable-next-line node/no-missing-require
 		client = new (require('./ext/ExtendedClient').default)({
 			fetchAllMembers: true,
 			reloader: reloader

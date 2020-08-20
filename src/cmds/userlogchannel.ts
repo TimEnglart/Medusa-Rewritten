@@ -13,7 +13,7 @@ export default class SetLogChannel extends ExtendedClientCommand {
 		this.description = 'Sets a Text Channel Where Guild Events are Sent';
 		this.environments = ['text'];
 		this.expectedArguments = [{ name: 'Channel Resolvable', optional: true, example: '4126456125411' }];
-		this.permissionRequired = 'MANAGE_GUILD';
+		this.executorPermissionRequired = 'MANAGE_GUILD';
 		this.requiredProperties = {
 			Message: {
 				author: undefined,

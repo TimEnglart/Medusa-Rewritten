@@ -5,14 +5,14 @@ import { CommandError } from "../ext/errorParser";
 import { Utility } from "../ext/utility";
 import RichEmbedGenerator from "../ext/RichEmbeds";
 
-export default class ExitBot extends ExtendedClientCommand {
+export default class InviteCommand extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {
 		super(commandHandler);
 		this.name = 'invite';
 		this.description = 'To invite a user to your voice channel and move them in if they accept.';
 		this.environments = ['text'];
 		this.expectedArguments = [{ name: 'User Resolvable', optional: false, example: '@User#12345' }];
-		this.permissionRequired = 'SUPER_USER';
+		this.executorPermissionRequired = 'SUPER_USER';
 		this.requiredProperties = {
 			Message: {
 				author: undefined,

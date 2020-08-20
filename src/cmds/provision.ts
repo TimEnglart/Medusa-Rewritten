@@ -11,7 +11,7 @@ export default class Provision extends ExtendedClientCommand {
 		this.description = 'Goes through all Database Relient Information that was changed while offline';
 		this.environments = ['text'];
 		this.expectedArguments = [];
-		this.permissionRequired = 'ADMINISTRATOR';
+		this.executorPermissionRequired = 'ADMINISTRATOR';
 		this.requiredProperties = {
 			Message: {
 				author: undefined,
@@ -28,6 +28,8 @@ export default class Provision extends ExtendedClientCommand {
 		if (!message.guild) throw new CommandError('NO_GUILD'); // If Guild is Needed
 		if (!this.client.user) throw new CommandError('NO_BOT_USER'); // If Bot Instance is Needed
 		// Because This bot has more downtime than uptime lmao
+		
+
 		
 
 	}

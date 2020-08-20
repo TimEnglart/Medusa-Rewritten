@@ -6,8 +6,8 @@
 # ssh-add ~/.ssh/github_rsa;
 
 # Set CWD
-REPO_DIR=/srv/Medusa-Rewritten;
-cd $REPO_DIR;
+#REPO_DIR=/srv/Medusa-Rewritten;
+#cd $REPO_DIR;
 
 # Get Lastest Github Commit
 # Too much of a Hassle When Running under a service
@@ -25,10 +25,10 @@ cd $REPO_DIR;
 # Get Vue Sorted
 cd './client';
 npm i && npm run build;
-cd $REPO_DIR;
+cd '../';
 
 # Update NPM Packagaes & Start Bot
 # npm update && npm audit fix; 
 # Prevent Breaking modules from x.x.x update
 
-npm run build && npm run start;
+npm i && npm run build && npm run start;

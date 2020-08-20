@@ -13,13 +13,17 @@ export default class DisableCommand extends ExtendedClientCommand {
 			{ name: 'Command Name', example: 'disable', optional: false },
 			{ name: 'Reason', example: 'Error Occurring When Used', optional: true },
 		];
-		this.permissionRequired = 'SUPER_USER';
+		this.executorPermissionRequired = 'SUPER_USER';
 		this.requiredProperties = undefined;
 		this.hidden = true;
 	}
 	protected async Run(message: Message, ...args: string[]): Promise<ICommandResult | void> {
-		const commandToDisable = args[0];
-		const reason = args.length > 1 ? args.slice(1).join(' ') : 'NO_REASON_PROVIDED';
+		const commandToDisable = args.shift();
+		const reason = args.join(' ') || 'NO_REASON_PROVIDED';
+		if (!commandToDisable) {
+			message.channel.send(RichEmbedGenerator.helpEmbed(this)); 
+			return;
+		}
 		await this.CommandHandler.DisableCommand(commandToDisable, reason);
 		await message.channel.send(RichEmbedGenerator.successEmbed(`Successfully Disabled Command`, `The Command: ${commandToDisable} has Successfully Been Disabled\n\nReason: ${reason}`));
 	}

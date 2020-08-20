@@ -5,14 +5,14 @@ import { CommandError } from "../ext/errorParser";
 import { Utility } from "../ext/utility";
 
 
-export default class ExitBot extends ExtendedClientCommand {
+export default class UserInfoCommand extends ExtendedClientCommand {
 	constructor(commandHandler: CommandHandler) {
 		super(commandHandler);
 		this.name = 'info';
 		this.description = 'Gets User Data';
 		this.environments = ['text'];
 		this.expectedArguments = [{ name: 'User Resolvable', optional: true, example: '' }];
-		this.permissionRequired = 'SUPER_USER';
+		this.executorPermissionRequired = 'SUPER_USER';
 		this.requiredProperties = {
 			Message: {
 				author: undefined,
