@@ -2,7 +2,7 @@
 
 
 ## Installation
-### Based on [Discord.js](https://github.com/discordjs/discord.js/) & [Typescipt](https://www.typescriptlang.org/)
+### Based on [Discord.js](https://github.com/discordjs/discord.js/) & [Typescript](https://www.typescriptlang.org/)
 **Node.js 12.0.0 or newer is required.**
 
 - Install Packages via NPM:  `npm install`
@@ -27,7 +27,6 @@ npm run build
 ## Configuring
 The Settings for this Bot is the `./src/config/settings.json` with a provided `settinggs-example.json`
 
-This 
 
 ## Running 
 ```
