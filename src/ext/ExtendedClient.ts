@@ -576,7 +576,7 @@ export default class ExtendedClient extends Client {
 		}
 		await this.user.setActivity(`READY`, { type: 'PLAYING' });
 		this.logger.logS(`Successfully Booted and Online -> ${this.user.username}`, LogFilter.Success);
-		this.RainbowRoles.start();
+		// this.RainbowRoles.start();
 	}
 
 	protected onError(error: Error): void {
