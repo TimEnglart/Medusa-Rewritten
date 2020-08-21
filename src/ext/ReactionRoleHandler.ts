@@ -21,49 +21,46 @@ export default class ReactionRoleHandler {
 	}
 	public async OnReactionAdd(messageReaction: MessageReaction, user: User | PartialUser): Promise<void> {
 		if (!messageReaction.message.guild) return; // Roles Only Assignable In Guilds
-		const collection = await this.getRoleReactionCollection();
-		for await (const row of collection.find<ReactionRoleAttrs>({
+
+		const reactionRole = this.reactionRoles.get({
 			guildId: messageReaction.message.guild.id,
 			reactionId: messageReaction.emoji.id,
 			reactionName: messageReaction.emoji.name,
 			channelId: messageReaction.message.channel.id,
 			messageId: messageReaction.message.id,
-		})) {
-			if (row) {
-				// Assign Role Based on React
-				const member = await messageReaction.message.guild.members.fetch(user.id);
-				await member.roles.add(row.roleId, 'Linked React Button');
-				this.client.logger.logS(
-					`Reaction Role Assignment Triggered:\nUser:${member.user.username}\nReaction:${messageReaction.emoji.name}(${messageReaction.emoji.id})`,
-					LogFilter.Debug,
-				);
-				member.roles.add(row.roleId);
-			}
+		});
+		if (reactionRole) {
+			// Assign Role Based on React
+			const member = await messageReaction.message.guild.members.fetch(user.id);
+			await member.roles.add(reactionRole.roleId, 'Linked React Button');
+			this.client.logger.logS(
+				`Reaction Role Assignment Triggered:\nUser:${member.user.username}\nReaction:${messageReaction.emoji.name}(${messageReaction.emoji.id})`,
+				LogFilter.Debug,
+			);
+			member.roles.add(reactionRole.roleId);
 		}
 	}
 
 	public async OnReactionRemove(messageReaction: MessageReaction, user: User | PartialUser): Promise<void> {
 		if (!messageReaction.message.guild) return; // Roles Only Assignable In Guilds
-		const collection = await this.getRoleReactionCollection();
-		for await (const row of collection.find<ReactionRoleAttrs>({
+
+		const reactionRole = this.reactionRoles.get({
 			guildId: messageReaction.message.guild.id,
 			reactionId: messageReaction.emoji.id,
 			reactionName: messageReaction.emoji.name,
 			channelId: messageReaction.message.channel.id,
 			messageId: messageReaction.message.id,
-		})) {
-			if (row) {
-				// Assign Role Based on React
-				const member = await messageReaction.message.guild.members.fetch(user.id);
-				await member.roles.remove(row.roleId, 'Linked React Button');
-				this.client.logger.logS(
-					`Reaction Role Assignment Triggered:\nUser:${member.user.username}\nReaction:${messageReaction.emoji.name}(${messageReaction.emoji.id})`,
-					LogFilter.Debug,
-				);
-				member.roles.remove(row.roleId);
-			}
+		});
+		if (reactionRole) {
+			// Assign Role Based on React
+			const member = await messageReaction.message.guild.members.fetch(user.id);
+			await member.roles.remove(reactionRole.roleId, 'Linked React Button');
+			this.client.logger.logS(
+				`Reaction Role Assignment Triggered:\nUser:${member.user.username}\nReaction:${messageReaction.emoji.name}(${messageReaction.emoji.id})`,
+				LogFilter.Debug,
+			);
+			member.roles.remove(reactionRole.roleId);
 		}
-		
 	}
 	private async getRoleReactionCollection(): Promise<Collection<ReactionRoleAttrs>> {
 		return await this.client.nextDBClient.getCollection('roleReactions');
